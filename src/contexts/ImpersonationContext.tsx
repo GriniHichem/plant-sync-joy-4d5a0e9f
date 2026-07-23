@@ -59,12 +59,36 @@ export function ImpersonationProvider({ children }: { children: React.ReactNode 
     }
   }, []);
 
-  // Restore from sessionStorage on mount
+  // Restore from sessionStorage on mount — ONLY if the current authenticated
+  // user is actually an admin. Otherwise any stale key (shared kiosk, previous
+  // admin session, duplicated tab) would make an operator suddenly see another
+  // user's roles/profile. This was the root cause of "l'interface bascule sur
+  // les permissions d'un autre utilisateur".
   useEffect(() => {
     const stored = sessionStorage.getItem(SS_KEY);
-    if (stored) {
-      loadTarget(stored);
-    }
+    if (!stored) return;
+    (async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          sessionStorage.removeItem(SS_KEY);
+          return;
+        }
+        const { data: roles } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id);
+        const isAdmin = (roles ?? []).some((r: any) => r.role === "admin");
+        if (!isAdmin) {
+          // Purge silently — non-admin must never impersonate.
+          sessionStorage.removeItem(SS_KEY);
+          return;
+        }
+        await loadTarget(stored);
+      } catch {
+        sessionStorage.removeItem(SS_KEY);
+      }
+    })();
   }, [loadTarget]);
 
   const startImpersonation = useCallback(async (userId: string) => {

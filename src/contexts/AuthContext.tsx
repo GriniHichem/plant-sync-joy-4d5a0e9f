@@ -47,6 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let lastUserId: string | null = null;
+    let bootstrapped = false;
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -59,15 +60,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // Only run public-access gate at real sign-in, never on background TOKEN_REFRESHED /
-      // USER_UPDATED events — those must not sign the user out mid-session on self-hosting.
-      const runGate = event === "SIGNED_IN" || event === "INITIAL_SESSION";
+      // Public-access gate ONLY on an actual fresh SIGNED_IN event (user just
+      // typed their credentials). Never on INITIAL_SESSION, TOKEN_REFRESHED,
+      // USER_UPDATED, or getSession() bootstrap — those fire on every mount /
+      // HMR / tab focus and were signing people out mid-work.
+      const runGate = event === "SIGNED_IN" && bootstrapped;
       const userChanged = uid !== lastUserId;
       lastUserId = uid;
 
       setTimeout(() => {
-        // Always refresh profile/roles for a new user; on token refresh, skip to avoid
-        // transient network hiccups blanking state on self-hosted deployments.
         if (userChanged) {
           fetchProfile(uid, runGate);
           fetchRoles(uid);
@@ -84,10 +85,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        lastUserId = session.user.id;
-        fetchProfile(session.user.id, true);
-        fetchRoles(session.user.id);
+        // Avoid double-fetch if onAuthStateChange already handled this uid.
+        if (lastUserId !== session.user.id) {
+          lastUserId = session.user.id;
+          fetchProfile(session.user.id, false);
+          fetchRoles(session.user.id);
+        }
       }
+      bootstrapped = true;
       setLoading(false);
     });
 
