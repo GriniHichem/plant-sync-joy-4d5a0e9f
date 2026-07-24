@@ -498,8 +498,9 @@ export default function ReceptionQualitative() {
                 return (
                   <PhotoSlot key={s} ticketId={ticketId} ticketNumero={form.numero}
                     supplierName={(selectedSupplier as any)?.nom ?? (selectedSupplier as any)?.name}
+                    campaignId={form.campaign_id || null}
                     slot={s as 1 | 2 | 3}
-                    disabled={!ticketId}
+                    disabled={!ticketId || !canCloseTicket}
                     storagePath={p?.storage_path}
                     onUploaded={(path) => addPhoto.mutate({ slot: s, path })}
                     onDeleted={() => p && removePhoto.mutate(p.id)} />
