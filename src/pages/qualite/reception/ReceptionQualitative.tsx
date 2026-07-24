@@ -319,6 +319,8 @@ export default function ReceptionQualitative() {
   if (!form.heure_debut) missingReasons.push("Heure de début");
   if (!form.heure_fin) missingReasons.push("Heure de fin");
   if (missingSlots.length > 0) missingReasons.push(`Photo${missingSlots.length > 1 ? "s" : ""} ${missingSlots.join(", ")}`);
+  const abatValid = form.taux_abattement !== "" && !Number.isNaN(Number(form.taux_abattement)) && Number(form.taux_abattement) >= 0 && Number(form.taux_abattement) <= 100;
+  if (!abatValid) missingReasons.push("Taux d'abattement");
   const canClose = !!ticketId && missingReasons.length === 0;
   const selectedSupplier = suppliers.find((s: any) => s.id === form.supplier_id);
 
