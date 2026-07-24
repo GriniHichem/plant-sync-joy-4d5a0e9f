@@ -162,20 +162,27 @@ export default function ReceptionQualitative() {
 
   const closeTicket = useMutation({
     mutationFn: async () => {
+      if (form.taux_abattement === "" || form.taux_abattement === null || form.taux_abattement === undefined) {
+        throw new Error("Le taux d'abattement est obligatoire. Si aucun abattement n'est appliqué, veuillez saisir 0.");
+      }
+      const abat = Number(form.taux_abattement);
+      if (Number.isNaN(abat) || abat < 0 || abat > 100) {
+        throw new Error("Taux d'abattement invalide (0 à 100).");
+      }
       // Persist la valeur d'abattement + heure_fin en direct avant clôture
       await supabase.from("reception_tickets" as any).update({
         heure_debut: form.heure_debut || null,
         heure_fin: form.heure_fin || null,
-        taux_abattement: form.taux_abattement ? Number(form.taux_abattement) : 0,
+        taux_abattement: abat,
         commentaire: form.commentaire || null,
         supplier_id: form.supplier_id,
       }).eq("id", ticketId!);
       const { data, error } = await supabase.rpc("close_reception_ticket" as any, { _ticket_id: ticketId! });
       if (error) throw error;
-      return data;
+      return { data, numero: form.numero };
     },
-    onSuccess: () => {
-      toast.success("Ticket clôturé");
+    onSuccess: (res: any) => {
+      toast.success(`Ticket N°${res?.numero ?? ""} clôturé avec succès`);
       setTicketId(undefined);
       setForm({ numero: "", campaign_id: defaultCampaign?.id ?? "", supplier_id: "", heure_debut: "", heure_fin: "", taux_abattement: "", commentaire: "" });
       try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
