@@ -95,19 +95,36 @@ export default function ReceptionGlobal() {
   const handleDelete = async () => {
     if (!toDelete) return;
     setDeleting(true);
-    const { error } = await supabase.rpc("admin_delete_reception_ticket" as any, {
-      p_ticket_id: toDelete.id,
-      p_reason: deleteReason.trim() || null,
-    });
-    setDeleting(false);
-    if (error) {
-      toast({ title: "Suppression impossible", description: error.message, variant: "destructive" });
-      return;
+    try {
+      // 1) Récupère les photos avant suppression pour nettoyer le bucket.
+      const { data: photos } = await supabase
+        .from("reception_ticket_photos" as any)
+        .select("storage_path")
+        .eq("ticket_id", toDelete.id);
+      const paths = ((photos ?? []) as any[]).map((p) => p.storage_path).filter(Boolean);
+
+      // 2) Suppression logique + cascade DB via RPC admin.
+      const { error } = await supabase.rpc("admin_delete_reception_ticket" as any, {
+        p_ticket_id: toDelete.id,
+        p_reason: deleteReason.trim() || null,
+      });
+      if (error) throw error;
+
+      // 3) Nettoyage bucket reception-photos (best-effort).
+      if (paths.length > 0) {
+        const { error: rmErr } = await supabase.storage.from("reception-photos").remove(paths);
+        if (rmErr) console.warn("Nettoyage bucket partiel:", rmErr.message);
+      }
+
+      toast({ title: "Ticket supprimé", description: `N° ${toDelete.numero} — ${paths.length} photo(s) nettoyée(s)` });
+      setToDelete(null);
+      setDeleteReason("");
+      invalidate();
+    } catch (e: any) {
+      toast({ title: "Suppression impossible", description: e.message, variant: "destructive" });
+    } finally {
+      setDeleting(false);
     }
-    toast({ title: "Ticket supprimé", description: `N° ${toDelete.numero}` });
-    setToDelete(null);
-    setDeleteReason("");
-    invalidate();
   };
 
 

@@ -162,20 +162,27 @@ export default function ReceptionQualitative() {
 
   const closeTicket = useMutation({
     mutationFn: async () => {
+      if (form.taux_abattement === "" || form.taux_abattement === null || form.taux_abattement === undefined) {
+        throw new Error("Le taux d'abattement est obligatoire. Si aucun abattement n'est appliqué, veuillez saisir 0.");
+      }
+      const abat = Number(form.taux_abattement);
+      if (Number.isNaN(abat) || abat < 0 || abat > 100) {
+        throw new Error("Taux d'abattement invalide (0 à 100).");
+      }
       // Persist la valeur d'abattement + heure_fin en direct avant clôture
       await supabase.from("reception_tickets" as any).update({
         heure_debut: form.heure_debut || null,
         heure_fin: form.heure_fin || null,
-        taux_abattement: form.taux_abattement ? Number(form.taux_abattement) : 0,
+        taux_abattement: abat,
         commentaire: form.commentaire || null,
         supplier_id: form.supplier_id,
       }).eq("id", ticketId!);
       const { data, error } = await supabase.rpc("close_reception_ticket" as any, { _ticket_id: ticketId! });
       if (error) throw error;
-      return data;
+      return { data, numero: form.numero };
     },
-    onSuccess: () => {
-      toast.success("Ticket clôturé");
+    onSuccess: (res: any) => {
+      toast.success(`Ticket N°${res?.numero ?? ""} clôturé avec succès`);
       setTicketId(undefined);
       setForm({ numero: "", campaign_id: defaultCampaign?.id ?? "", supplier_id: "", heure_debut: "", heure_fin: "", taux_abattement: "", commentaire: "" });
       try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
@@ -312,6 +319,8 @@ export default function ReceptionQualitative() {
   if (!form.heure_debut) missingReasons.push("Heure de début");
   if (!form.heure_fin) missingReasons.push("Heure de fin");
   if (missingSlots.length > 0) missingReasons.push(`Photo${missingSlots.length > 1 ? "s" : ""} ${missingSlots.join(", ")}`);
+  const abatValid = form.taux_abattement !== "" && !Number.isNaN(Number(form.taux_abattement)) && Number(form.taux_abattement) >= 0 && Number(form.taux_abattement) <= 100;
+  if (!abatValid) missingReasons.push("Taux d'abattement");
   const canClose = !!ticketId && missingReasons.length === 0;
   const selectedSupplier = suppliers.find((s: any) => s.id === form.supplier_id);
 
@@ -489,8 +498,9 @@ export default function ReceptionQualitative() {
                 return (
                   <PhotoSlot key={s} ticketId={ticketId} ticketNumero={form.numero}
                     supplierName={(selectedSupplier as any)?.nom ?? (selectedSupplier as any)?.name}
+                    campaignId={form.campaign_id || null}
                     slot={s as 1 | 2 | 3}
-                    disabled={!ticketId}
+                    disabled={!ticketId || !canCloseTicket}
                     storagePath={p?.storage_path}
                     onUploaded={(path) => addPhoto.mutate({ slot: s, path })}
                     onDeleted={() => p && removePhoto.mutate(p.id)} />
