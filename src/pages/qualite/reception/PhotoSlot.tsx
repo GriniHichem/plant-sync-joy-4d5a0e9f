@@ -13,6 +13,7 @@ interface Props {
   ticketId?: string; // undefined tant que le ticket n'existe pas
   ticketNumero?: string;
   supplierName?: string;
+  campaignId?: string | null;
   slot: 1 | 2 | 3;
   disabled?: boolean;
   storagePath?: string | null;
@@ -20,7 +21,9 @@ interface Props {
   onDeleted: () => void;
 }
 
-export function PhotoSlot({ ticketId, ticketNumero, supplierName, slot, disabled, storagePath, onUploaded, onDeleted }: Props) {
+const MAX_BYTES = 5 * 1024 * 1024;
+
+export function PhotoSlot({ ticketId, ticketNumero, supplierName, campaignId, slot, disabled, storagePath, onUploaded, onDeleted }: Props) {
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [cameraOpen, setCameraOpen] = useState(false);
@@ -46,14 +49,19 @@ export function PhotoSlot({ ticketId, ticketNumero, supplierName, slot, disabled
     }
     setBusy(true);
     try {
-      const blob = await compressImage(file);
-      const path = `tickets/${ticketId}/slot-${slot}-${crypto.randomUUID()}.jpg`;
+      const blob = await compressImage(file, 2560, 0.92, MAX_BYTES);
+      if (blob.size > MAX_BYTES) {
+        throw new Error("Photo > 5 Mo malgré compression — réessayez avec moins de zoom");
+      }
+      // Organisation Supabase: reception-photos/{campagne}/{ticket_id}/photoN-<uuid>.jpg
+      const camp = campaignId ?? "sans-campagne";
+      const path = `${camp}/${ticketId}/photo${slot}-${crypto.randomUUID()}.jpg`;
       const { error } = await supabase.storage
         .from("reception-photos")
         .upload(path, blob, { contentType: "image/jpeg", upsert: false });
       if (error) throw error;
       onUploaded(path);
-      toast.success(`Photo ${slot} enregistrée`);
+      toast.success(`Photo ${slot} enregistrée (${(blob.size / 1024 / 1024).toFixed(2)} Mo)`);
     } catch (e: any) {
       toast.error(e.message ?? "Erreur d'envoi");
     } finally {
