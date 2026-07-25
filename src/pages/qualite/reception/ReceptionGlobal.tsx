@@ -313,6 +313,7 @@ export default function ReceptionGlobal() {
                   <DropdownMenuLabel>Colonnes optionnelles</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuCheckboxItem checked={cols.photos} onCheckedChange={(v) => setCols({ ...cols, photos: !!v })}>Photos</DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem checked={cols.code_saisi} onCheckedChange={(v) => setCols({ ...cols, code_saisi: !!v })}>N° système</DropdownMenuCheckboxItem>
                   <DropdownMenuCheckboxItem checked={cols.created_by} onCheckedChange={(v) => setCols({ ...cols, created_by: !!v })}>Créé par</DropdownMenuCheckboxItem>
                   <DropdownMenuCheckboxItem checked={cols.cloture_by} onCheckedChange={(v) => setCols({ ...cols, cloture_by: !!v })}>Clôturé par</DropdownMenuCheckboxItem>
                   <DropdownMenuCheckboxItem checked={cols.cloture_at} onCheckedChange={(v) => setCols({ ...cols, cloture_at: !!v })}>Clôturé le</DropdownMenuCheckboxItem>
