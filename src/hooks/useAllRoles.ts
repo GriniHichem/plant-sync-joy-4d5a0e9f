@@ -25,6 +25,7 @@ const SYSTEM_LABELS: Record<string, string> = {
   responsable_controle_qualite: "Resp. Contrôle Qualité",
   directeur_qualite: "Directeur Qualité",
   agreeur: "Agréeur",
+  agent_pont_bascule: "Agent Pont Bascule",
   responsable_inventaire: "Resp. Inventaire",
   agent_inventaire: "Agent Inventaire",
 };

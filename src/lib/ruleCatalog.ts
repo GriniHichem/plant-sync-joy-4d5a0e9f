@@ -232,6 +232,7 @@ export const ROLES = [
   "responsable_controle_qualite",
   "directeur_qualite",
   "agreeur",
+  "agent_pont_bascule",
   "responsable_inventaire",
   "agent_inventaire",
 ] as const;

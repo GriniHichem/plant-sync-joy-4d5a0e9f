@@ -36,6 +36,7 @@ const ROLE_LABELS: Record<string, string> = {
   responsable_inventaire: "Resp. Inventaire",
   agent_inventaire: "Agent Inventaire",
   agreeur: "Agréeur",
+  agent_pont_bascule: "Agent Pont Bascule",
 };
 
 export default function UsersAdmin() {
