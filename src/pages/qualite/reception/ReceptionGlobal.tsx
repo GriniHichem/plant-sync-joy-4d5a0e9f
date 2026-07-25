@@ -448,6 +448,7 @@ export default function ReceptionGlobal() {
                   <TableHead className="text-right">Abat. kg</TableHead><TableHead className="text-right">Net</TableHead>
                   <TableHead>État</TableHead>
                   {cols.photos && <TableHead>Photos</TableHead>}
+                  {cols.code_saisi && <TableHead>N° système</TableHead>}
                   {cols.created_by && <TableHead>Créé par</TableHead>}
                   {cols.cloture_by && <TableHead>Clôturé par</TableHead>}
                   {cols.cloture_at && <TableHead>Clôturé le</TableHead>}
