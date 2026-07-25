@@ -29,11 +29,11 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 
 
-type ColKey = "created_by" | "cloture_by" | "cloture_at" | "photos";
+type ColKey = "created_by" | "cloture_by" | "cloture_at" | "photos" | "code_saisi";
 const COL_LS_KEY = "reception-global-cols";
 const VIEW_LS_KEY = "reception-global-view";
 const DEFAULT_COLS: Record<ColKey, boolean> = {
-  created_by: false, cloture_by: false, cloture_at: false, photos: true,
+  created_by: false, cloture_by: false, cloture_at: false, photos: true, code_saisi: false,
 };
 
 export default function ReceptionGlobal() {
@@ -313,6 +313,7 @@ export default function ReceptionGlobal() {
                   <DropdownMenuLabel>Colonnes optionnelles</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuCheckboxItem checked={cols.photos} onCheckedChange={(v) => setCols({ ...cols, photos: !!v })}>Photos</DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem checked={cols.code_saisi} onCheckedChange={(v) => setCols({ ...cols, code_saisi: !!v })}>N° système</DropdownMenuCheckboxItem>
                   <DropdownMenuCheckboxItem checked={cols.created_by} onCheckedChange={(v) => setCols({ ...cols, created_by: !!v })}>Créé par</DropdownMenuCheckboxItem>
                   <DropdownMenuCheckboxItem checked={cols.cloture_by} onCheckedChange={(v) => setCols({ ...cols, cloture_by: !!v })}>Clôturé par</DropdownMenuCheckboxItem>
                   <DropdownMenuCheckboxItem checked={cols.cloture_at} onCheckedChange={(v) => setCols({ ...cols, cloture_at: !!v })}>Clôturé le</DropdownMenuCheckboxItem>
@@ -337,6 +338,7 @@ export default function ReceptionGlobal() {
                 }))}
                 columns={[
                   { key: "numero", label: "N° ticket" },
+                  { key: "code_saisi", label: "N° système" },
                   { key: "date_ticket", label: "Date" },
                   { key: "campagne", label: "Campagne" },
                   { key: "produit", label: "Produit" },
@@ -394,7 +396,10 @@ export default function ReceptionGlobal() {
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <div className="font-mono text-[11px] text-muted-foreground">#{r.numero}</div>
+                          <div className="font-mono text-[11px] text-muted-foreground">
+                            #{r.numero}
+                            {r.code_saisi && <span className="ml-1.5 text-foreground/70">· sys {r.code_saisi}</span>}
+                          </div>
                           <div className="font-semibold truncate">{r.produit ?? "—"}</div>
                           <div className="text-xs text-muted-foreground truncate">{r.fournisseur ?? "—"}</div>
                         </div>
@@ -446,6 +451,7 @@ export default function ReceptionGlobal() {
                   <TableHead className="text-right">Abat. kg</TableHead><TableHead className="text-right">Net</TableHead>
                   <TableHead>État</TableHead>
                   {cols.photos && <TableHead>Photos</TableHead>}
+                  {cols.code_saisi && <TableHead>N° système</TableHead>}
                   {cols.created_by && <TableHead>Créé par</TableHead>}
                   {cols.cloture_by && <TableHead>Clôturé par</TableHead>}
                   {cols.cloture_at && <TableHead>Clôturé le</TableHead>}
@@ -486,6 +492,7 @@ export default function ReceptionGlobal() {
                           </span>
                         </TableCell>
                       )}
+                      {cols.code_saisi && <TableCell className="font-mono text-xs">{r.code_saisi ?? "—"}</TableCell>}
                       {cols.created_by && <TableCell className="text-xs">{r.created_by_name ?? "—"}</TableCell>}
                       {cols.cloture_by && <TableCell className="text-xs">{r.cloture_by_name ?? "—"}</TableCell>}
                       {cols.cloture_at && <TableCell className="text-xs">{fmtDT(r.cloture_at)}</TableCell>}
@@ -535,6 +542,7 @@ export default function ReceptionGlobal() {
           { key: "heure_debut", label: "Heure début", aliases: ["debut", "hdebut", "heure_pesee_1", "heure_pesée_1"] },
           { key: "heure_fin", label: "Heure fin", aliases: ["fin", "hfin", "heure_pesee_2", "heure_pesée_2"] },
           { key: "commentaire", label: "Commentaire", aliases: ["notes", "remarque", "raison_collecteur"] },
+          { key: "numero_systeme", label: "Numéro système", aliases: ["n_systeme", "num_systeme", "code_systeme", "code_saisi", "code_pesee", "ref_systeme", "reference_systeme"] },
         ]}
         options={
           <div className="space-y-1">
