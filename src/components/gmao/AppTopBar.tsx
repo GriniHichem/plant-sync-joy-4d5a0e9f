@@ -145,35 +145,58 @@ function MegaMenu({
   );
 }
 
-function MobileNav() {
+function MobileNav({
+  visibleGmao,
+  visibleGpao,
+  visibleQualite,
+  visibleInventaire,
+  visibleConfig,
+}: {
+  visibleGmao: NavItem[];
+  visibleGpao: NavItem[];
+  visibleQualite: NavItem[];
+  visibleInventaire: NavItem[];
+  visibleConfig: NavItem[];
+}) {
   const [open, setOpen] = useState(false);
   const location = useLocation();
   useEffect(() => setOpen(false), [location.pathname]);
 
-  const renderItems = (label: string, items: NavItem[]) => (
-    <div className="space-y-1">
-      <p className="text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground/60 px-2 pt-2 pb-1">
-        {label}
-      </p>
-      {items.map((item) => (
-        <RRNavLink
-          key={item.url}
-          to={item.url}
-          end={item.url === "/"}
-          className={({ isActive: a }) =>
-            cn(
-              "flex items-center gap-3 px-3 py-2.5 rounded-md text-[14px] font-medium",
-              "text-foreground/75 hover:bg-accent hover:text-foreground",
-              a && "bg-primary/10 text-primary font-semibold"
-            )
-          }
-        >
-          <item.icon size={18} />
-          {item.title}
-        </RRNavLink>
-      ))}
-    </div>
-  );
+  const renderItems = (label: string, items: NavItem[]) => {
+    if (items.length === 0) return null;
+    return (
+      <div className="space-y-1">
+        <p className="text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground/60 px-2 pt-2 pb-1">
+          {label}
+        </p>
+        {items.map((item) => (
+          <RRNavLink
+            key={item.url}
+            to={item.url}
+            end={item.url === "/"}
+            className={({ isActive: a }) =>
+              cn(
+                "flex items-center gap-3 px-3 py-2.5 rounded-md text-[14px] font-medium",
+                "text-foreground/75 hover:bg-accent hover:text-foreground",
+                a && "bg-primary/10 text-primary font-semibold"
+              )
+            }
+          >
+            <item.icon size={18} />
+            {item.title}
+          </RRNavLink>
+        ))}
+      </div>
+    );
+  };
+
+  const groups = [
+    { label: "Maintenance", items: visibleGmao },
+    { label: "Production", items: visibleGpao },
+    { label: "Qualité", items: visibleQualite },
+    { label: "Inventaire", items: visibleInventaire },
+    { label: "Configuration", items: visibleConfig },
+  ].filter((g) => g.items.length > 0);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -200,19 +223,17 @@ function MobileNav() {
           <Menu size={18} />
           Apps
         </RRNavLink>
-        {renderItems("Maintenance", gmaoItems)}
-        <div className="my-3 h-px bg-border/60" />
-        {renderItems("Production", gpaoItems)}
-        <div className="my-3 h-px bg-border/60" />
-        {renderItems("Qualité", qualiteItems)}
-        <div className="my-3 h-px bg-border/60" />
-        {renderItems("Inventaire", inventaireItems)}
-        <div className="my-3 h-px bg-border/60" />
-        {renderItems("Configuration", configItems)}
+        {groups.map((g, idx) => (
+          <div key={g.label}>
+            {idx > 0 && <div className="my-3 h-px bg-border/60" />}
+            {renderItems(g.label, g.items)}
+          </div>
+        ))}
       </SheetContent>
     </Sheet>
   );
 }
+
 
 export function AppTopBar() {
   const location = useLocation();
