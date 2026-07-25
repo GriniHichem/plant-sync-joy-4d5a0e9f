@@ -46,6 +46,7 @@ export default function ReceptionGlobal() {
   const canImport = canEdit("reception_global") || canDelete("reception_global");
   const [importOpen, setImportOpen] = useState(false);
   const [importMode, setImportMode] = useState<"ignore" | "replace">("ignore");
+  const [importPoidsOpen, setImportPoidsOpen] = useState(false);
   const [toDelete, setToDelete] = useState<any | null>(null);
   const [deleteReason, setDeleteReason] = useState("");
   const [deleting, setDeleting] = useState(false);
@@ -318,9 +319,14 @@ export default function ReceptionGlobal() {
                 </DropdownMenuContent>
               </DropdownMenu>
               {canImport && (
-                <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
-                  <Upload className="h-4 w-4 mr-1" />Importer
-                </Button>
+                <>
+                  <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
+                    <Upload className="h-4 w-4 mr-1" />Importer
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => setImportPoidsOpen(true)}>
+                    <Upload className="h-4 w-4 mr-1" />Importer poids bruts
+                  </Button>
+                </>
               )}
               <ExportCsvButton
                 filename="reception-global"
@@ -547,6 +553,31 @@ export default function ReceptionGlobal() {
         }}
         onSuccess={invalidate}
       />
+
+      <CsvImportDialog
+        open={importPoidsOpen}
+        onOpenChange={setImportPoidsOpen}
+        title="Importer les poids bruts"
+        description="Met à jour uniquement le poids brut des tickets existants. Le poids net et l'abattement en tonnes sont recalculés automatiquement à partir du taux d'abattement déjà enregistré. Aucun autre champ n'est modifié. Les tickets introuvables sont ignorés."
+        fields={[
+          { key: "numero", label: "N° ticket", required: true, aliases: ["n", "num", "n_tick", "n_ticket", "num_ticket", "numero_ticket"] },
+          { key: "poids_brut", label: "Poids brut (kg)", required: true, aliases: ["brut", "poids_brut_kg", "poids", "pesee_2", "pesée_2", "pesee2"] },
+        ]}
+        onImport={async (rows): Promise<ImportReport> => {
+          const { data, error } = await supabase.rpc("import_reception_poids_bruts" as any, { rows: rows as any });
+          if (error) throw error;
+          const r = (data ?? {}) as any;
+          return {
+            total: r.total ?? rows.length,
+            success: r.success ?? 0,
+            failed: r.failed ?? 0,
+            extra: { "mis à jour": r.updated ?? 0, "ignorés (introuvables)": r.skipped ?? 0 },
+            errors: r.errors ?? [],
+          };
+        }}
+        onSuccess={invalidate}
+      />
+
 
       <AlertDialog open={!!toDelete} onOpenChange={(o) => { if (!o) { setToDelete(null); setDeleteReason(""); } }}>
         <AlertDialogContent>
