@@ -489,6 +489,7 @@ export default function ReceptionGlobal() {
                           </span>
                         </TableCell>
                       )}
+                      {cols.code_saisi && <TableCell className="font-mono text-xs">{r.code_saisi ?? "—"}</TableCell>}
                       {cols.created_by && <TableCell className="text-xs">{r.created_by_name ?? "—"}</TableCell>}
                       {cols.cloture_by && <TableCell className="text-xs">{r.cloture_by_name ?? "—"}</TableCell>}
                       {cols.cloture_at && <TableCell className="text-xs">{fmtDT(r.cloture_at)}</TableCell>}
