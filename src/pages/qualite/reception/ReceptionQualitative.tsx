@@ -215,7 +215,9 @@ export default function ReceptionQualitative() {
     queryFn: async () => {
       const { data, error } = await supabase.from("v_reception_global")
         .select("*")
-        .eq("statut", "cloture").order("cloture_at", { ascending: false }).limit(10);
+        .eq("statut", "cloture")
+        .order("numero", { ascending: false })
+        .limit(10);
       if (error) throw error;
       return (data ?? []) as any[];
     },
