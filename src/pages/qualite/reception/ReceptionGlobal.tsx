@@ -338,6 +338,7 @@ export default function ReceptionGlobal() {
                 }))}
                 columns={[
                   { key: "numero", label: "N° ticket" },
+                  { key: "code_saisi", label: "N° système" },
                   { key: "date_ticket", label: "Date" },
                   { key: "campagne", label: "Campagne" },
                   { key: "produit", label: "Produit" },
