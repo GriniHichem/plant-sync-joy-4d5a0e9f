@@ -42,8 +42,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [realProfile, setRealProfile] = useState<Profile | null>(null);
   const [realRoles, setRealRoles] = useState<AppRole[]>([]);
+  const [customRoleInherits, setCustomRoleInherits] = useState<Record<string, string | null>>({});
   const [loading, setLoading] = useState(true);
   const { impersonation } = useImpersonation();
+
+  // Load the custom_roles → inherits_from map once. Custom roles behave like
+  // their inherited system role for hardcoded hasRole() feature-gates, WITHOUT
+  // accumulating matrix rights (usePermissions still queries only the assigned
+  // role codes, so role_permissions rows remain the single source of truth).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("custom_roles" as any)
+        .select("code, inherits_from, is_active");
+      if (cancelled || !data) return;
+      const map: Record<string, string | null> = {};
+      for (const r of data as any[]) {
+        if (r.is_active) map[r.code] = r.inherits_from ?? null;
+      }
+      setCustomRoleInherits(map);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
 
   useEffect(() => {
     let lastUserId: string | null = null;
@@ -189,7 +211,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     : realProfile;
 
-  const hasRole = (role: AppRole) => effectiveRoles.includes(role);
+  // Feature-gate hasRole(): matches assigned roles + the system role each
+  // custom role inherits from. Matrix permissions are still evaluated per
+  // assigned role code only (no rights cumulation) — see usePermissions.
+  const hasRole = (role: AppRole) => {
+    if (effectiveRoles.includes(role)) return true;
+    for (const r of effectiveRoles) {
+      const inherited = customRoleInherits[r as unknown as string];
+      if (inherited && inherited === (role as unknown as string)) return true;
+    }
+    return false;
+  };
+
 
   const refreshProfile = async () => {
     if (user) await fetchProfile(user.id);
