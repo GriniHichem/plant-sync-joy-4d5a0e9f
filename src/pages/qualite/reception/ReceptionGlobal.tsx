@@ -542,6 +542,7 @@ export default function ReceptionGlobal() {
           { key: "heure_debut", label: "Heure début", aliases: ["debut", "hdebut", "heure_pesee_1", "heure_pesée_1"] },
           { key: "heure_fin", label: "Heure fin", aliases: ["fin", "hfin", "heure_pesee_2", "heure_pesée_2"] },
           { key: "commentaire", label: "Commentaire", aliases: ["notes", "remarque", "raison_collecteur"] },
+          { key: "numero_systeme", label: "Numéro système", aliases: ["n_systeme", "num_systeme", "code_systeme", "code_saisi", "code_pesee", "ref_systeme", "reference_systeme"] },
         ]}
         options={
           <div className="space-y-1">
