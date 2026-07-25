@@ -83,7 +83,7 @@ export default function ReceptionGlobal() {
     queryKey: ["v_reception_global"],
     queryFn: async () => {
       const { data, error } = await supabase.from("v_reception_global")
-        .select("*").order("date_ticket", { ascending: false }).limit(1000);
+        .select("*").order("numero", { ascending: false }).limit(1000);
       if (error) throw error;
       return (data ?? []) as any[];
     },
@@ -153,15 +153,12 @@ export default function ReceptionGlobal() {
       }
       return true;
     });
-    // Tri : date la plus récente d'abord, puis dernier ticket (created_at desc, N° desc)
+    // Tri principal : numéro de ticket décroissant, quelle que soit la date.
     return list.sort((a, b) => {
-      const d = String(b.date_ticket ?? "").localeCompare(String(a.date_ticket ?? ""));
-      if (d !== 0) return d;
-      const t = String(b.created_at ?? "").localeCompare(String(a.created_at ?? ""));
-      if (t !== 0) return t;
       const na = Number(String(a.numero ?? "").replace(/\D/g, "")) || 0;
       const nb = Number(String(b.numero ?? "").replace(/\D/g, "")) || 0;
-      return nb - na;
+      if (nb !== na) return nb - na;
+      return String(b.numero ?? "").localeCompare(String(a.numero ?? ""));
     });
   }, [rows, f]);
 
