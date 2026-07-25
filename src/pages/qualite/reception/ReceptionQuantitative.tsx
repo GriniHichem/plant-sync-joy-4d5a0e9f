@@ -32,8 +32,7 @@ export default function ReceptionQuantitative() {
     queryFn: async () => {
       const { data, error } = await supabase.from("v_reception_global")
         .select("*").eq("statut", "cloture")
-        .order("etat_pesee", { ascending: true })
-        .order("cloture_at", { ascending: false })
+        .order("numero", { ascending: false })
         .limit(limit);
       if (error) throw error;
       return (data ?? []) as any[];
