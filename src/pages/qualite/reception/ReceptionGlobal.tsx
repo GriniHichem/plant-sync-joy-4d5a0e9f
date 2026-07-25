@@ -319,9 +319,14 @@ export default function ReceptionGlobal() {
                 </DropdownMenuContent>
               </DropdownMenu>
               {canImport && (
-                <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
-                  <Upload className="h-4 w-4 mr-1" />Importer
-                </Button>
+                <>
+                  <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
+                    <Upload className="h-4 w-4 mr-1" />Importer
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => setImportPoidsOpen(true)}>
+                    <Upload className="h-4 w-4 mr-1" />Importer poids bruts
+                  </Button>
+                </>
               )}
               <ExportCsvButton
                 filename="reception-global"
