@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import {
   ShieldCheck, Users, FileText, Package, ClipboardCheck, CheckSquare,
-  Activity, ToggleLeft, Download, LayoutGrid, Search, ChevronRight, Lock, Truck,
+  Activity, ToggleLeft, Download, LayoutGrid, Search, ChevronRight, Lock, Truck, Home,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -20,9 +20,10 @@ import PortabilityTab from "./parametres/access-control/PortabilityTab";
 import RolesMatrix from "./parametres/RolesMatrix";
 import DocumentPermissionsAdmin from "./parametres/DocumentPermissionsAdmin";
 import PdrStockPermissionsAdmin from "./parametres/PdrStockPermissionsAdmin";
+import LandingPagesTab from "./parametres/access-control/LandingPagesTab";
 
 type SectionKey =
-  | "overview" | "users" | "roles" | "matrix" | "documents" | "pdr"
+  | "overview" | "users" | "roles" | "matrix" | "landing" | "documents" | "pdr"
   | "quality" | "reception" | "validations" | "audit" | "control" | "portability";
 
 interface SectionDef {
@@ -39,6 +40,7 @@ const SECTIONS: SectionDef[] = [
   { key: "users", label: "Utilisateurs", description: "Comptes, rôles assignés et statut", icon: Users, group: "Identités", accent: "from-blue-500/15 to-blue-500/5 text-blue-500" },
   { key: "roles", label: "Rôles", description: "Rôles système et personnalisés", icon: ShieldCheck, group: "Identités", accent: "from-indigo-500/15 to-indigo-500/5 text-indigo-500" },
   { key: "matrix", label: "Matrice modules", description: "Permissions par rôle × module", icon: LayoutGrid, group: "Permissions", accent: "from-violet-500/15 to-violet-500/5 text-violet-500" },
+  { key: "landing", label: "Page d'accueil", description: "Module par défaut à la connexion, par rôle", icon: Home, group: "Permissions", accent: "from-cyan-500/15 to-cyan-500/5 text-cyan-500" },
   { key: "documents", label: "Documents", description: "Droits d'accès aux documents", icon: FileText, group: "Permissions", accent: "from-fuchsia-500/15 to-fuchsia-500/5 text-fuchsia-500" },
   { key: "pdr", label: "PDR & Stock", description: "Mouvements, inventaires, fournisseurs", icon: Package, group: "Permissions", accent: "from-amber-500/15 to-amber-500/5 text-amber-500" },
   { key: "quality", label: "Qualité", description: "15 droits granulaires qualité", icon: ClipboardCheck, group: "Permissions", accent: "from-emerald-500/15 to-emerald-500/5 text-emerald-500" },
@@ -195,6 +197,7 @@ export default function SecurityHub() {
               {active === "users" && <UsersAdmin />}
               {active === "roles" && <RolesTab />}
               {active === "matrix" && <RolesMatrix />}
+              {active === "landing" && <LandingPagesTab />}
               {active === "documents" && <DocumentPermissionsAdmin />}
               {active === "pdr" && <PdrStockPermissionsAdmin />}
               {active === "quality" && <QualityPermissionsTab />}
