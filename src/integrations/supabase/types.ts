@@ -7338,6 +7338,7 @@ export type Database = {
         Args: { _rows: Json; _update_existing: boolean }
         Returns: Json
       }
+      import_reception_poids_bruts: { Args: { rows: Json }; Returns: Json }
       import_reception_suppliers: { Args: { rows: Json }; Returns: Json }
       import_reception_tickets: {
         Args: { on_conflict?: string; rows: Json }
