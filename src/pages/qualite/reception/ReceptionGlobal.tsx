@@ -29,11 +29,11 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 
 
-type ColKey = "created_by" | "cloture_by" | "cloture_at" | "photos";
+type ColKey = "created_by" | "cloture_by" | "cloture_at" | "photos" | "code_saisi";
 const COL_LS_KEY = "reception-global-cols";
 const VIEW_LS_KEY = "reception-global-view";
 const DEFAULT_COLS: Record<ColKey, boolean> = {
-  created_by: false, cloture_by: false, cloture_at: false, photos: true,
+  created_by: false, cloture_by: false, cloture_at: false, photos: true, code_saisi: false,
 };
 
 export default function ReceptionGlobal() {
