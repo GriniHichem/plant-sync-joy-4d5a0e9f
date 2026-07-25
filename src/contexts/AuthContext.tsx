@@ -211,7 +211,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     : realProfile;
 
-  const hasRole = (role: AppRole) => effectiveRoles.includes(role);
+  // Feature-gate hasRole(): matches assigned roles + the system role each
+  // custom role inherits from. Matrix permissions are still evaluated per
+  // assigned role code only (no rights cumulation) — see usePermissions.
+  const hasRole = (role: AppRole) => {
+    if (effectiveRoles.includes(role)) return true;
+    for (const r of effectiveRoles) {
+      const inherited = customRoleInherits[r as unknown as string];
+      if (inherited && inherited === (role as unknown as string)) return true;
+    }
+    return false;
+  };
+
 
   const refreshProfile = async () => {
     if (user) await fetchProfile(user.id);
