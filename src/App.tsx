@@ -119,6 +119,7 @@ import { ShiftHomePage } from "@/components/shift/ShiftHomePage";
 import MagasinShiftHome from "@/pages/magasin/MagasinShiftHome";
 import MagasinKiosk from "@/pages/magasin/MagasinKiosk";
 import MagasinJournal from "@/pages/magasin/MagasinJournal";
+import HomeRoute from "@/components/HomeRoute";
 
 const queryClient = new QueryClient();
 
@@ -239,7 +240,7 @@ const App = () => (
             <Route path="/magasin/shift/live" element={<ProtectedKioskRoute><MagasinKiosk /></ProtectedKioskRoute>} />
             <Route element={<ProtectedRoutes />}>
               {/* GMAO */}
-              <Route path="/" element={<Dashboard />} />
+              <Route path="/" element={<HomeRoute />} />
               <Route path="/apps" element={<Apps />} />
               <Route path="/mon-profil" element={<MonProfil />} />
               <Route path="/securite" element={<SecurityHub />} />
