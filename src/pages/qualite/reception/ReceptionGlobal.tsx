@@ -46,6 +46,7 @@ export default function ReceptionGlobal() {
   const canImport = canEdit("reception_global") || canDelete("reception_global");
   const [importOpen, setImportOpen] = useState(false);
   const [importMode, setImportMode] = useState<"ignore" | "replace">("ignore");
+  const [importPoidsOpen, setImportPoidsOpen] = useState(false);
   const [toDelete, setToDelete] = useState<any | null>(null);
   const [deleteReason, setDeleteReason] = useState("");
   const [deleting, setDeleting] = useState(false);
