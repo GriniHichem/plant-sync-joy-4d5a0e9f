@@ -284,7 +284,13 @@ export function AppTopBar() {
     >
       <div className="h-full flex items-center gap-2 px-3 md:px-5">
         {/* Mobile menu */}
-        <MobileNav />
+        <MobileNav
+          visibleGmao={visibleGmao}
+          visibleGpao={visibleGpao}
+          visibleQualite={visibleQualite}
+          visibleInventaire={visibleInventaire}
+          visibleConfig={visibleConfig}
+        />
 
         {/* Brand */}
         <button
