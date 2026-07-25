@@ -30,6 +30,7 @@ const SYSTEM_ROLE_LABELS: Record<string, string> = {
   agreeur: "Agréeur",
   responsable_inventaire: "Responsable Inventaire",
   agent_inventaire: "Agent Inventaire",
+  agent_pont_bascule: "Agent Pont Bascule",
 };
 
 export default function RolesTab() {
