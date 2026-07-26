@@ -656,6 +656,37 @@ export default function ReceptionGlobal() {
         onSuccess={invalidate}
       />
 
+      <AlertDialog open={!!toWeigh} onOpenChange={(o) => { if (!o) { setToWeigh(null); setWeighValue(""); } }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Saisir le poids brut</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ticket <span className="font-mono font-semibold">#{toWeigh?.numero}</span>
+              {toWeigh?.produit ? <> — {toWeigh.produit}</> : null}. Abattement appliqué :{" "}
+              {Number(toWeigh?.taux_abattement ?? 0).toFixed(2)} %. L'abattement en kg et le poids net
+              sont recalculés automatiquement.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Poids brut (kg)</Label>
+            <Input
+              inputMode="decimal"
+              value={weighValue}
+              onChange={(e) => setWeighValue(e.target.value)}
+              placeholder="Ex. 12 500"
+              className="h-12 text-lg font-semibold tabular-nums"
+              autoFocus
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={weighing}>Annuler</AlertDialogCancel>
+            <AlertDialogAction disabled={weighing} onClick={(e) => { e.preventDefault(); handleWeigh(); }}>
+              {weighing ? "Enregistrement…" : "Enregistrer"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
 
       <AlertDialog open={!!toDelete} onOpenChange={(o) => { if (!o) { setToDelete(null); setDeleteReason(""); } }}>
         <AlertDialogContent>
