@@ -542,6 +542,17 @@ export default function ReceptionGlobal() {
                         {r.etat_pesee === "pese"
                           ? <Badge variant="secondary">Pesé</Badge>
                           : <Badge>En attente</Badge>}
+                        {canImport && !(Number(r.poids_brut_kg ?? 0) > 0) && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="ml-1 h-7 px-2"
+                            title="Saisir le poids brut"
+                            onClick={(e) => { e.stopPropagation(); setToWeigh(r); setWeighValue(""); }}
+                          >
+                            <Scale className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
                       </TableCell>
                       {cols.photos && (
                         <TableCell>
