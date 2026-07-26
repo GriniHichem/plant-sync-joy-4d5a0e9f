@@ -23,16 +23,18 @@ export default function ReceptionQuantitative() {
   const isMobile = useIsMobile();
   const [limit, setLimit] = useState(20);
   const [search, setSearch] = useState("");
+  const [sortAsc, setSortAsc] = useState(false);
   const [selected, setSelected] = useState<any>(null);
   const [poidsBrut, setPoidsBrut] = useState("");
   const [codeSaisi, setCodeSaisi] = useState("");
 
   const { data: tickets = [], isFetching } = useQuery({
-    queryKey: ["reception_pesee_list", limit],
+    queryKey: ["reception_pesee_list", limit, sortAsc],
     queryFn: async () => {
+      // Seuls les tickets clôturés non encore pesés remontent au pont-bascule.
       const { data, error } = await supabase.from("v_reception_global")
-        .select("*").eq("statut", "cloture")
-        .order("numero", { ascending: false })
+        .select("*").eq("statut", "cloture").eq("etat_pesee", "a_peser")
+        .order("numero", { ascending: sortAsc })
         .limit(limit);
       if (error) throw error;
       return (data ?? []) as any[];
@@ -50,6 +52,7 @@ export default function ReceptionQuantitative() {
       [t.numero, t.fournisseur, t.produit, t.wilaya].some((x) => (x ?? "").toString().toLowerCase().includes(q)),
     );
   }, [tickets, search]);
+
 
   // Formatage du code système : préfixe + zéros + numéro saisi
   const digits = selected?.code_digits ? Math.max(1, Math.min(10, Number(selected.code_digits))) : null;
