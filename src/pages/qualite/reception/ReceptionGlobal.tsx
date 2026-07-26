@@ -131,6 +131,49 @@ export default function ReceptionGlobal() {
     }
   };
 
+  // Saisie / mise à jour du poids brut depuis la consultation (tickets non pesés).
+  // L'abattement et le poids net sont recalculés automatiquement par la base
+  // à partir du taux d'abattement du ticket.
+  const handleWeigh = async () => {
+    if (!toWeigh) return;
+    const brut = Number(String(weighValue).replace(/\s/g, "").replace(",", "."));
+    if (!brut || brut <= 0) {
+      toast({ title: "Poids brut invalide", variant: "destructive" });
+      return;
+    }
+    setWeighing(true);
+    try {
+      const taux = Number(toWeigh.taux_abattement ?? 0);
+      const { data: existing } = await supabase
+        .from("reception_weighings" as any)
+        .select("id")
+        .eq("ticket_id", toWeigh.id)
+        .maybeSingle();
+
+      if (existing?.id) {
+        const { error } = await supabase
+          .from("reception_weighings" as any)
+          .update({ poids_brut_kg: brut, taux_abattement_snapshot: taux })
+          .eq("id", existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("reception_weighings" as any)
+          .insert({ ticket_id: toWeigh.id, poids_brut_kg: brut, taux_abattement_snapshot: taux });
+        if (error) throw error;
+      }
+
+      toast({ title: "Poids brut enregistré", description: `N° ${toWeigh.numero} — ${formatKgInt(brut)}` });
+      setToWeigh(null);
+      setWeighValue("");
+      invalidate();
+    } catch (e: any) {
+      toast({ title: "Enregistrement impossible", description: e.message, variant: "destructive" });
+    } finally {
+      setWeighing(false);
+    }
+  };
+
 
   const { data: campaigns = [] } = useQuery({
     queryKey: ["reception_campaigns", "all"],
