@@ -144,7 +144,8 @@ export default function ReceptionGlobal() {
       if (f.campaign !== "__all__" && r.campaign_id !== f.campaign) return false;
       if (f.supplier !== "__all__" && r.supplier_id !== f.supplier) return false;
       if (f.product !== "__all__" && r.product_id !== f.product) return false;
-      if (f.etat !== "__all__" && r.etat_pesee !== f.etat) return false;
+      if (f.etat === "sans_brut" && Number(r.poids_brut_kg ?? 0) > 0) return false;
+      if (f.etat !== "__all__" && f.etat !== "sans_brut" && r.etat_pesee !== f.etat) return false;
       if (f.conformite === "conforme" && isOverdue(r.duree_minutes)) return false;
       if (f.conformite === "hors_delai" && !isOverdue(r.duree_minutes)) return false;
       if (f.q) {
