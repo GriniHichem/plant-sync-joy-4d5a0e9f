@@ -86,7 +86,7 @@ BEGIN
     -- Normalisation : espaces (y compris insécables), points et tirets ramenés
     -- à un séparateur unique. Formats acceptés : AAAA-MM-JJ, JJ/MM/AAAA, JJ/MM/AA.
     IF s_date IS NOT NULL THEN
-      s_date := btrim(regexp_replace(s_date, '[[:space:]\u00A0]', '', 'g'));
+      s_date := replace(regexp_replace(s_date, '[[:space:]]', '', 'g'), chr(160), '');
       s_date := split_part(s_date, 'T', 1);
       s_date := replace(replace(s_date, '.', '/'), '\\', '/');
     END IF;
