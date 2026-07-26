@@ -231,9 +231,11 @@ export default function ReceptionGlobal() {
             <SelectItem value="__all__">Tous</SelectItem>
             <SelectItem value="pese">Pesé</SelectItem>
             <SelectItem value="a_peser">À peser</SelectItem>
+            <SelectItem value="sans_brut">Sans poids brut</SelectItem>
           </SelectContent>
         </Select>
       </div>
+
       <div><Label>Conformité durée</Label>
         <Select value={f.conformite} onValueChange={(v) => setF({ ...f, conformite: v })}>
           <SelectTrigger><SelectValue /></SelectTrigger>
