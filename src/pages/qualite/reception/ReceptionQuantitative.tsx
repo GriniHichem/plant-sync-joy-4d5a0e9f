@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Scale, Search, ChevronRight } from "lucide-react";
+import { Scale, Search, ChevronRight, ArrowUpDown } from "lucide-react";
 import { computeAbattementKg, computeNetKg, formatKg, kgToTonnes } from "@/lib/reception";
 import { PhotoLightbox } from "./PhotoLightbox";
 import { useShiftRealtime } from "@/hooks/useShiftRealtime";
@@ -23,16 +23,18 @@ export default function ReceptionQuantitative() {
   const isMobile = useIsMobile();
   const [limit, setLimit] = useState(20);
   const [search, setSearch] = useState("");
+  const [sortAsc, setSortAsc] = useState(false);
   const [selected, setSelected] = useState<any>(null);
   const [poidsBrut, setPoidsBrut] = useState("");
   const [codeSaisi, setCodeSaisi] = useState("");
 
   const { data: tickets = [], isFetching } = useQuery({
-    queryKey: ["reception_pesee_list", limit],
+    queryKey: ["reception_pesee_list", limit, sortAsc],
     queryFn: async () => {
+      // Seuls les tickets clôturés non encore pesés remontent au pont-bascule.
       const { data, error } = await supabase.from("v_reception_global")
-        .select("*").eq("statut", "cloture")
-        .order("numero", { ascending: false })
+        .select("*").eq("statut", "cloture").eq("etat_pesee", "a_peser")
+        .order("numero", { ascending: sortAsc })
         .limit(limit);
       if (error) throw error;
       return (data ?? []) as any[];
@@ -50,6 +52,7 @@ export default function ReceptionQuantitative() {
       [t.numero, t.fournisseur, t.produit, t.wilaya].some((x) => (x ?? "").toString().toLowerCase().includes(q)),
     );
   }, [tickets, search]);
+
 
   // Formatage du code système : préfixe + zéros + numéro saisi
   const digits = selected?.code_digits ? Math.max(1, Math.min(10, Number(selected.code_digits))) : null;
@@ -183,11 +186,24 @@ export default function ReceptionQuantitative() {
         <CardHeader>
           <div className="flex items-center gap-2 flex-wrap">
             <CardTitle className="text-base md:text-lg">Tickets à peser</CardTitle>
-            <div className="relative ml-auto w-full sm:w-64">
-              <Search className="h-4 w-4 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input className="pl-8 h-10" placeholder="N°, fournisseur, produit…" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <Badge variant="outline">{filtered.length} en attente</Badge>
+            <div className="ml-auto flex items-center gap-2 w-full sm:w-auto">
+              <Button
+                variant="outline"
+                className="h-10 shrink-0"
+                onClick={() => setSortAsc((v) => !v)}
+                title="Trier par numéro de ticket"
+              >
+                <ArrowUpDown className="h-4 w-4 mr-1" />
+                N° {sortAsc ? "croissant" : "décroissant"}
+              </Button>
+              <div className="relative flex-1 sm:w-64">
+                <Search className="h-4 w-4 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input className="pl-8 h-10" placeholder="N°, fournisseur, produit…" value={search} onChange={(e) => setSearch(e.target.value)} />
+              </div>
             </div>
           </div>
+
         </CardHeader>
         <CardContent>
           {/* Mobile / tablette portrait : liste condensée */}

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
-import { AlertTriangle, RotateCcw, Columns3, Image as ImageIcon, LayoutGrid, TableIcon, Upload, Trash2 } from "lucide-react";
+import { AlertTriangle, RotateCcw, Columns3, Image as ImageIcon, LayoutGrid, TableIcon, Upload, Trash2, Scale } from "lucide-react";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ExportCsvButton } from "@/components/common/ExportCsvButton";
 import { formatDuration, formatKg, formatKgInt, formatTonnesInt, formatHm, kgToTonnes, isOverdue } from "@/lib/reception";
@@ -50,6 +50,9 @@ export default function ReceptionGlobal() {
   const [toDelete, setToDelete] = useState<any | null>(null);
   const [deleteReason, setDeleteReason] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [toWeigh, setToWeigh] = useState<any | null>(null);
+  const [weighValue, setWeighValue] = useState("");
+  const [weighing, setWeighing] = useState(false);
   const [f, setF] = useState({
     from: "", to: "", campaign: "__all__", supplier: "__all__", product: "__all__",
     etat: "__all__", conformite: "__all__", q: "",
@@ -128,6 +131,50 @@ export default function ReceptionGlobal() {
     }
   };
 
+  // Saisie / mise à jour du poids brut depuis la consultation (tickets non pesés).
+  // L'abattement et le poids net sont recalculés automatiquement par la base
+  // à partir du taux d'abattement du ticket.
+  const handleWeigh = async () => {
+    if (!toWeigh) return;
+    const brut = Number(String(weighValue).replace(/\s/g, "").replace(",", "."));
+    if (!brut || brut <= 0) {
+      toast({ title: "Poids brut invalide", variant: "destructive" });
+      return;
+    }
+    setWeighing(true);
+    try {
+      const taux = Number(toWeigh.taux_abattement ?? 0);
+      const { data: existingRow } = await supabase
+        .from("reception_weighings" as any)
+        .select("id")
+        .eq("ticket_id", toWeigh.id)
+        .maybeSingle();
+      const existingId = (existingRow as any)?.id as string | undefined;
+
+      if (existingId) {
+        const { error } = await supabase
+          .from("reception_weighings" as any)
+          .update({ poids_brut_kg: brut, taux_abattement_snapshot: taux })
+          .eq("id", existingId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("reception_weighings" as any)
+          .insert({ ticket_id: toWeigh.id, poids_brut_kg: brut, taux_abattement_snapshot: taux });
+        if (error) throw error;
+      }
+
+      toast({ title: "Poids brut enregistré", description: `N° ${toWeigh.numero} — ${formatKgInt(brut)}` });
+      setToWeigh(null);
+      setWeighValue("");
+      invalidate();
+    } catch (e: any) {
+      toast({ title: "Enregistrement impossible", description: e.message, variant: "destructive" });
+    } finally {
+      setWeighing(false);
+    }
+  };
+
 
   const { data: campaigns = [] } = useQuery({
     queryKey: ["reception_campaigns", "all"],
@@ -144,7 +191,8 @@ export default function ReceptionGlobal() {
       if (f.campaign !== "__all__" && r.campaign_id !== f.campaign) return false;
       if (f.supplier !== "__all__" && r.supplier_id !== f.supplier) return false;
       if (f.product !== "__all__" && r.product_id !== f.product) return false;
-      if (f.etat !== "__all__" && r.etat_pesee !== f.etat) return false;
+      if (f.etat === "sans_brut" && Number(r.poids_brut_kg ?? 0) > 0) return false;
+      if (f.etat !== "__all__" && f.etat !== "sans_brut" && r.etat_pesee !== f.etat) return false;
       if (f.conformite === "conforme" && isOverdue(r.duree_minutes)) return false;
       if (f.conformite === "hors_delai" && !isOverdue(r.duree_minutes)) return false;
       if (f.q) {
@@ -230,9 +278,11 @@ export default function ReceptionGlobal() {
             <SelectItem value="__all__">Tous</SelectItem>
             <SelectItem value="pese">Pesé</SelectItem>
             <SelectItem value="a_peser">À peser</SelectItem>
+            <SelectItem value="sans_brut">Sans poids brut</SelectItem>
           </SelectContent>
         </Select>
       </div>
+
       <div><Label>Conformité durée</Label>
         <Select value={f.conformite} onValueChange={(v) => setF({ ...f, conformite: v })}>
           <SelectTrigger><SelectValue /></SelectTrigger>
@@ -430,6 +480,18 @@ export default function ReceptionGlobal() {
                         <span>{Number(r.nb_photos ?? 0)}/3 photos</span>
                       </div>
                     </button>
+                    {canImport && !(Number(r.poids_brut_kg ?? 0) > 0) && (
+                      <div className="px-3 pb-3">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full"
+                          onClick={(e) => { e.stopPropagation(); setToWeigh(r); setWeighValue(""); }}
+                        >
+                          <Scale className="h-3.5 w-3.5 mr-1" />Saisir le poids brut
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 );
 
@@ -480,6 +542,17 @@ export default function ReceptionGlobal() {
                         {r.etat_pesee === "pese"
                           ? <Badge variant="secondary">Pesé</Badge>
                           : <Badge>En attente</Badge>}
+                        {canImport && !(Number(r.poids_brut_kg ?? 0) > 0) && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="ml-1 h-7 px-2"
+                            title="Saisir le poids brut"
+                            onClick={(e) => { e.stopPropagation(); setToWeigh(r); setWeighValue(""); }}
+                          >
+                            <Scale className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
                       </TableCell>
                       {cols.photos && (
                         <TableCell>
@@ -582,6 +655,37 @@ export default function ReceptionGlobal() {
         }}
         onSuccess={invalidate}
       />
+
+      <AlertDialog open={!!toWeigh} onOpenChange={(o) => { if (!o) { setToWeigh(null); setWeighValue(""); } }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Saisir le poids brut</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ticket <span className="font-mono font-semibold">#{toWeigh?.numero}</span>
+              {toWeigh?.produit ? <> — {toWeigh.produit}</> : null}. Abattement appliqué :{" "}
+              {Number(toWeigh?.taux_abattement ?? 0).toFixed(2)} %. L'abattement en kg et le poids net
+              sont recalculés automatiquement.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Poids brut (kg)</Label>
+            <Input
+              inputMode="decimal"
+              value={weighValue}
+              onChange={(e) => setWeighValue(e.target.value)}
+              placeholder="Ex. 12 500"
+              className="h-12 text-lg font-semibold tabular-nums"
+              autoFocus
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={weighing}>Annuler</AlertDialogCancel>
+            <AlertDialogAction disabled={weighing} onClick={(e) => { e.preventDefault(); handleWeigh(); }}>
+              {weighing ? "Enregistrement…" : "Enregistrer"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
 
       <AlertDialog open={!!toDelete} onOpenChange={(o) => { if (!o) { setToDelete(null); setDeleteReason(""); } }}>
