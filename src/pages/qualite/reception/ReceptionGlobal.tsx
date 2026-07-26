@@ -144,17 +144,18 @@ export default function ReceptionGlobal() {
     setWeighing(true);
     try {
       const taux = Number(toWeigh.taux_abattement ?? 0);
-      const { data: existing } = await supabase
+      const { data: existingRow } = await supabase
         .from("reception_weighings" as any)
         .select("id")
         .eq("ticket_id", toWeigh.id)
         .maybeSingle();
+      const existingId = (existingRow as any)?.id as string | undefined;
 
-      if (existing?.id) {
+      if (existingId) {
         const { error } = await supabase
           .from("reception_weighings" as any)
           .update({ poids_brut_kg: brut, taux_abattement_snapshot: taux })
-          .eq("id", existing.id);
+          .eq("id", existingId);
         if (error) throw error;
       } else {
         const { error } = await supabase
