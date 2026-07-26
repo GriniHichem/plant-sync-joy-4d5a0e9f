@@ -13,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Clock, Lock, Truck, XCircle, Search, Lightbulb } from "lucide-react";
+import { AlertTriangle, Clock, Lock, Truck, XCircle, Search, Lightbulb } from "lucide-react";
 import { toast } from "sonner";
 import { PhotoSlot } from "./PhotoSlot";
 import { TicketDetailDialog } from "./TicketDetailDialog";
@@ -22,6 +22,7 @@ import { useShiftRealtime } from "@/hooks/useShiftRealtime";
 import { StickyActionBar } from "@/components/responsive/StickyActionBar";
 import { receptionDraftStore, DRAFT_KEY, DRAFT_MAX_AGE_MS } from "./receptionDraftStore";
 import { OrientationsAdvisorDialog } from "@/components/reception/OrientationsAdvisorDialog";
+import { getTicketSequenceWarning } from "./ticketSequence";
 
 export default function ReceptionQualitative() {
   const qc = useQueryClient();
@@ -33,6 +34,7 @@ export default function ReceptionQualitative() {
   const [ticketId, setTicketId] = useState<string | undefined>();
   const [supplierSearch, setSupplierSearch] = useState("");
   const [advisorOpen, setAdvisorOpen] = useState(false);
+  const [ignoredSequenceFor, setIgnoredSequenceFor] = useState<string | null>(null);
   const [form, setForm] = useState({
     numero: "",
     campaign_id: "",
@@ -95,6 +97,30 @@ export default function ReceptionQualitative() {
     [campaigns, form.campaign_id, defaultCampaign],
   );
 
+  // Dernier ticket créé dans la campagne, sans filtrer le statut.
+  const { data: lastCampaignTicket } = useQuery({
+    queryKey: ["reception_last_ticket_number", form.campaign_id],
+    enabled: !!form.campaign_id && !ticketId,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("reception_tickets")
+        .select("numero, created_at")
+        .eq("campaign_id", form.campaign_id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data as { numero: string; created_at: string } | null;
+    },
+  });
+
+  const sequenceWarning = useMemo(
+    () => getTicketSequenceWarning(lastCampaignTicket?.numero, form.numero),
+    [lastCampaignTicket?.numero, form.numero],
+  );
+  const showSequenceWarning = !!sequenceWarning
+    && !ticketId
+    && ignoredSequenceFor !== form.numero.trim();
+
   // Photos du ticket
   const { data: photos = [] } = useQuery({
     queryKey: ["reception_photos", ticketId],
@@ -127,6 +153,8 @@ export default function ReceptionQualitative() {
     },
     onSuccess: (t: any) => {
       setTicketId(t.id);
+      setIgnoredSequenceFor(null);
+      qc.invalidateQueries({ queryKey: ["reception_last_ticket_number", form.campaign_id] });
       toast.success(`Ticket ${t.numero} ouvert — ajoutez les 3 photos`);
     },
     onError: (e: any) => toast.error(e.message?.includes("duplicate") ? "Ce numéro de ticket existe déjà" : e.message),
@@ -293,6 +321,7 @@ export default function ReceptionQualitative() {
       if (document.visibilityState !== "visible") return;
       qc.invalidateQueries({ queryKey: ["reception_photos", ticketId] });
       qc.invalidateQueries({ queryKey: ["reception_tickets_recent"] });
+      qc.invalidateQueries({ queryKey: ["reception_last_ticket_number"] });
     };
     document.addEventListener("visibilitychange", onVis);
     return () => document.removeEventListener("visibilitychange", onVis);
@@ -310,7 +339,10 @@ export default function ReceptionQualitative() {
   useShiftRealtime(
     "reception-qualitative-recent",
     "reception_tickets",
-    () => qc.invalidateQueries({ queryKey: ["reception_tickets_recent"] }),
+    () => {
+      qc.invalidateQueries({ queryKey: ["reception_tickets_recent"] });
+      qc.invalidateQueries({ queryKey: ["reception_last_ticket_number"] });
+    },
   );
 
   const photoBySlot = (slot: number) => photos.find((p) => p.slot === slot);
@@ -351,7 +383,10 @@ export default function ReceptionQualitative() {
                 disabled={!!ticketId}
                 maxLength={50}
                 placeholder="10001"
-                onChange={(e) => setForm({ ...form, numero: e.target.value })}
+                onChange={(e) => {
+                  setIgnoredSequenceFor(null);
+                  setForm({ ...form, numero: e.target.value });
+                }}
               />
             </div>
             <div className="min-w-0">
@@ -373,6 +408,31 @@ export default function ReceptionQualitative() {
               </div>
             </div>
           </div>
+
+          {showSequenceWarning && sequenceWarning && (
+            <div
+              role="alert"
+              className="flex flex-col gap-3 rounded-lg border border-amber-400/70 bg-amber-50 p-3 text-amber-950 dark:border-amber-500/60 dark:bg-amber-950/30 dark:text-amber-100 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
+                <p className="text-sm">
+                  <span className="font-semibold">Vérifiez le numéro de ticket SVP.</span>{" "}
+                  Un écart de +{sequenceWarning.gap} a été détecté par rapport au dernier ticket
+                  {" "}({sequenceWarning.previousTicketNumber}). Peut-être une erreur de saisie.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="shrink-0 border-amber-500 bg-background/80"
+                onClick={() => setIgnoredSequenceFor(form.numero.trim())}
+              >
+                Continuer
+              </Button>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
