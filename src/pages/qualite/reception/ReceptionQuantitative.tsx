@@ -186,11 +186,24 @@ export default function ReceptionQuantitative() {
         <CardHeader>
           <div className="flex items-center gap-2 flex-wrap">
             <CardTitle className="text-base md:text-lg">Tickets à peser</CardTitle>
-            <div className="relative ml-auto w-full sm:w-64">
-              <Search className="h-4 w-4 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input className="pl-8 h-10" placeholder="N°, fournisseur, produit…" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <Badge variant="outline">{filtered.length} en attente</Badge>
+            <div className="ml-auto flex items-center gap-2 w-full sm:w-auto">
+              <Button
+                variant="outline"
+                className="h-10 shrink-0"
+                onClick={() => setSortAsc((v) => !v)}
+                title="Trier par numéro de ticket"
+              >
+                <ArrowUpDown className="h-4 w-4 mr-1" />
+                N° {sortAsc ? "croissant" : "décroissant"}
+              </Button>
+              <div className="relative flex-1 sm:w-64">
+                <Search className="h-4 w-4 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input className="pl-8 h-10" placeholder="N°, fournisseur, produit…" value={search} onChange={(e) => setSearch(e.target.value)} />
+              </div>
             </div>
           </div>
+
         </CardHeader>
         <CardContent>
           {/* Mobile / tablette portrait : liste condensée */}
