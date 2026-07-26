@@ -33,7 +33,7 @@ export default function ReceptionQuantitative() {
     queryFn: async () => {
       // Seuls les tickets clôturés non encore pesés remontent au pont-bascule.
       const { data, error } = await supabase.from("v_reception_global")
-        .select("*").eq("statut", "cloture").eq("etat_pesee", "a_peser")
+        .select("*").eq("statut", "cloture").is("poids_brut_kg", null)
         .order("numero", { ascending: sortAsc })
         .limit(limit);
       if (error) throw error;
