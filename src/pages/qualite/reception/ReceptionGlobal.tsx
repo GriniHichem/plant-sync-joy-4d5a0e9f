@@ -480,6 +480,18 @@ export default function ReceptionGlobal() {
                         <span>{Number(r.nb_photos ?? 0)}/3 photos</span>
                       </div>
                     </button>
+                    {canImport && !(Number(r.poids_brut_kg ?? 0) > 0) && (
+                      <div className="px-3 pb-3">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full"
+                          onClick={(e) => { e.stopPropagation(); setToWeigh(r); setWeighValue(""); }}
+                        >
+                          <Scale className="h-3.5 w-3.5 mr-1" />Saisir le poids brut
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 );
 
