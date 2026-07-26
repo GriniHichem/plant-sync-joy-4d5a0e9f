@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,10 +30,34 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 
 type ColKey = "created_by" | "cloture_by" | "cloture_at" | "photos" | "code_saisi";
+type ReceptionFilters = {
+  from: string;
+  to: string;
+  campaign: string;
+  supplier: string;
+  product: string;
+  etat: string;
+  conformite: string;
+  q: string;
+};
+type ReceptionKpis = {
+  total: number;
+  brut: number;
+  net: number;
+  abat: number;
+  moyDuree: number | null;
+  hd: number;
+  pese: number;
+  aPeser: number;
+};
+
 const COL_LS_KEY = "reception-global-cols";
 const VIEW_LS_KEY = "reception-global-view";
 const DEFAULT_COLS: Record<ColKey, boolean> = {
   created_by: false, cloture_by: false, cloture_at: false, photos: true, code_saisi: false,
+};
+const EMPTY_KPIS: ReceptionKpis = {
+  total: 0, brut: 0, net: 0, abat: 0, moyDuree: null, hd: 0, pese: 0, aPeser: 0,
 };
 
 export default function ReceptionGlobal() {
@@ -44,6 +68,7 @@ export default function ReceptionGlobal() {
   const { toast } = useToast();
   const isAdmin = hasRole("admin");
   const canImport = canEdit("reception_global") || canDelete("reception_global");
+  const canWeigh = isAdmin || canEdit("reception_global");
   const [importOpen, setImportOpen] = useState(false);
   const [importMode, setImportMode] = useState<"ignore" | "replace">("ignore");
   const [importPoidsOpen, setImportPoidsOpen] = useState(false);
@@ -53,10 +78,24 @@ export default function ReceptionGlobal() {
   const [toWeigh, setToWeigh] = useState<any | null>(null);
   const [weighValue, setWeighValue] = useState("");
   const [weighing, setWeighing] = useState(false);
-  const [f, setF] = useState({
+  const [f, setF] = useState<ReceptionFilters>({
     from: "", to: "", campaign: "__all__", supplier: "__all__", product: "__all__",
     etat: "__all__", conformite: "__all__", q: "",
   });
+  const deferredSearch = useDeferredValue(f.q.trim());
+  const filterArgs = useMemo(() => ({
+    p_date_from: f.from || null,
+    p_date_to: f.to || null,
+    p_campaign_id: f.campaign === "__all__" ? null : f.campaign,
+    p_supplier_id: f.supplier === "__all__" ? null : f.supplier,
+    p_product_id: f.product === "__all__" ? null : f.product,
+    p_etat: f.etat === "__all__" ? null : f.etat,
+    p_conformite: f.conformite === "__all__" ? null : f.conformite,
+    p_search: deferredSearch || null,
+  }), [
+    f.from, f.to, f.campaign, f.supplier, f.product,
+    f.etat, f.conformite, deferredSearch,
+  ]);
 
   const [cols, setCols] = useState<Record<ColKey, boolean>>(() => {
     try {
@@ -83,16 +122,40 @@ export default function ReceptionGlobal() {
     }) : "—";
 
   const { data: rows = [] } = useQuery({
-    queryKey: ["v_reception_global"],
+    queryKey: ["v_reception_global", filterArgs],
     queryFn: async () => {
-      const { data, error } = await supabase.from("v_reception_global")
-        .select("*").order("numero", { ascending: false }).limit(1000);
+      const { data, error } = await supabase
+        .rpc("filter_reception_tickets" as any, filterArgs as any)
+        .order("numero", { ascending: false })
+        .limit(1000);
       if (error) throw error;
       return (data ?? []) as any[];
     },
   });
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["v_reception_global"] });
+  const { data: kpis = EMPTY_KPIS } = useQuery({
+    queryKey: ["reception_kpis", filterArgs],
+    queryFn: async (): Promise<ReceptionKpis> => {
+      const { data, error } = await supabase.rpc("get_reception_kpis" as any, filterArgs as any);
+      if (error) throw error;
+      const raw = (data ?? {}) as any;
+      return {
+        total: Number(raw.total ?? 0),
+        brut: Number(raw.brut ?? 0),
+        net: Number(raw.net ?? 0),
+        abat: Number(raw.abat ?? 0),
+        moyDuree: raw.moy_duree == null ? null : Number(raw.moy_duree),
+        hd: Number(raw.hd ?? 0),
+        pese: Number(raw.pese ?? 0),
+        aPeser: Number(raw.a_peser ?? 0),
+      };
+    },
+  });
+
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ["v_reception_global"] });
+    qc.invalidateQueries({ queryKey: ["reception_kpis"] });
+  };
   useShiftRealtime("reception-global-tickets", "reception_tickets", invalidate);
   useShiftRealtime("reception-global-weighings", "reception_weighings", invalidate);
 
@@ -143,26 +206,11 @@ export default function ReceptionGlobal() {
     }
     setWeighing(true);
     try {
-      const taux = Number(toWeigh.taux_abattement ?? 0);
-      const { data: existingRow } = await supabase
-        .from("reception_weighings" as any)
-        .select("id")
-        .eq("ticket_id", toWeigh.id)
-        .maybeSingle();
-      const existingId = (existingRow as any)?.id as string | undefined;
-
-      if (existingId) {
-        const { error } = await supabase
-          .from("reception_weighings" as any)
-          .update({ poids_brut_kg: brut, taux_abattement_snapshot: taux })
-          .eq("id", existingId);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from("reception_weighings" as any)
-          .insert({ ticket_id: toWeigh.id, poids_brut_kg: brut, taux_abattement_snapshot: taux });
-        if (error) throw error;
-      }
+      const { error } = await supabase.rpc("set_reception_ticket_poids_brut" as any, {
+        p_ticket_id: toWeigh.id,
+        p_poids_brut_kg: brut,
+      } as any);
+      if (error) throw error;
 
       toast({ title: "Poids brut enregistré", description: `N° ${toWeigh.numero} — ${formatKgInt(brut)}` });
       setToWeigh(null);
@@ -184,23 +232,32 @@ export default function ReceptionGlobal() {
     },
   });
 
+  const { data: suppliers = [] } = useQuery({
+    queryKey: ["reception_suppliers", "filters"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("reception_suppliers" as any)
+        .select("id, nom")
+        .order("nom");
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
+  const { data: products = [] } = useQuery({
+    queryKey: ["reception_products", "filters"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("reception_products" as any)
+        .select("id, designation")
+        .order("designation");
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
   const filtered = useMemo(() => {
-    const list = rows.filter((r) => {
-      if (f.from && r.date_ticket < f.from) return false;
-      if (f.to && r.date_ticket > f.to) return false;
-      if (f.campaign !== "__all__" && r.campaign_id !== f.campaign) return false;
-      if (f.supplier !== "__all__" && r.supplier_id !== f.supplier) return false;
-      if (f.product !== "__all__" && r.product_id !== f.product) return false;
-      if (f.etat === "sans_brut" && Number(r.poids_brut_kg ?? 0) > 0) return false;
-      if (f.etat !== "__all__" && f.etat !== "sans_brut" && r.etat_pesee !== f.etat) return false;
-      if (f.conformite === "conforme" && isOverdue(r.duree_minutes)) return false;
-      if (f.conformite === "hors_delai" && !isOverdue(r.duree_minutes)) return false;
-      if (f.q) {
-        const q = f.q.toLowerCase();
-        if (![r.numero, r.fournisseur, r.produit, r.wilaya, r.region].some((v) => (v ?? "").toString().toLowerCase().includes(q))) return false;
-      }
-      return true;
-    });
+    const list = [...rows];
     // Tri principal : numéro de ticket décroissant, quelle que soit la date.
     return list.sort((a, b) => {
       const na = Number(String(a.numero ?? "").replace(/\D/g, "")) || 0;
@@ -208,28 +265,12 @@ export default function ReceptionGlobal() {
       if (nb !== na) return nb - na;
       return String(b.numero ?? "").localeCompare(String(a.numero ?? ""));
     });
-  }, [rows, f]);
-
-  const kpis = useMemo(() => {
-    const total = filtered.length;
-    const brut = filtered.reduce((s, r) => s + Number(r.poids_brut_kg ?? 0), 0);
-    const net = filtered.reduce((s, r) => s + Number(r.poids_net_kg ?? 0), 0);
-    const abat = filtered.reduce((s, r) => s + Number(r.poids_abattement_kg ?? 0), 0);
-    const durees = filtered.map((r) => r.duree_minutes).filter((v) => v != null);
-    const moyDuree = durees.length ? durees.reduce((s, v) => s + v, 0) / durees.length : null;
-    const hd = filtered.filter((r) => isOverdue(r.duree_minutes)).length;
-    const pese = filtered.filter((r) => r.etat_pesee === "pese").length;
-    return { total, brut, net, abat, moyDuree, hd, pese, aPeser: total - pese };
-  }, [filtered]);
+  }, [rows]);
 
   const activeCampaign = campaigns.find((c) => c.id === f.campaign);
   const progression = activeCampaign?.objectif_kg
     ? Math.min(100, (kpis.net / Number(activeCampaign.objectif_kg)) * 100)
     : null;
-
-  const distinct = (idKey: "campaign_id" | "supplier_id" | "product_id", labelKey: "campagne" | "fournisseur" | "produit") =>
-    Array.from(new Map(rows.map((r: any) => [r[idKey], { id: r[idKey], label: r[labelKey] ?? r[idKey] }])).values())
-      .filter((x) => x.id);
 
   const resetFilters = () =>
     setF({ from: "", to: "", campaign: "__all__", supplier: "__all__", product: "__all__", etat: "__all__", conformite: "__all__", q: "" });
@@ -249,7 +290,7 @@ export default function ReceptionGlobal() {
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="__all__">Toutes</SelectItem>
-            {distinct("campaign_id", "campagne").map((x: any) => <SelectItem key={x.id} value={x.id}>{x.label}</SelectItem>)}
+            {campaigns.map((x: any) => <SelectItem key={x.id} value={x.id}>{x.libelle}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
@@ -258,7 +299,7 @@ export default function ReceptionGlobal() {
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="__all__">Tous</SelectItem>
-            {distinct("supplier_id", "fournisseur").map((x: any) => <SelectItem key={x.id} value={x.id}>{x.label}</SelectItem>)}
+            {suppliers.map((x: any) => <SelectItem key={x.id} value={x.id}>{x.nom}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
@@ -267,7 +308,7 @@ export default function ReceptionGlobal() {
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="__all__">Tous</SelectItem>
-            {distinct("product_id", "produit").map((x: any) => <SelectItem key={x.id} value={x.id}>{x.label}</SelectItem>)}
+            {products.map((x: any) => <SelectItem key={x.id} value={x.id}>{x.designation}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
@@ -480,7 +521,7 @@ export default function ReceptionGlobal() {
                         <span>{Number(r.nb_photos ?? 0)}/3 photos</span>
                       </div>
                     </button>
-                    {canImport && !(Number(r.poids_brut_kg ?? 0) > 0) && (
+                    {canWeigh && r.poids_brut_kg == null && ["cloture", "pese_importe"].includes(r.statut) && (
                       <div className="px-3 pb-3">
                         <Button
                           size="sm"
@@ -542,7 +583,7 @@ export default function ReceptionGlobal() {
                         {r.etat_pesee === "pese"
                           ? <Badge variant="secondary">Pesé</Badge>
                           : <Badge>En attente</Badge>}
-                        {canImport && !(Number(r.poids_brut_kg ?? 0) > 0) && (
+                        {canWeigh && r.poids_brut_kg == null && ["cloture", "pese_importe"].includes(r.statut) && (
                           <Button
                             variant="ghost"
                             size="sm"
