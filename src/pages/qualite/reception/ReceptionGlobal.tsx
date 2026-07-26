@@ -50,6 +50,9 @@ export default function ReceptionGlobal() {
   const [toDelete, setToDelete] = useState<any | null>(null);
   const [deleteReason, setDeleteReason] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [toWeigh, setToWeigh] = useState<any | null>(null);
+  const [weighValue, setWeighValue] = useState("");
+  const [weighing, setWeighing] = useState(false);
   const [f, setF] = useState({
     from: "", to: "", campaign: "__all__", supplier: "__all__", product: "__all__",
     etat: "__all__", conformite: "__all__", q: "",
