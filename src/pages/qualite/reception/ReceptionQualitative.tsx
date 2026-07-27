@@ -34,6 +34,7 @@ export default function ReceptionQualitative() {
 
   const [ticketId, setTicketId] = useState<string | undefined>();
   const [supplierSearch, setSupplierSearch] = useState("");
+  const [supplierOpen, setSupplierOpen] = useState(false);
   const [advisorOpen, setAdvisorOpen] = useState(false);
   const [ignoredSequenceFor, setIgnoredSequenceFor] = useState<string | null>(null);
   const [form, setForm] = useState({
