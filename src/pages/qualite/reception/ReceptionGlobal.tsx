@@ -98,13 +98,15 @@ export default function ReceptionGlobal() {
   const [weighValue, setWeighValue] = useState("");
   const [weighing, setWeighing] = useState(false);
   const [f, setF] = useState<ReceptionFilters>({
-    from: "", to: "", campaign: "__all__", supplier: "__all__", product: "__all__",
+    from: "", to: "", dtFrom: "", dtTo: "", campaign: "__all__", supplier: "__all__", product: "__all__",
     etat: "__all__", conformite: "__all__", q: "",
   });
   const deferredSearch = useDeferredValue(f.q.trim());
   const filterArgs = useMemo(() => ({
     p_date_from: f.from || null,
     p_date_to: f.to || null,
+    p_dt_from: f.dtFrom ? `${f.dtFrom}:00` : null,
+    p_dt_to: f.dtTo ? `${f.dtTo}:59` : null,
     p_campaign_id: f.campaign === "__all__" ? null : f.campaign,
     p_supplier_id: f.supplier === "__all__" ? null : f.supplier,
     p_product_id: f.product === "__all__" ? null : f.product,
@@ -112,7 +114,7 @@ export default function ReceptionGlobal() {
     p_conformite: f.conformite === "__all__" ? null : f.conformite,
     p_search: deferredSearch || null,
   }), [
-    f.from, f.to, f.campaign, f.supplier, f.product,
+    f.from, f.to, f.dtFrom, f.dtTo, f.campaign, f.supplier, f.product,
     f.etat, f.conformite, deferredSearch,
   ]);
 
