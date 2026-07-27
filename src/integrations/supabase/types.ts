@@ -7193,6 +7193,65 @@ export type Database = {
         Args: { p_of_id: string }
         Returns: string
       }
+      filter_reception_tickets: {
+        Args: {
+          p_campaign_id?: string
+          p_conformite?: string
+          p_date_from?: string
+          p_date_to?: string
+          p_dt_from?: string
+          p_dt_to?: string
+          p_etat?: string
+          p_product_id?: string
+          p_search?: string
+          p_supplier_id?: string
+        }
+        Returns: {
+          campagne: string | null
+          campaign_id: string | null
+          cloture_at: string | null
+          cloture_by: string | null
+          cloture_by_name: string | null
+          code_digits: number | null
+          code_pesee: string | null
+          code_prefix: string | null
+          code_saisi: string | null
+          commentaire: string | null
+          created_at: string | null
+          created_by: string | null
+          created_by_name: string | null
+          date_ticket: string | null
+          duree_minutes: number | null
+          etat_pesee: string | null
+          fournisseur: string | null
+          heure_debut: string | null
+          heure_fin: string | null
+          id: string | null
+          nb_photos: number | null
+          numero: string | null
+          objectif_kg: number | null
+          poids_abattement_kg: number | null
+          poids_brut_kg: number | null
+          poids_net_kg: number | null
+          product_id: string | null
+          produit: string | null
+          produit_code: string | null
+          region: string | null
+          statut: string | null
+          supplier_code: string | null
+          supplier_id: string | null
+          taux_abattement: number | null
+          weighed_at: string | null
+          weighing_id: string | null
+          wilaya: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "v_reception_global"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       fts_build: { Args: { parts: string[] }; Returns: unknown }
       get_active_shift_context: {
         Args: { _at?: string; _user_id: string }
@@ -7244,6 +7303,21 @@ export type Database = {
           tolerance_plus: number
           unit: string
         }[]
+      }
+      get_reception_kpis: {
+        Args: {
+          p_campaign_id?: string
+          p_conformite?: string
+          p_date_from?: string
+          p_date_to?: string
+          p_dt_from?: string
+          p_dt_to?: string
+          p_etat?: string
+          p_product_id?: string
+          p_search?: string
+          p_supplier_id?: string
+        }
+        Returns: Json
       }
       get_recipe_for_of: {
         Args: { p_of_id: string }
