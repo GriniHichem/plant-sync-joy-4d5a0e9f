@@ -412,6 +412,7 @@ export default function ReceptionGlobal() {
         </Select>
       </div>
       <div><Label>Recherche</Label><Input placeholder="N°, fournisseur, wilaya…" value={f.q} onChange={(e) => setF({ ...f, q: e.target.value })} /></div>
+      </div>
     </div>
   );
 
