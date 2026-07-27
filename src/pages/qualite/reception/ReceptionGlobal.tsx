@@ -33,6 +33,8 @@ type ColKey = "created_by" | "cloture_by" | "cloture_at" | "photos" | "code_sais
 type ReceptionFilters = {
   from: string;
   to: string;
+  dtFrom: string;
+  dtTo: string;
   campaign: string;
   supplier: string;
   product: string;
@@ -40,6 +42,23 @@ type ReceptionFilters = {
   conformite: string;
   q: string;
 };
+
+/** Journée de réception : de 06:00 à 05:59 le lendemain. */
+const RECEPTION_DAY_START_HOUR = 6;
+const pad = (n: number) => String(n).padStart(2, "0");
+const toLocalInput = (d: Date) =>
+  `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+
+/** Renvoie la plage [06:00, 05:59 J+1] de la journée de réception contenant `ref`. */
+function receptionDayRange(ref = new Date()) {
+  const start = new Date(ref);
+  if (start.getHours() < RECEPTION_DAY_START_HOUR) start.setDate(start.getDate() - 1);
+  start.setHours(RECEPTION_DAY_START_HOUR, 0, 0, 0);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+  end.setHours(RECEPTION_DAY_START_HOUR - 1, 59, 0, 0);
+  return { from: toLocalInput(start), to: toLocalInput(end) };
+}
 type ReceptionKpis = {
   total: number;
   brut: number;
