@@ -33,6 +33,8 @@ type ColKey = "created_by" | "cloture_by" | "cloture_at" | "photos" | "code_sais
 type ReceptionFilters = {
   from: string;
   to: string;
+  dtFrom: string;
+  dtTo: string;
   campaign: string;
   supplier: string;
   product: string;
@@ -40,6 +42,23 @@ type ReceptionFilters = {
   conformite: string;
   q: string;
 };
+
+/** Journée de réception : de 06:00 à 05:59 le lendemain. */
+const RECEPTION_DAY_START_HOUR = 6;
+const pad = (n: number) => String(n).padStart(2, "0");
+const toLocalInput = (d: Date) =>
+  `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+
+/** Renvoie la plage [06:00, 05:59 J+1] de la journée de réception contenant `ref`. */
+function receptionDayRange(ref = new Date()) {
+  const start = new Date(ref);
+  if (start.getHours() < RECEPTION_DAY_START_HOUR) start.setDate(start.getDate() - 1);
+  start.setHours(RECEPTION_DAY_START_HOUR, 0, 0, 0);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+  end.setHours(RECEPTION_DAY_START_HOUR - 1, 59, 0, 0);
+  return { from: toLocalInput(start), to: toLocalInput(end) };
+}
 type ReceptionKpis = {
   total: number;
   brut: number;
@@ -79,13 +98,15 @@ export default function ReceptionGlobal() {
   const [weighValue, setWeighValue] = useState("");
   const [weighing, setWeighing] = useState(false);
   const [f, setF] = useState<ReceptionFilters>({
-    from: "", to: "", campaign: "__all__", supplier: "__all__", product: "__all__",
+    from: "", to: "", dtFrom: "", dtTo: "", campaign: "__all__", supplier: "__all__", product: "__all__",
     etat: "__all__", conformite: "__all__", q: "",
   });
   const deferredSearch = useDeferredValue(f.q.trim());
   const filterArgs = useMemo(() => ({
     p_date_from: f.from || null,
     p_date_to: f.to || null,
+    p_dt_from: f.dtFrom ? `${f.dtFrom}:00` : null,
+    p_dt_to: f.dtTo ? `${f.dtTo}:59` : null,
     p_campaign_id: f.campaign === "__all__" ? null : f.campaign,
     p_supplier_id: f.supplier === "__all__" ? null : f.supplier,
     p_product_id: f.product === "__all__" ? null : f.product,
@@ -93,7 +114,7 @@ export default function ReceptionGlobal() {
     p_conformite: f.conformite === "__all__" ? null : f.conformite,
     p_search: deferredSearch || null,
   }), [
-    f.from, f.to, f.campaign, f.supplier, f.product,
+    f.from, f.to, f.dtFrom, f.dtTo, f.campaign, f.supplier, f.product,
     f.etat, f.conformite, deferredSearch,
   ]);
 
@@ -273,18 +294,74 @@ export default function ReceptionGlobal() {
     : null;
 
   const resetFilters = () =>
-    setF({ from: "", to: "", campaign: "__all__", supplier: "__all__", product: "__all__", etat: "__all__", conformite: "__all__", q: "" });
+    setF({ from: "", to: "", dtFrom: "", dtTo: "", campaign: "__all__", supplier: "__all__", product: "__all__", etat: "__all__", conformite: "__all__", q: "" });
+
+  // Journée de réception en cours (06:00 → 05:59 le lendemain)
+  const applyToday = () => {
+    const { from, to } = receptionDayRange();
+    setF((prev) => ({ ...prev, from: "", to: "", dtFrom: from, dtTo: to }));
+  };
+  const applyYesterday = () => {
+    const ref = new Date();
+    ref.setDate(ref.getDate() - 1);
+    const { from, to } = receptionDayRange(ref);
+    setF((prev) => ({ ...prev, from: "", to: "", dtFrom: from, dtTo: to }));
+  };
+  const todayRange = receptionDayRange();
+  const isTodayActive = f.dtFrom === todayRange.from && f.dtTo === todayRange.to;
 
   const activeFilterCount =
-    (f.from ? 1 : 0) + (f.to ? 1 : 0) +
+    (f.from ? 1 : 0) + (f.to ? 1 : 0) + (f.dtFrom ? 1 : 0) + (f.dtTo ? 1 : 0) +
     (f.campaign !== "__all__" ? 1 : 0) + (f.supplier !== "__all__" ? 1 : 0) +
     (f.product !== "__all__" ? 1 : 0) + (f.etat !== "__all__" ? 1 : 0) +
     (f.conformite !== "__all__" ? 1 : 0) + (f.q ? 1 : 0);
 
   const filtersForm = (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
-      <div><Label>Du</Label><Input type="date" value={f.from} onChange={(e) => setF({ ...f, from: e.target.value })} /></div>
-      <div><Label>Au</Label><Input type="date" value={f.to} onChange={(e) => setF({ ...f, to: e.target.value })} /></div>
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          type="button"
+          size="sm"
+          variant={isTodayActive ? "default" : "outline"}
+          onClick={applyToday}
+        >
+          Aujourd'hui (6h → 6h)
+        </Button>
+        <Button type="button" size="sm" variant="outline" onClick={applyYesterday}>
+          Hier
+        </Button>
+        {(f.dtFrom || f.dtTo) && (
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={() => setF({ ...f, dtFrom: "", dtTo: "" })}
+          >
+            <RotateCcw className="h-4 w-4 mr-1" /> Effacer plage horaire
+          </Button>
+        )}
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
+      <div>
+        <Label>Début (date + heure)</Label>
+        <Input
+          type="datetime-local"
+          value={f.dtFrom}
+          onChange={(e) => setF({ ...f, dtFrom: e.target.value, from: "", to: "" })}
+          onFocus={() => { if (!f.dtFrom) setF((p) => ({ ...p, dtFrom: receptionDayRange().from, from: "", to: "" })); }}
+        />
+      </div>
+      <div>
+        <Label>Fin (date + heure)</Label>
+        <Input
+          type="datetime-local"
+          value={f.dtTo}
+          onChange={(e) => setF({ ...f, dtTo: e.target.value, from: "", to: "" })}
+          onFocus={() => { if (!f.dtTo) setF((p) => ({ ...p, dtTo: receptionDayRange().to, from: "", to: "" })); }}
+        />
+      </div>
+      <div><Label>Du</Label><Input type="date" value={f.from} onChange={(e) => setF({ ...f, from: e.target.value, dtFrom: "", dtTo: "" })} /></div>
+      <div><Label>Au</Label><Input type="date" value={f.to} onChange={(e) => setF({ ...f, to: e.target.value, dtFrom: "", dtTo: "" })} /></div>
       <div><Label>Campagne</Label>
         <Select value={f.campaign} onValueChange={(v) => setF({ ...f, campaign: v })}>
           <SelectTrigger><SelectValue /></SelectTrigger>
@@ -335,6 +412,7 @@ export default function ReceptionGlobal() {
         </Select>
       </div>
       <div><Label>Recherche</Label><Input placeholder="N°, fournisseur, wilaya…" value={f.q} onChange={(e) => setF({ ...f, q: e.target.value })} /></div>
+      </div>
     </div>
   );
 

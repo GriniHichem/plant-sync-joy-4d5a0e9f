@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -33,6 +34,7 @@ export default function ReceptionQualitative() {
 
   const [ticketId, setTicketId] = useState<string | undefined>();
   const [supplierSearch, setSupplierSearch] = useState("");
+  const [supplierOpen, setSupplierOpen] = useState(false);
   const [advisorOpen, setAdvisorOpen] = useState(false);
   const [ignoredSequenceFor, setIgnoredSequenceFor] = useState<string | null>(null);
   const [form, setForm] = useState({
@@ -455,33 +457,57 @@ export default function ReceptionQualitative() {
             </div>
             <div className="md:col-span-2">
               <Label>Fournisseur agréé *</Label>
-              <Select value={form.supplier_id} onValueChange={(v) => setForm({ ...form, supplier_id: v })}>
-                <SelectTrigger className="h-11"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
-                <SelectContent>
-                  <div className="sticky top-0 z-10 bg-popover p-2 border-b">
+              <Popover open={supplierOpen} onOpenChange={(o) => { setSupplierOpen(o); if (!o) setSupplierSearch(""); }}>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={supplierOpen}
+                    className="h-11 w-full justify-between font-normal"
+                  >
+                    <span className="truncate">
+                      {selectedSupplier
+                        ? <><span className="font-mono text-xs mr-2">{selectedSupplier.code}</span>{selectedSupplier.nom}</>
+                        : <span className="text-muted-foreground">Sélectionner</span>}
+                    </span>
+                    <Search className="h-4 w-4 opacity-50 shrink-0" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  align="start"
+                  className="p-0 w-[--radix-popover-trigger-width] max-w-[95vw]"
+                  onOpenAutoFocus={(e) => e.preventDefault()}
+                >
+                  <div className="p-2 border-b">
                     <div className="relative">
                       <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
-                        autoFocus
                         placeholder="Rechercher par nom ou code…"
-                        className="h-9 pl-8"
+                        className="h-10 pl-8"
+                        inputMode="search"
                         value={supplierSearch}
                         onChange={(e) => setSupplierSearch(e.target.value)}
-                        onKeyDown={(e) => e.stopPropagation()}
-                        onPointerDown={(e) => e.stopPropagation()}
                       />
                     </div>
                   </div>
-                  {filteredSuppliers.map((s: any) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      <span className="font-mono text-xs mr-2">{s.code}</span>{s.nom}
-                    </SelectItem>
-                  ))}
-                  {filteredSuppliers.length === 0 && (
-                    <div className="px-3 py-4 text-center text-xs text-muted-foreground">Aucun fournisseur</div>
-                  )}
-                </SelectContent>
-              </Select>
+                  <div className="max-h-[45vh] overflow-y-auto overscroll-contain py-1">
+                    {filteredSuppliers.map((s: any) => (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => { setForm({ ...form, supplier_id: s.id }); setSupplierOpen(false); setSupplierSearch(""); }}
+                        className={`w-full text-left px-3 py-2.5 text-sm hover:bg-accent active:bg-accent ${form.supplier_id === s.id ? "bg-accent" : ""}`}
+                      >
+                        <span className="font-mono text-xs mr-2">{s.code}</span>{s.nom}
+                      </button>
+                    ))}
+                    {filteredSuppliers.length === 0 && (
+                      <div className="px-3 py-4 text-center text-xs text-muted-foreground">Aucun fournisseur</div>
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="md:col-span-2">
               <div className="flex items-center justify-between">
