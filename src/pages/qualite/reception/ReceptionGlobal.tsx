@@ -294,18 +294,74 @@ export default function ReceptionGlobal() {
     : null;
 
   const resetFilters = () =>
-    setF({ from: "", to: "", campaign: "__all__", supplier: "__all__", product: "__all__", etat: "__all__", conformite: "__all__", q: "" });
+    setF({ from: "", to: "", dtFrom: "", dtTo: "", campaign: "__all__", supplier: "__all__", product: "__all__", etat: "__all__", conformite: "__all__", q: "" });
+
+  // Journée de réception en cours (06:00 → 05:59 le lendemain)
+  const applyToday = () => {
+    const { from, to } = receptionDayRange();
+    setF((prev) => ({ ...prev, from: "", to: "", dtFrom: from, dtTo: to }));
+  };
+  const applyYesterday = () => {
+    const ref = new Date();
+    ref.setDate(ref.getDate() - 1);
+    const { from, to } = receptionDayRange(ref);
+    setF((prev) => ({ ...prev, from: "", to: "", dtFrom: from, dtTo: to }));
+  };
+  const todayRange = receptionDayRange();
+  const isTodayActive = f.dtFrom === todayRange.from && f.dtTo === todayRange.to;
 
   const activeFilterCount =
-    (f.from ? 1 : 0) + (f.to ? 1 : 0) +
+    (f.from ? 1 : 0) + (f.to ? 1 : 0) + (f.dtFrom ? 1 : 0) + (f.dtTo ? 1 : 0) +
     (f.campaign !== "__all__" ? 1 : 0) + (f.supplier !== "__all__" ? 1 : 0) +
     (f.product !== "__all__" ? 1 : 0) + (f.etat !== "__all__" ? 1 : 0) +
     (f.conformite !== "__all__" ? 1 : 0) + (f.q ? 1 : 0);
 
   const filtersForm = (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
-      <div><Label>Du</Label><Input type="date" value={f.from} onChange={(e) => setF({ ...f, from: e.target.value })} /></div>
-      <div><Label>Au</Label><Input type="date" value={f.to} onChange={(e) => setF({ ...f, to: e.target.value })} /></div>
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          type="button"
+          size="sm"
+          variant={isTodayActive ? "default" : "outline"}
+          onClick={applyToday}
+        >
+          Aujourd'hui (6h → 6h)
+        </Button>
+        <Button type="button" size="sm" variant="outline" onClick={applyYesterday}>
+          Hier
+        </Button>
+        {(f.dtFrom || f.dtTo) && (
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={() => setF({ ...f, dtFrom: "", dtTo: "" })}
+          >
+            <RotateCcw className="h-4 w-4 mr-1" /> Effacer plage horaire
+          </Button>
+        )}
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
+      <div>
+        <Label>Début (date + heure)</Label>
+        <Input
+          type="datetime-local"
+          value={f.dtFrom}
+          onChange={(e) => setF({ ...f, dtFrom: e.target.value, from: "", to: "" })}
+          onFocus={() => { if (!f.dtFrom) setF((p) => ({ ...p, dtFrom: receptionDayRange().from, from: "", to: "" })); }}
+        />
+      </div>
+      <div>
+        <Label>Fin (date + heure)</Label>
+        <Input
+          type="datetime-local"
+          value={f.dtTo}
+          onChange={(e) => setF({ ...f, dtTo: e.target.value, from: "", to: "" })}
+          onFocus={() => { if (!f.dtTo) setF((p) => ({ ...p, dtTo: receptionDayRange().to, from: "", to: "" })); }}
+        />
+      </div>
+      <div><Label>Du</Label><Input type="date" value={f.from} onChange={(e) => setF({ ...f, from: e.target.value, dtFrom: "", dtTo: "" })} /></div>
+      <div><Label>Au</Label><Input type="date" value={f.to} onChange={(e) => setF({ ...f, to: e.target.value, dtFrom: "", dtTo: "" })} /></div>
       <div><Label>Campagne</Label>
         <Select value={f.campaign} onValueChange={(v) => setF({ ...f, campaign: v })}>
           <SelectTrigger><SelectValue /></SelectTrigger>
