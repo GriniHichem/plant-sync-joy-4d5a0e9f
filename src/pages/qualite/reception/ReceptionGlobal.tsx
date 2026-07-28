@@ -698,7 +698,16 @@ export default function ReceptionGlobal() {
                       {cols.cloture_by && <TableCell className="text-xs">{r.cloture_by_name ?? "—"}</TableCell>}
                       {cols.cloture_at && <TableCell className="text-xs">{fmtDT(r.cloture_at)}</TableCell>}
                       {isAdmin && (
-                        <TableCell className="p-1">
+                        <TableCell className="p-1 whitespace-nowrap">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-primary"
+                            title="Maintenance ticket (admin)"
+                            onClick={(e) => { e.stopPropagation(); setMaintenanceTicket(r); }}
+                          >
+                            <Wrench className="h-4 w-4" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="icon"
