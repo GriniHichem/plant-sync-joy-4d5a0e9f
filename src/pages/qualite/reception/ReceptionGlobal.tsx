@@ -581,7 +581,7 @@ export default function ReceptionGlobal() {
                           <div className="font-semibold truncate">{r.produit ?? "—"}</div>
                           <div className="text-xs text-muted-foreground truncate">{r.fournisseur ?? "—"}</div>
                         </div>
-                        <div className={`flex flex-col items-end gap-1 shrink-0 ${isAdmin ? "mr-7" : ""}`}>
+                        <div className={`flex flex-col items-end gap-1 shrink-0 ${isAdmin ? "mr-14" : ""}`}>
                           {pese
                             ? <Badge variant="secondary">Pesé</Badge>
                             : <Badge>En attente</Badge>}
@@ -645,7 +645,7 @@ export default function ReceptionGlobal() {
                   {cols.created_by && <TableHead>Créé par</TableHead>}
                   {cols.cloture_by && <TableHead>Clôturé par</TableHead>}
                   {cols.cloture_at && <TableHead>Clôturé le</TableHead>}
-                  {isAdmin && <TableHead className="w-[52px]"></TableHead>}
+                  {isAdmin && <TableHead className="w-[92px]"></TableHead>}
                 </TableRow></TableHeader>
                 <TableBody>
                   {filtered.map((r: any) => (
