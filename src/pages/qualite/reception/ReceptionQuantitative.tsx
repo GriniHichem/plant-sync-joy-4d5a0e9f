@@ -211,24 +211,36 @@ export default function ReceptionQuantitative() {
           {/* Mobile / tablette portrait : liste condensée */}
           <div className="lg:hidden space-y-2">
             {filtered.map((t: any) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => { setSelected(t); setPoidsBrut(""); setCodeSaisi(""); }}
-                className="w-full text-left rounded-lg border p-3 flex items-center gap-3 active:bg-muted/60"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs text-muted-foreground truncate">{t.numero}</span>
-                    {t.etat_pesee === "pese"
-                      ? <Badge variant="secondary" className="h-5">{formatKg(t.poids_net_kg)} net</Badge>
-                      : <Badge className="h-5">À peser</Badge>}
+              <div key={t.id} className="rounded-lg border flex items-center gap-1 pr-1">
+                <button
+                  type="button"
+                  onClick={() => { setSelected(t); setPoidsBrut(""); setCodeSaisi(""); }}
+                  className="flex-1 min-w-0 text-left p-3 flex items-center gap-3 active:bg-muted/60 rounded-lg"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs text-muted-foreground truncate">{t.numero}</span>
+                      {t.etat_pesee === "pese"
+                        ? <Badge variant="secondary" className="h-5">{formatKg(t.poids_net_kg)} net</Badge>
+                        : <Badge className="h-5">À peser</Badge>}
+                    </div>
+                    <div className="font-medium truncate">{t.produit}</div>
+                    <div className="text-xs text-muted-foreground truncate">{t.fournisseur} · Abat. {Number(t.taux_abattement).toFixed(2)} %</div>
                   </div>
-                  <div className="font-medium truncate">{t.produit}</div>
-                  <div className="text-xs text-muted-foreground truncate">{t.fournisseur} · Abat. {Number(t.taux_abattement).toFixed(2)} %</div>
-                </div>
-                <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
-              </button>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
+                </button>
+                {t.poids_brut_kg == null && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-10 w-10 shrink-0 text-muted-foreground"
+                    title="Maintenance ticket"
+                    onClick={() => setMaintenanceTicket(t)}
+                  >
+                    <Wrench className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
             ))}
             {filtered.length === 0 && (
               <div className="text-center text-muted-foreground py-8">
