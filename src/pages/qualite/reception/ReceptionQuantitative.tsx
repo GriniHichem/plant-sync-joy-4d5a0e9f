@@ -270,7 +270,17 @@ export default function ReceptionQuantitative() {
                           ? <Badge variant="secondary">{formatKg(t.poids_net_kg)} net</Badge>
                           : <Badge>À peser</Badge>}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right whitespace-nowrap">
+                        {t.poids_brut_kg == null && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            title="Maintenance ticket"
+                            onClick={() => setMaintenanceTicket(t)}
+                          >
+                            <Wrench className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Button size="sm" variant="ghost" onClick={() => { setSelected(t); setPoidsBrut(""); setCodeSaisi(""); }}>
                           <ChevronRight className="h-4 w-4" />
                         </Button>
