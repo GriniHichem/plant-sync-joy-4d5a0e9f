@@ -93,6 +93,7 @@ export default function ReceptionGlobal() {
   const [importMode, setImportMode] = useState<"ignore" | "replace">("ignore");
   const [importPoidsOpen, setImportPoidsOpen] = useState(false);
   const [toDelete, setToDelete] = useState<any | null>(null);
+  const [maintenanceTicket, setMaintenanceTicket] = useState<any | null>(null);
   const [deleteReason, setDeleteReason] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [toWeigh, setToWeigh] = useState<any | null>(null);
