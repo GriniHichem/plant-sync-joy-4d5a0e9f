@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Scale, Search, ChevronRight, ArrowUpDown } from "lucide-react";
+import { Scale, Search, ChevronRight, ArrowUpDown, Wrench } from "lucide-react";
 import { computeAbattementKg, computeNetKg, formatKg, kgToTonnes } from "@/lib/reception";
 import { PhotoLightbox } from "./PhotoLightbox";
 import { useShiftRealtime } from "@/hooks/useShiftRealtime";
@@ -17,6 +17,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { ResponsiveDialog } from "@/components/responsive/ResponsiveDialog";
 import { ScrollTable } from "@/components/responsive/ScrollTable";
 import { StickyActionBar } from "@/components/responsive/StickyActionBar";
+import { TicketMaintenanceDialog } from "./TicketMaintenanceDialog";
 
 export default function ReceptionQuantitative() {
   const qc = useQueryClient();
@@ -27,6 +28,7 @@ export default function ReceptionQuantitative() {
   const [selected, setSelected] = useState<any>(null);
   const [poidsBrut, setPoidsBrut] = useState("");
   const [codeSaisi, setCodeSaisi] = useState("");
+  const [maintenanceTicket, setMaintenanceTicket] = useState<any>(null);
 
   const { data: tickets = [], isFetching } = useQuery({
     queryKey: ["reception_pesee_list", limit, sortAsc],
@@ -209,24 +211,36 @@ export default function ReceptionQuantitative() {
           {/* Mobile / tablette portrait : liste condensée */}
           <div className="lg:hidden space-y-2">
             {filtered.map((t: any) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => { setSelected(t); setPoidsBrut(""); setCodeSaisi(""); }}
-                className="w-full text-left rounded-lg border p-3 flex items-center gap-3 active:bg-muted/60"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs text-muted-foreground truncate">{t.numero}</span>
-                    {t.etat_pesee === "pese"
-                      ? <Badge variant="secondary" className="h-5">{formatKg(t.poids_net_kg)} net</Badge>
-                      : <Badge className="h-5">À peser</Badge>}
+              <div key={t.id} className="rounded-lg border flex items-center gap-1 pr-1">
+                <button
+                  type="button"
+                  onClick={() => { setSelected(t); setPoidsBrut(""); setCodeSaisi(""); }}
+                  className="flex-1 min-w-0 text-left p-3 flex items-center gap-3 active:bg-muted/60 rounded-lg"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs text-muted-foreground truncate">{t.numero}</span>
+                      {t.etat_pesee === "pese"
+                        ? <Badge variant="secondary" className="h-5">{formatKg(t.poids_net_kg)} net</Badge>
+                        : <Badge className="h-5">À peser</Badge>}
+                    </div>
+                    <div className="font-medium truncate">{t.produit}</div>
+                    <div className="text-xs text-muted-foreground truncate">{t.fournisseur} · Abat. {Number(t.taux_abattement).toFixed(2)} %</div>
                   </div>
-                  <div className="font-medium truncate">{t.produit}</div>
-                  <div className="text-xs text-muted-foreground truncate">{t.fournisseur} · Abat. {Number(t.taux_abattement).toFixed(2)} %</div>
-                </div>
-                <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
-              </button>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
+                </button>
+                {t.poids_brut_kg == null && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-10 w-10 shrink-0 text-muted-foreground"
+                    title="Maintenance ticket"
+                    onClick={() => setMaintenanceTicket(t)}
+                  >
+                    <Wrench className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
             ))}
             {filtered.length === 0 && (
               <div className="text-center text-muted-foreground py-8">
@@ -256,7 +270,17 @@ export default function ReceptionQuantitative() {
                           ? <Badge variant="secondary">{formatKg(t.poids_net_kg)} net</Badge>
                           : <Badge>À peser</Badge>}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right whitespace-nowrap">
+                        {t.poids_brut_kg == null && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            title="Maintenance ticket"
+                            onClick={() => setMaintenanceTicket(t)}
+                          >
+                            <Wrench className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Button size="sm" variant="ghost" onClick={() => { setSelected(t); setPoidsBrut(""); setCodeSaisi(""); }}>
                           <ChevronRight className="h-4 w-4" />
                         </Button>
@@ -302,6 +326,13 @@ export default function ReceptionQuantitative() {
           {detailPanel}
         </ResponsiveDialog>
       )}
+
+      <TicketMaintenanceDialog
+        open={!!maintenanceTicket}
+        onOpenChange={(o) => { if (!o) setMaintenanceTicket(null); }}
+        ticket={maintenanceTicket}
+        onDone={() => qc.invalidateQueries({ queryKey: ["reception_pesee_list"] })}
+      />
     </div>
   );
 }

@@ -9,11 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
-import { AlertTriangle, RotateCcw, Columns3, Image as ImageIcon, LayoutGrid, TableIcon, Upload, Trash2, Scale } from "lucide-react";
+import { AlertTriangle, RotateCcw, Columns3, Image as ImageIcon, LayoutGrid, TableIcon, Upload, Trash2, Scale, Wrench } from "lucide-react";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ExportCsvButton } from "@/components/common/ExportCsvButton";
 import { formatDuration, formatKg, formatKgInt, formatTonnesInt, formatHm, kgToTonnes, isOverdue } from "@/lib/reception";
 import { TicketDetailDialog } from "./TicketDetailDialog";
+import { TicketMaintenanceDialog } from "./TicketMaintenanceDialog";
 import { useShiftRealtime } from "@/hooks/useShiftRealtime";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { FilterSheet } from "@/components/responsive/FilterSheet";
@@ -92,6 +93,7 @@ export default function ReceptionGlobal() {
   const [importMode, setImportMode] = useState<"ignore" | "replace">("ignore");
   const [importPoidsOpen, setImportPoidsOpen] = useState(false);
   const [toDelete, setToDelete] = useState<any | null>(null);
+  const [maintenanceTicket, setMaintenanceTicket] = useState<any | null>(null);
   const [deleteReason, setDeleteReason] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [toWeigh, setToWeigh] = useState<any | null>(null);
@@ -546,14 +548,24 @@ export default function ReceptionGlobal() {
                     className={`relative rounded-lg border border-l-[3px] ${borderColor} bg-card hover:bg-accent/40 transition-colors`}
                   >
                     {isAdmin && (
-                      <button
-                        type="button"
-                        title="Supprimer (admin)"
-                        onClick={(e) => { e.stopPropagation(); setToDelete(r); }}
-                        className="absolute top-1.5 right-1.5 z-10 p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 focus:outline-none focus:ring-2 focus:ring-ring"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                      <div className="absolute top-1.5 right-1.5 z-10 flex items-center gap-0.5">
+                        <button
+                          type="button"
+                          title="Maintenance ticket (admin)"
+                          onClick={(e) => { e.stopPropagation(); setMaintenanceTicket(r); }}
+                          className="p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-ring"
+                        >
+                          <Wrench className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          title="Supprimer (admin)"
+                          onClick={(e) => { e.stopPropagation(); setToDelete(r); }}
+                          className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 focus:outline-none focus:ring-2 focus:ring-ring"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     )}
                     <button
                       type="button"
@@ -569,7 +581,7 @@ export default function ReceptionGlobal() {
                           <div className="font-semibold truncate">{r.produit ?? "—"}</div>
                           <div className="text-xs text-muted-foreground truncate">{r.fournisseur ?? "—"}</div>
                         </div>
-                        <div className={`flex flex-col items-end gap-1 shrink-0 ${isAdmin ? "mr-7" : ""}`}>
+                        <div className={`flex flex-col items-end gap-1 shrink-0 ${isAdmin ? "mr-14" : ""}`}>
                           {pese
                             ? <Badge variant="secondary">Pesé</Badge>
                             : <Badge>En attente</Badge>}
@@ -633,7 +645,7 @@ export default function ReceptionGlobal() {
                   {cols.created_by && <TableHead>Créé par</TableHead>}
                   {cols.cloture_by && <TableHead>Clôturé par</TableHead>}
                   {cols.cloture_at && <TableHead>Clôturé le</TableHead>}
-                  {isAdmin && <TableHead className="w-[52px]"></TableHead>}
+                  {isAdmin && <TableHead className="w-[92px]"></TableHead>}
                 </TableRow></TableHeader>
                 <TableBody>
                   {filtered.map((r: any) => (
@@ -686,7 +698,16 @@ export default function ReceptionGlobal() {
                       {cols.cloture_by && <TableCell className="text-xs">{r.cloture_by_name ?? "—"}</TableCell>}
                       {cols.cloture_at && <TableCell className="text-xs">{fmtDT(r.cloture_at)}</TableCell>}
                       {isAdmin && (
-                        <TableCell className="p-1">
+                        <TableCell className="p-1 whitespace-nowrap">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-primary"
+                            title="Maintenance ticket (admin)"
+                            onClick={(e) => { e.stopPropagation(); setMaintenanceTicket(r); }}
+                          >
+                            <Wrench className="h-4 w-4" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="icon"
@@ -714,6 +735,16 @@ export default function ReceptionGlobal() {
         onOpenChange={(o) => !o && setSelected(null)}
         row={selected}
       />
+
+      <TicketMaintenanceDialog
+        open={!!maintenanceTicket}
+        onOpenChange={(o) => { if (!o) setMaintenanceTicket(null); }}
+        ticket={maintenanceTicket}
+        allowPhotoTransfer={isAdmin}
+        onDone={invalidate}
+      />
+
+
 
       <CsvImportDialog
         open={importOpen}
