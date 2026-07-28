@@ -28,6 +28,7 @@ export default function ReceptionQuantitative() {
   const [selected, setSelected] = useState<any>(null);
   const [poidsBrut, setPoidsBrut] = useState("");
   const [codeSaisi, setCodeSaisi] = useState("");
+  const [maintenanceTicket, setMaintenanceTicket] = useState<any>(null);
 
   const { data: tickets = [], isFetching } = useQuery({
     queryKey: ["reception_pesee_list", limit, sortAsc],
