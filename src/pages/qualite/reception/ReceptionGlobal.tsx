@@ -736,6 +736,16 @@ export default function ReceptionGlobal() {
         row={selected}
       />
 
+      <TicketMaintenanceDialog
+        open={!!maintenanceTicket}
+        onOpenChange={(o) => { if (!o) setMaintenanceTicket(null); }}
+        ticket={maintenanceTicket}
+        allowPhotoTransfer={isAdmin}
+        onDone={invalidate}
+      />
+
+
+
       <CsvImportDialog
         open={importOpen}
         onOpenChange={setImportOpen}
