@@ -548,14 +548,24 @@ export default function ReceptionGlobal() {
                     className={`relative rounded-lg border border-l-[3px] ${borderColor} bg-card hover:bg-accent/40 transition-colors`}
                   >
                     {isAdmin && (
-                      <button
-                        type="button"
-                        title="Supprimer (admin)"
-                        onClick={(e) => { e.stopPropagation(); setToDelete(r); }}
-                        className="absolute top-1.5 right-1.5 z-10 p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 focus:outline-none focus:ring-2 focus:ring-ring"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                      <div className="absolute top-1.5 right-1.5 z-10 flex items-center gap-0.5">
+                        <button
+                          type="button"
+                          title="Maintenance ticket (admin)"
+                          onClick={(e) => { e.stopPropagation(); setMaintenanceTicket(r); }}
+                          className="p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-ring"
+                        >
+                          <Wrench className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          title="Supprimer (admin)"
+                          onClick={(e) => { e.stopPropagation(); setToDelete(r); }}
+                          className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 focus:outline-none focus:ring-2 focus:ring-ring"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     )}
                     <button
                       type="button"
