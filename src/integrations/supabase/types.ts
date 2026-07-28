@@ -7495,6 +7495,10 @@ export type Database = {
         Args: { p_item_id: string; p_motif: string }
         Returns: undefined
       }
+      rename_reception_ticket: {
+        Args: { p_new_numero: string; p_ticket_id: string }
+        Returns: undefined
+      }
       reopen_preventive_action: {
         Args: { p_plan_id: string; p_reason: string }
         Returns: string
@@ -7550,6 +7554,14 @@ export type Database = {
       start_or_join_preventive_action: {
         Args: { p_plan_id: string }
         Returns: string
+      }
+      transfer_reception_ticket_photos: {
+        Args: {
+          p_reason?: string
+          p_source_ticket_id: string
+          p_target_ticket_id: string
+        }
+        Returns: number
       }
       unaccent: { Args: { "": string }; Returns: string }
       user_has_role_text: {
