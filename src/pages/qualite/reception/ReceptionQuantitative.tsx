@@ -326,6 +326,13 @@ export default function ReceptionQuantitative() {
           {detailPanel}
         </ResponsiveDialog>
       )}
+
+      <TicketMaintenanceDialog
+        open={!!maintenanceTicket}
+        onOpenChange={(o) => { if (!o) setMaintenanceTicket(null); }}
+        ticket={maintenanceTicket}
+        onDone={() => qc.invalidateQueries({ queryKey: ["reception_pesee_list"] })}
+      />
     </div>
   );
 }
