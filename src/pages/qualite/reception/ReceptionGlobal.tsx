@@ -302,6 +302,11 @@ export default function ReceptionGlobal() {
     ? Math.min(100, (kpis.net / Number(activeCampaign.objectif_kg)) * 100)
     : null;
 
+  /** Moyenne d'abattement = abattement total / brut total × 100. */
+  const tauxAbatMoyen = kpis.brut > 0 ? (kpis.abat / kpis.brut) * 100 : null;
+  /** Moyenne net = poids net total / nombre de jours couverts. */
+  const moyNetParJour = kpis.jours > 0 ? kpis.net / kpis.jours : null;
+
   const resetFilters = () =>
     setF({ from: "", to: "", dtFrom: "", dtTo: "", campaign: "__all__", supplier: "__all__", product: "__all__", etat: "__all__", conformite: "__all__", q: "" });
 
