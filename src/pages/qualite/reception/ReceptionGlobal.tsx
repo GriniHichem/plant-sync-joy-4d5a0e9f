@@ -427,16 +427,29 @@ export default function ReceptionGlobal() {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2 md:gap-3">
+      {/* Tous les KPI restent visibles sur mobile (grille 2 colonnes, aucun masquage). */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-10 gap-2 md:gap-3">
         <Kpi label="Tickets" value={kpis.total} />
         <Kpi label="Pesés" value={kpis.pese} />
         <Kpi label="À peser" value={kpis.aPeser} />
         <Kpi label="Hors délai" value={kpis.hd} accent={kpis.hd > 0} />
         <Kpi label="Poids brut" value={formatTonnesInt(kpis.brut)} />
         <Kpi label="Poids net" value={formatTonnesInt(kpis.net)} />
-        <Kpi label="Abattement" value={formatTonnesInt(kpis.abat)} className="hidden sm:block" />
-        <Kpi label="Durée moyenne" value={formatDuration(kpis.moyDuree ? Math.round(kpis.moyDuree) : null)} className="hidden sm:block" />
+        <Kpi label="Abattement" value={formatTonnesInt(kpis.abat)} />
+        <Kpi
+          label="Moy. abattement"
+          value={tauxAbatMoyen == null ? "—" : `${tauxAbatMoyen.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} %`}
+        />
+        <Kpi
+          label={`Moy. net / jour${kpis.jours ? ` (${kpis.jours} j)` : ""}`}
+          value={moyNetParJour == null ? "—" : formatTonnesInt(moyNetParJour)}
+        />
+        <Kpi
+          label={`Durée moyenne${kpis.nbDuree ? ` (${kpis.nbDuree})` : ""}`}
+          value={formatDuration(kpis.moyDuree != null ? Math.round(kpis.moyDuree) : null)}
+        />
       </div>
+
 
       {progression != null && (
         <Card>
