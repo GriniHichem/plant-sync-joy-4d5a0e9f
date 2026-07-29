@@ -582,7 +582,7 @@ export default function ReceptionGlobal() {
                 return (
                   <div
                     key={r.id}
-                    className={`relative rounded-lg border border-l-[3px] ${borderColor} bg-card hover:bg-accent/40 transition-colors`}
+                    className={`relative rounded-lg border border-l-[3px] ${borderColor} bg-card shadow-sm hover:shadow-md hover:bg-accent/40 transition-all`}
                   >
                     {isAdmin && (
                       <div className="absolute top-1.5 right-1.5 z-10 flex items-center gap-0.5">
