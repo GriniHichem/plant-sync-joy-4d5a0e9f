@@ -66,10 +66,15 @@ type ReceptionKpis = {
   net: number;
   abat: number;
   moyDuree: number | null;
+  /** Nombre de tickets ayant heure_debut ET heure_fin renseignées. */
+  nbDuree: number;
+  /** Nombre de jours distincts couverts par les tickets filtrés. */
+  jours: number;
   hd: number;
   pese: number;
   aPeser: number;
 };
+
 
 const COL_LS_KEY = "reception-global-cols";
 const VIEW_LS_KEY = "reception-global-view";
