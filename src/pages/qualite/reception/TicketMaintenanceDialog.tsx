@@ -25,10 +25,12 @@ interface Props {
   ticket: MaintenanceTicket | null;
   /** Active l'onglet de transfert de photos (administrateur uniquement). */
   allowPhotoTransfer?: boolean;
+  /** L'administrateur (Consultation) peut renommer même un ticket déjà pesé. */
+  allowRenameWhenWeighed?: boolean;
   onDone?: () => void;
 }
 
-export function TicketMaintenanceDialog({ open, onOpenChange, ticket, allowPhotoTransfer, onDone }: Props) {
+export function TicketMaintenanceDialog({ open, onOpenChange, ticket, allowPhotoTransfer, allowRenameWhenWeighed, onDone }: Props) {
   const [numero, setNumero] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -45,7 +47,8 @@ export function TicketMaintenanceDialog({ open, onOpenChange, ticket, allowPhoto
     setSrcQuery(""); setSrcResults([]); setSource(null); setReason("");
   }, [open, ticket?.id]);
 
-  const alreadyWeighed = ticket?.poids_brut_kg != null;
+  // Verrouillage : seul un ticket déjà pesé bloque le renommage, sauf pour l'admin.
+  const alreadyWeighed = ticket?.poids_brut_kg != null && !allowRenameWhenWeighed;
 
   // Recherche du ticket source (celui qui porte les photos à récupérer).
   useEffect(() => {
