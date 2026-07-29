@@ -671,7 +671,7 @@ export default function ReceptionGlobal() {
           ) : (
             <ScrollTable>
               <Table>
-                <TableHeader><TableRow>
+                <TableHeader className="sticky top-0 z-10 bg-muted [&_th]:h-9 [&_th]:whitespace-nowrap [&_th]:text-[11px] [&_th]:uppercase [&_th]:tracking-wide"><TableRow>
                   <TableHead>N°</TableHead><TableHead>Date</TableHead><TableHead>Fournisseur</TableHead>
                   <TableHead>Produit</TableHead><TableHead>Début/Fin</TableHead><TableHead>Durée</TableHead>
                   <TableHead>Abat.</TableHead><TableHead className="text-right">Brut</TableHead>
