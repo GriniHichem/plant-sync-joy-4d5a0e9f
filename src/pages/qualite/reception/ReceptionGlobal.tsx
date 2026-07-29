@@ -173,6 +173,8 @@ export default function ReceptionGlobal() {
         net: Number(raw.net ?? 0),
         abat: Number(raw.abat ?? 0),
         moyDuree: raw.moy_duree == null ? null : Number(raw.moy_duree),
+        nbDuree: Number(raw.nb_duree ?? 0),
+        jours: Number(raw.jours ?? 0),
         hd: Number(raw.hd ?? 0),
         pese: Number(raw.pese ?? 0),
         aPeser: Number(raw.a_peser ?? 0),
