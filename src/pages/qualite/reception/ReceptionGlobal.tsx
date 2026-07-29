@@ -432,41 +432,53 @@ export default function ReceptionGlobal() {
 
   return (
     <div className="space-y-4">
-      {/* Tous les KPI restent visibles sur mobile (grille 2 colonnes, aucun masquage). */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-10 gap-2 md:gap-3">
-        <Kpi label="Tickets" value={kpis.total} />
-        <Kpi label="Pesés" value={kpis.pese} />
-        <Kpi label="À peser" value={kpis.aPeser} />
-        <Kpi label="Hors délai" value={kpis.hd} accent={kpis.hd > 0} />
-        <Kpi label="Poids brut" value={formatTonnesInt(kpis.brut)} />
-        <Kpi label="Poids net" value={formatTonnesInt(kpis.net)} />
-        <Kpi label="Abattement" value={formatTonnesInt(kpis.abat)} />
-        <Kpi
-          label="Moy. abattement"
-          value={tauxAbatMoyen == null ? "—" : `${tauxAbatMoyen.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} %`}
-        />
-        <Kpi
-          label={`Moy. net / jour${kpis.jours ? ` (${kpis.jours} j)` : ""}`}
-          value={moyNetParJour == null ? "—" : formatTonnesInt(moyNetParJour)}
-        />
-        <Kpi
-          label={`Durée moyenne${kpis.nbDuree ? ` (${kpis.nbDuree})` : ""}`}
-          value={formatDuration(kpis.moyDuree != null ? Math.round(kpis.moyDuree) : null)}
-        />
+      {/* Bloc indicateurs — 2 groupes lisibles, tous visibles sur mobile. */}
+      <div className="space-y-2">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+          <Kpi label="Tickets" value={kpis.total} icon={Ticket} tone="primary" />
+          <Kpi label="Pesés" value={kpis.pese} icon={CheckCircle2} tone="success" />
+          <Kpi label="À peser" value={kpis.aPeser} icon={Scale} tone={kpis.aPeser > 0 ? "warning" : "muted"} />
+          <Kpi label="Hors délai" value={kpis.hd} icon={AlertTriangle} tone={kpis.hd > 0 ? "danger" : "muted"} />
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-3">
+          <Kpi label="Poids brut" value={formatTonnesInt(kpis.brut)} icon={Truck} />
+          <Kpi label="Poids net" value={formatTonnesInt(kpis.net)} icon={PackageCheck} tone="primary" />
+          <Kpi label="Abattement" value={formatTonnesInt(kpis.abat)} icon={TrendingDown} />
+          <Kpi
+            label="Moy. abattement"
+            value={tauxAbatMoyen == null ? "—" : `${tauxAbatMoyen.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} %`}
+            icon={Percent}
+          />
+          <Kpi
+            label="Moy. net / jour"
+            hint={kpis.jours ? `${kpis.jours} j` : undefined}
+            value={moyNetParJour == null ? "—" : formatTonnesInt(moyNetParJour)}
+            icon={CalendarDays}
+          />
+          <Kpi
+            label="Durée moyenne"
+            hint={kpis.nbDuree ? `${kpis.nbDuree} tickets` : undefined}
+            value={formatDuration(kpis.moyDuree != null ? Math.round(kpis.moyDuree) : null)}
+            icon={Timer}
+          />
+        </div>
       </div>
 
-
       {progression != null && (
-        <Card>
+        <Card className="border-primary/25 bg-primary/[0.03]">
           <CardContent className="p-4 space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Progression campagne — {activeCampaign?.libelle}</span>
-              <span className="font-medium">{kgToTonnes(kpis.net)} t / {kgToTonnes(activeCampaign.objectif_kg)} t</span>
+            <div className="flex flex-wrap items-baseline justify-between gap-1 text-sm">
+              <span className="font-medium">Progression campagne — {activeCampaign?.libelle}</span>
+              <span className="tabular-nums text-muted-foreground">
+                <span className="font-semibold text-foreground">{kgToTonnes(kpis.net)} t</span> / {kgToTonnes(activeCampaign.objectif_kg)} t
+                <span className="ml-2 font-semibold text-primary">{progression.toFixed(1)} %</span>
+              </span>
             </div>
-            <Progress value={progression} />
+            <Progress value={progression} className="h-2" />
           </CardContent>
         </Card>
       )}
+
 
       <Card>
         <CardHeader className="pb-3">
