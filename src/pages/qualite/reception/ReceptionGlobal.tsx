@@ -766,6 +766,7 @@ export default function ReceptionGlobal() {
         onOpenChange={(o) => { if (!o) setMaintenanceTicket(null); }}
         ticket={maintenanceTicket}
         allowPhotoTransfer={isAdmin}
+        allowRenameWhenWeighed={isAdmin}
         onDone={invalidate}
       />
 
