@@ -665,7 +665,13 @@ export default function ReceptionGlobal() {
 
               })}
               {filtered.length === 0 && (
-                <div className="col-span-full text-center text-muted-foreground py-8">Aucun ticket</div>
+                <div className="col-span-full flex flex-col items-center gap-2 rounded-lg border border-dashed py-10 text-center text-muted-foreground">
+                  <Ticket className="h-6 w-6 opacity-60" />
+                  <div className="text-sm">Aucun ticket pour ces filtres</div>
+                  <Button variant="outline" size="sm" onClick={resetFilters}>
+                    <RotateCcw className="h-3.5 w-3.5 mr-1" />Réinitialiser
+                  </Button>
+                </div>
               )}
             </div>
           ) : (
