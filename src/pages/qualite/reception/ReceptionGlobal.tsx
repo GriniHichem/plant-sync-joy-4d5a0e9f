@@ -922,13 +922,48 @@ function WeightCell({ label, kg, emphasize }: { label: string; kg?: number | nul
 }
 
 
-function Kpi({ label, value, accent, className }: { label: string; value: React.ReactNode; accent?: boolean; className?: string }) {
+type KpiTone = "default" | "muted" | "primary" | "success" | "warning" | "danger";
+
+const KPI_TONES: Record<KpiTone, { ring: string; icon: string; value: string }> = {
+  default: { ring: "", icon: "bg-muted text-muted-foreground", value: "text-foreground" },
+  muted: { ring: "", icon: "bg-muted text-muted-foreground", value: "text-muted-foreground" },
+  primary: { ring: "border-primary/30", icon: "bg-primary/10 text-primary", value: "text-foreground" },
+  success: { ring: "border-success/30", icon: "bg-success/10 text-success", value: "text-success" },
+  warning: { ring: "border-warning/40", icon: "bg-warning/10 text-warning", value: "text-warning" },
+  danger: { ring: "border-destructive/40", icon: "bg-destructive/10 text-destructive", value: "text-destructive" },
+};
+
+function Kpi({
+  label, value, hint, icon: Icon, tone = "default", accent, className,
+}: {
+  label: string;
+  value: React.ReactNode;
+  hint?: string;
+  icon?: LucideIcon;
+  tone?: KpiTone;
+  accent?: boolean;
+  className?: string;
+}) {
+  const t = KPI_TONES[accent ? "danger" : tone];
   return (
-    <Card className={`${accent ? "border-destructive/40" : ""} ${className ?? ""}`}>
+    <Card className={`overflow-hidden transition-colors hover:bg-accent/30 ${t.ring} ${className ?? ""}`}>
       <CardContent className="p-2.5 md:p-3">
-        <div className="text-[11px] md:text-xs text-muted-foreground">{label}</div>
-        <div className={"text-base md:text-xl font-semibold " + (accent ? "text-destructive" : "")}>{value}</div>
+        <div className="flex items-start gap-2">
+          {Icon && (
+            <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${t.icon}`}>
+              <Icon className="h-3.5 w-3.5" />
+            </span>
+          )}
+          <div className="min-w-0">
+            <div className="truncate text-[10px] md:text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              {label}
+            </div>
+            <div className={`text-base md:text-xl font-semibold tabular-nums leading-tight ${t.value}`}>{value}</div>
+            {hint && <div className="text-[10px] text-muted-foreground">{hint}</div>}
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
 }
+
