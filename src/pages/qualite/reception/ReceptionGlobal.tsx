@@ -66,10 +66,15 @@ type ReceptionKpis = {
   net: number;
   abat: number;
   moyDuree: number | null;
+  /** Nombre de tickets ayant heure_debut ET heure_fin renseignées. */
+  nbDuree: number;
+  /** Nombre de jours distincts couverts par les tickets filtrés. */
+  jours: number;
   hd: number;
   pese: number;
   aPeser: number;
 };
+
 
 const COL_LS_KEY = "reception-global-cols";
 const VIEW_LS_KEY = "reception-global-view";
@@ -77,7 +82,7 @@ const DEFAULT_COLS: Record<ColKey, boolean> = {
   created_by: false, cloture_by: false, cloture_at: false, photos: true, code_saisi: false,
 };
 const EMPTY_KPIS: ReceptionKpis = {
-  total: 0, brut: 0, net: 0, abat: 0, moyDuree: null, hd: 0, pese: 0, aPeser: 0,
+  total: 0, brut: 0, net: 0, abat: 0, moyDuree: null, nbDuree: 0, jours: 0, hd: 0, pese: 0, aPeser: 0,
 };
 
 export default function ReceptionGlobal() {
@@ -168,6 +173,8 @@ export default function ReceptionGlobal() {
         net: Number(raw.net ?? 0),
         abat: Number(raw.abat ?? 0),
         moyDuree: raw.moy_duree == null ? null : Number(raw.moy_duree),
+        nbDuree: Number(raw.nb_duree ?? 0),
+        jours: Number(raw.jours ?? 0),
         hd: Number(raw.hd ?? 0),
         pese: Number(raw.pese ?? 0),
         aPeser: Number(raw.a_peser ?? 0),
@@ -295,6 +302,11 @@ export default function ReceptionGlobal() {
     ? Math.min(100, (kpis.net / Number(activeCampaign.objectif_kg)) * 100)
     : null;
 
+  /** Moyenne d'abattement = abattement total / brut total × 100. */
+  const tauxAbatMoyen = kpis.brut > 0 ? (kpis.abat / kpis.brut) * 100 : null;
+  /** Moyenne net = poids net total / nombre de jours couverts. */
+  const moyNetParJour = kpis.jours > 0 ? kpis.net / kpis.jours : null;
+
   const resetFilters = () =>
     setF({ from: "", to: "", dtFrom: "", dtTo: "", campaign: "__all__", supplier: "__all__", product: "__all__", etat: "__all__", conformite: "__all__", q: "" });
 
@@ -420,16 +432,29 @@ export default function ReceptionGlobal() {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2 md:gap-3">
+      {/* Tous les KPI restent visibles sur mobile (grille 2 colonnes, aucun masquage). */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-10 gap-2 md:gap-3">
         <Kpi label="Tickets" value={kpis.total} />
         <Kpi label="Pesés" value={kpis.pese} />
         <Kpi label="À peser" value={kpis.aPeser} />
         <Kpi label="Hors délai" value={kpis.hd} accent={kpis.hd > 0} />
         <Kpi label="Poids brut" value={formatTonnesInt(kpis.brut)} />
         <Kpi label="Poids net" value={formatTonnesInt(kpis.net)} />
-        <Kpi label="Abattement" value={formatTonnesInt(kpis.abat)} className="hidden sm:block" />
-        <Kpi label="Durée moyenne" value={formatDuration(kpis.moyDuree ? Math.round(kpis.moyDuree) : null)} className="hidden sm:block" />
+        <Kpi label="Abattement" value={formatTonnesInt(kpis.abat)} />
+        <Kpi
+          label="Moy. abattement"
+          value={tauxAbatMoyen == null ? "—" : `${tauxAbatMoyen.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} %`}
+        />
+        <Kpi
+          label={`Moy. net / jour${kpis.jours ? ` (${kpis.jours} j)` : ""}`}
+          value={moyNetParJour == null ? "—" : formatTonnesInt(moyNetParJour)}
+        />
+        <Kpi
+          label={`Durée moyenne${kpis.nbDuree ? ` (${kpis.nbDuree})` : ""}`}
+          value={formatDuration(kpis.moyDuree != null ? Math.round(kpis.moyDuree) : null)}
+        />
       </div>
+
 
       {progression != null && (
         <Card>
@@ -741,6 +766,7 @@ export default function ReceptionGlobal() {
         onOpenChange={(o) => { if (!o) setMaintenanceTicket(null); }}
         ticket={maintenanceTicket}
         allowPhotoTransfer={isAdmin}
+        allowRenameWhenWeighed={isAdmin}
         onDone={invalidate}
       />
 
