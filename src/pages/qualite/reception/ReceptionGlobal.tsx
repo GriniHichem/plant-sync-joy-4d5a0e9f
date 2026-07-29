@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
-import { AlertTriangle, RotateCcw, Columns3, Image as ImageIcon, LayoutGrid, TableIcon, Upload, Trash2, Scale, Wrench } from "lucide-react";
+import { AlertTriangle, RotateCcw, Columns3, Image as ImageIcon, LayoutGrid, TableIcon, Upload, Trash2, Scale, Wrench, Ticket, CheckCircle2, Truck, PackageCheck, TrendingDown, Percent, CalendarDays, Timer, type LucideIcon } from "lucide-react";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ExportCsvButton } from "@/components/common/ExportCsvButton";
 import { formatDuration, formatKg, formatKgInt, formatTonnesInt, formatHm, kgToTonnes, isOverdue } from "@/lib/reception";
@@ -432,41 +432,53 @@ export default function ReceptionGlobal() {
 
   return (
     <div className="space-y-4">
-      {/* Tous les KPI restent visibles sur mobile (grille 2 colonnes, aucun masquage). */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-10 gap-2 md:gap-3">
-        <Kpi label="Tickets" value={kpis.total} />
-        <Kpi label="Pesés" value={kpis.pese} />
-        <Kpi label="À peser" value={kpis.aPeser} />
-        <Kpi label="Hors délai" value={kpis.hd} accent={kpis.hd > 0} />
-        <Kpi label="Poids brut" value={formatTonnesInt(kpis.brut)} />
-        <Kpi label="Poids net" value={formatTonnesInt(kpis.net)} />
-        <Kpi label="Abattement" value={formatTonnesInt(kpis.abat)} />
-        <Kpi
-          label="Moy. abattement"
-          value={tauxAbatMoyen == null ? "—" : `${tauxAbatMoyen.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} %`}
-        />
-        <Kpi
-          label={`Moy. net / jour${kpis.jours ? ` (${kpis.jours} j)` : ""}`}
-          value={moyNetParJour == null ? "—" : formatTonnesInt(moyNetParJour)}
-        />
-        <Kpi
-          label={`Durée moyenne${kpis.nbDuree ? ` (${kpis.nbDuree})` : ""}`}
-          value={formatDuration(kpis.moyDuree != null ? Math.round(kpis.moyDuree) : null)}
-        />
+      {/* Bloc indicateurs — 2 groupes lisibles, tous visibles sur mobile. */}
+      <div className="space-y-2">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+          <Kpi label="Tickets" value={kpis.total} icon={Ticket} tone="primary" />
+          <Kpi label="Pesés" value={kpis.pese} icon={CheckCircle2} tone="success" />
+          <Kpi label="À peser" value={kpis.aPeser} icon={Scale} tone={kpis.aPeser > 0 ? "warning" : "muted"} />
+          <Kpi label="Hors délai" value={kpis.hd} icon={AlertTriangle} tone={kpis.hd > 0 ? "danger" : "muted"} />
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-3">
+          <Kpi label="Poids brut" value={formatTonnesInt(kpis.brut)} icon={Truck} />
+          <Kpi label="Poids net" value={formatTonnesInt(kpis.net)} icon={PackageCheck} tone="primary" />
+          <Kpi label="Abattement" value={formatTonnesInt(kpis.abat)} icon={TrendingDown} />
+          <Kpi
+            label="Moy. abattement"
+            value={tauxAbatMoyen == null ? "—" : `${tauxAbatMoyen.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} %`}
+            icon={Percent}
+          />
+          <Kpi
+            label="Moy. net / jour"
+            hint={kpis.jours ? `${kpis.jours} j` : undefined}
+            value={moyNetParJour == null ? "—" : formatTonnesInt(moyNetParJour)}
+            icon={CalendarDays}
+          />
+          <Kpi
+            label="Durée moyenne"
+            hint={kpis.nbDuree ? `${kpis.nbDuree} tickets` : undefined}
+            value={formatDuration(kpis.moyDuree != null ? Math.round(kpis.moyDuree) : null)}
+            icon={Timer}
+          />
+        </div>
       </div>
 
-
       {progression != null && (
-        <Card>
+        <Card className="border-primary/25 bg-primary/[0.03]">
           <CardContent className="p-4 space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Progression campagne — {activeCampaign?.libelle}</span>
-              <span className="font-medium">{kgToTonnes(kpis.net)} t / {kgToTonnes(activeCampaign.objectif_kg)} t</span>
+            <div className="flex flex-wrap items-baseline justify-between gap-1 text-sm">
+              <span className="font-medium">Progression campagne — {activeCampaign?.libelle}</span>
+              <span className="tabular-nums text-muted-foreground">
+                <span className="font-semibold text-foreground">{kgToTonnes(kpis.net)} t</span> / {kgToTonnes(activeCampaign.objectif_kg)} t
+                <span className="ml-2 font-semibold text-primary">{progression.toFixed(1)} %</span>
+              </span>
             </div>
-            <Progress value={progression} />
+            <Progress value={progression} className="h-2" />
           </CardContent>
         </Card>
       )}
+
 
       <Card>
         <CardHeader className="pb-3">
@@ -570,7 +582,7 @@ export default function ReceptionGlobal() {
                 return (
                   <div
                     key={r.id}
-                    className={`relative rounded-lg border border-l-[3px] ${borderColor} bg-card hover:bg-accent/40 transition-colors`}
+                    className={`relative rounded-lg border border-l-[3px] ${borderColor} bg-card shadow-sm hover:shadow-md hover:bg-accent/40 transition-all`}
                   >
                     {isAdmin && (
                       <div className="absolute top-1.5 right-1.5 z-10 flex items-center gap-0.5">
@@ -653,14 +665,20 @@ export default function ReceptionGlobal() {
 
               })}
               {filtered.length === 0 && (
-                <div className="col-span-full text-center text-muted-foreground py-8">Aucun ticket</div>
+                <div className="col-span-full flex flex-col items-center gap-2 rounded-lg border border-dashed py-10 text-center text-muted-foreground">
+                  <Ticket className="h-6 w-6 opacity-60" />
+                  <div className="text-sm">Aucun ticket pour ces filtres</div>
+                  <Button variant="outline" size="sm" onClick={resetFilters}>
+                    <RotateCcw className="h-3.5 w-3.5 mr-1" />Réinitialiser
+                  </Button>
+                </div>
               )}
             </div>
           ) : (
             <ScrollTable>
               <Table>
-                <TableHeader><TableRow>
-                  <TableHead>N°</TableHead><TableHead>Date</TableHead><TableHead>Fournisseur</TableHead>
+                <TableHeader className="bg-muted [&_th]:h-9 [&_th]:whitespace-nowrap [&_th]:text-[11px] [&_th]:uppercase [&_th]:tracking-wide"><TableRow>
+                  <TableHead className="first-col-sticky">N°</TableHead><TableHead>Date</TableHead><TableHead>Fournisseur</TableHead>
                   <TableHead>Produit</TableHead><TableHead>Début/Fin</TableHead><TableHead>Durée</TableHead>
                   <TableHead>Abat.</TableHead><TableHead className="text-right">Brut</TableHead>
                   <TableHead className="text-right">Abat. kg</TableHead><TableHead className="text-right">Net</TableHead>
@@ -676,10 +694,10 @@ export default function ReceptionGlobal() {
                   {filtered.map((r: any) => (
                     <TableRow
                       key={r.id}
-                      className={`cursor-pointer ${isOverdue(r.duree_minutes) ? "bg-destructive/10" : ""}`}
+                      className={`cursor-pointer even:bg-muted/30 hover:bg-accent/50 ${isOverdue(r.duree_minutes) ? "bg-destructive/10 even:bg-destructive/10" : ""}`}
                       onClick={() => setSelected(r)}
                     >
-                      <TableCell className="font-mono text-xs">{r.numero}</TableCell>
+                      <TableCell className="first-col-sticky font-mono text-xs font-semibold">{r.numero}</TableCell>
                       <TableCell>{r.date_ticket}</TableCell>
                       <TableCell>{r.fournisseur}</TableCell>
                       <TableCell>{r.produit}</TableCell>
@@ -910,13 +928,48 @@ function WeightCell({ label, kg, emphasize }: { label: string; kg?: number | nul
 }
 
 
-function Kpi({ label, value, accent, className }: { label: string; value: React.ReactNode; accent?: boolean; className?: string }) {
+type KpiTone = "default" | "muted" | "primary" | "success" | "warning" | "danger";
+
+const KPI_TONES: Record<KpiTone, { ring: string; icon: string; value: string }> = {
+  default: { ring: "", icon: "bg-muted text-muted-foreground", value: "text-foreground" },
+  muted: { ring: "", icon: "bg-muted text-muted-foreground", value: "text-muted-foreground" },
+  primary: { ring: "border-primary/30", icon: "bg-primary/10 text-primary", value: "text-foreground" },
+  success: { ring: "border-success/30", icon: "bg-success/10 text-success", value: "text-success" },
+  warning: { ring: "border-warning/40", icon: "bg-warning/10 text-warning", value: "text-warning" },
+  danger: { ring: "border-destructive/40", icon: "bg-destructive/10 text-destructive", value: "text-destructive" },
+};
+
+function Kpi({
+  label, value, hint, icon: Icon, tone = "default", accent, className,
+}: {
+  label: string;
+  value: React.ReactNode;
+  hint?: string;
+  icon?: LucideIcon;
+  tone?: KpiTone;
+  accent?: boolean;
+  className?: string;
+}) {
+  const t = KPI_TONES[accent ? "danger" : tone];
   return (
-    <Card className={`${accent ? "border-destructive/40" : ""} ${className ?? ""}`}>
+    <Card className={`overflow-hidden transition-colors hover:bg-accent/30 ${t.ring} ${className ?? ""}`}>
       <CardContent className="p-2.5 md:p-3">
-        <div className="text-[11px] md:text-xs text-muted-foreground">{label}</div>
-        <div className={"text-base md:text-xl font-semibold " + (accent ? "text-destructive" : "")}>{value}</div>
+        <div className="flex items-start gap-2">
+          {Icon && (
+            <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${t.icon}`}>
+              <Icon className="h-3.5 w-3.5" />
+            </span>
+          )}
+          <div className="min-w-0">
+            <div className="truncate text-[10px] md:text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              {label}
+            </div>
+            <div className={`text-base md:text-xl font-semibold tabular-nums leading-tight ${t.value}`}>{value}</div>
+            {hint && <div className="text-[10px] text-muted-foreground">{hint}</div>}
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
 }
+
