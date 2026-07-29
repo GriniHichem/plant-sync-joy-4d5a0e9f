@@ -82,7 +82,7 @@ const DEFAULT_COLS: Record<ColKey, boolean> = {
   created_by: false, cloture_by: false, cloture_at: false, photos: true, code_saisi: false,
 };
 const EMPTY_KPIS: ReceptionKpis = {
-  total: 0, brut: 0, net: 0, abat: 0, moyDuree: null, hd: 0, pese: 0, aPeser: 0,
+  total: 0, brut: 0, net: 0, abat: 0, moyDuree: null, nbDuree: 0, jours: 0, hd: 0, pese: 0, aPeser: 0,
 };
 
 export default function ReceptionGlobal() {
