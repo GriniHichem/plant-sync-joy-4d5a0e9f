@@ -688,10 +688,10 @@ export default function ReceptionGlobal() {
                   {filtered.map((r: any) => (
                     <TableRow
                       key={r.id}
-                      className={`cursor-pointer ${isOverdue(r.duree_minutes) ? "bg-destructive/10" : ""}`}
+                      className={`cursor-pointer even:bg-muted/30 hover:bg-accent/50 ${isOverdue(r.duree_minutes) ? "bg-destructive/10 even:bg-destructive/10" : ""}`}
                       onClick={() => setSelected(r)}
                     >
-                      <TableCell className="font-mono text-xs">{r.numero}</TableCell>
+                      <TableCell className="first-col-sticky font-mono text-xs font-semibold">{r.numero}</TableCell>
                       <TableCell>{r.date_ticket}</TableCell>
                       <TableCell>{r.fournisseur}</TableCell>
                       <TableCell>{r.produit}</TableCell>
