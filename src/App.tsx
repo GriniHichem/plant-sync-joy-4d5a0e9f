@@ -101,6 +101,8 @@ import QualiteTracabilite from "@/pages/qualite/QualiteTracabilite";
 import QualiteRapports from "@/pages/qualite/QualiteRapports";
 import QualiteShiftScreen from "@/pages/qualite/QualiteShiftScreen";
 import ReceptionPage from "@/pages/qualite/reception/ReceptionPage";
+import DirectionDashboards from "@/pages/direction/DirectionDashboards";
+import DirectionDashboardDetail from "@/pages/direction/DirectionDashboardDetail";
 import InventoryDashboard from "@/pages/inventaire/InventoryDashboard";
 import InventoryCampaignsList from "@/pages/inventaire/InventoryCampaignsList";
 import InventoryCampaignNew from "@/pages/inventaire/InventoryCampaignNew";
