@@ -14,7 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { AlertTriangle, Clock, Lock, Truck, XCircle, Search, Lightbulb } from "lucide-react";
+import { AlertTriangle, Clock, Lock, Truck, XCircle, Search, Lightbulb, Pencil, Check, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { PhotoSlot } from "./PhotoSlot";
 import { TicketDetailDialog } from "./TicketDetailDialog";
@@ -24,6 +24,7 @@ import { StickyActionBar } from "@/components/responsive/StickyActionBar";
 import { receptionDraftStore, DRAFT_KEY, DRAFT_MAX_AGE_MS } from "./receptionDraftStore";
 import { OrientationsAdvisorDialog } from "@/components/reception/OrientationsAdvisorDialog";
 import { getTicketSequenceWarning } from "./ticketSequence";
+import { computeDurationMinutes, formatDuration, isOverdue } from "@/lib/reception";
 
 export default function ReceptionQualitative() {
   const qc = useQueryClient();
@@ -37,6 +38,8 @@ export default function ReceptionQualitative() {
   const [supplierOpen, setSupplierOpen] = useState(false);
   const [advisorOpen, setAdvisorOpen] = useState(false);
   const [ignoredSequenceFor, setIgnoredSequenceFor] = useState<string | null>(null);
+  const [editingNumero, setEditingNumero] = useState(false);
+  const [numeroDraft, setNumeroDraft] = useState("");
   const [form, setForm] = useState({
     numero: "",
     campaign_id: "",
@@ -171,6 +174,36 @@ export default function ReceptionQualitative() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  // Renommage du numéro tant que le ticket n'est pas clôturé (traçé côté serveur).
+  const renameTicket = useMutation({
+    mutationFn: async (nextNumero: string) => {
+      const v = nextNumero.trim();
+      if (!v) throw new Error("Numéro de ticket requis");
+      if (v === form.numero.trim()) return v;
+      const { data: dup } = await supabase.from("reception_tickets" as any)
+        .select("id").eq("numero", v).maybeSingle();
+      if (dup) throw new Error("Ce numéro de ticket existe déjà. Veuillez en saisir un autre.");
+      const { error } = await supabase.rpc("rename_reception_ticket" as any, {
+        p_ticket_id: ticketId!, p_new_numero: v,
+      });
+      if (error) throw error;
+      return v;
+    },
+    onSuccess: (v: string) => {
+      setForm((f) => ({ ...f, numero: v }));
+      setEditingNumero(false);
+      qc.invalidateQueries({ queryKey: ["reception_tickets_recent"] });
+      toast.success(`Numéro du ticket mis à jour : ${v}`);
+    },
+    onError: (e: any) =>
+      toast.error(
+        String(e.message ?? "").includes("déjà utilisé")
+          ? "Ce numéro de ticket existe déjà. Veuillez en saisir un autre."
+          : e.message ?? "Modification impossible",
+      ),
+  });
+
+
   const addPhoto = useMutation({
     mutationFn: async ({ slot, path }: { slot: number; path: string }) => {
       const { error } = await supabase.from("reception_ticket_photos" as any).insert({
@@ -214,6 +247,7 @@ export default function ReceptionQualitative() {
     onSuccess: (res: any) => {
       toast.success(`Ticket N°${res?.numero ?? ""} clôturé avec succès`);
       setTicketId(undefined);
+      setEditingNumero(false);
       setForm({ numero: "", campaign_id: defaultCampaign?.id ?? "", supplier_id: "", heure_debut: "", heure_fin: "", taux_abattement: "", commentaire: "" });
       try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
       qc.invalidateQueries({ queryKey: ["reception_tickets_recent"] });
@@ -231,6 +265,7 @@ export default function ReceptionQualitative() {
       toast.success("Ticket annulé — page réinitialisée");
       setTicketId(undefined);
       setCancelMotif("");
+      setEditingNumero(false);
       setForm({ numero: "", campaign_id: defaultCampaign?.id ?? "", supplier_id: "", heure_debut: "", heure_fin: "", taux_abattement: "", commentaire: "" });
       try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
       qc.invalidateQueries({ queryKey: ["reception_photos", ticketId] });
@@ -379,17 +414,48 @@ export default function ReceptionQualitative() {
             </div>
             <div className="min-w-0">
               <Label className="text-xs">N° ticket *</Label>
-              <Input
-                className="h-11 w-full"
-                value={form.numero}
-                disabled={!!ticketId}
-                maxLength={50}
-                placeholder="10001"
-                onChange={(e) => {
-                  setIgnoredSequenceFor(null);
-                  setForm({ ...form, numero: e.target.value });
-                }}
-              />
+              {ticketId && editingNumero ? (
+                <div className="flex gap-1 min-w-0">
+                  <Input
+                    className="h-11 flex-1 min-w-0 font-mono"
+                    value={numeroDraft}
+                    maxLength={50}
+                    autoFocus
+                    onChange={(e) => setNumeroDraft(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") renameTicket.mutate(numeroDraft); }}
+                  />
+                  <Button type="button" size="icon" className="h-11 w-11 shrink-0" title="Valider"
+                    disabled={renameTicket.isPending || !numeroDraft.trim()}
+                    onClick={() => renameTicket.mutate(numeroDraft)}>
+                    {renameTicket.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                  </Button>
+                  <Button type="button" variant="outline" size="icon" className="h-11 w-11 shrink-0" title="Annuler"
+                    onClick={() => setEditingNumero(false)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex gap-1 min-w-0">
+                  <Input
+                    className="h-11 flex-1 min-w-0"
+                    value={form.numero}
+                    disabled={!!ticketId}
+                    maxLength={50}
+                    placeholder="10001"
+                    onChange={(e) => {
+                      setIgnoredSequenceFor(null);
+                      setForm({ ...form, numero: e.target.value });
+                    }}
+                  />
+                  {ticketId && (
+                    <Button type="button" variant="outline" size="icon" className="h-11 w-11 shrink-0"
+                      title="Modifier le numéro (avant clôture)"
+                      onClick={() => { setNumeroDraft(form.numero); setEditingNumero(true); }}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
             <div className="min-w-0">
               <Label className="text-xs">Heure début *</Label>
@@ -408,8 +474,18 @@ export default function ReceptionQualitative() {
                   <Clock className="h-4 w-4" />
                 </Button>
               </div>
+              {(() => {
+                const d = computeDurationMinutes(form.heure_debut, form.heure_fin);
+                if (d == null) return null;
+                return (
+                  <p className={`text-xs mt-1 tabular-nums ${isOverdue(d) ? "text-destructive font-medium" : "text-muted-foreground"}`}>
+                    Durée : {formatDuration(d)}{isOverdue(d) ? " — hors délai (> 20 min)" : ""}
+                  </p>
+                );
+              })()}
             </div>
           </div>
+
 
           {showSequenceWarning && sequenceWarning && (
             <div
