@@ -172,6 +172,36 @@ export default function ReceptionQualitative() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  // Renommage du numéro tant que le ticket n'est pas clôturé (traçé côté serveur).
+  const renameTicket = useMutation({
+    mutationFn: async (nextNumero: string) => {
+      const v = nextNumero.trim();
+      if (!v) throw new Error("Numéro de ticket requis");
+      if (v === form.numero.trim()) return v;
+      const { data: dup } = await supabase.from("reception_tickets" as any)
+        .select("id").eq("numero", v).maybeSingle();
+      if (dup) throw new Error("Ce numéro de ticket existe déjà. Veuillez en saisir un autre.");
+      const { error } = await supabase.rpc("rename_reception_ticket" as any, {
+        p_ticket_id: ticketId!, p_new_numero: v,
+      });
+      if (error) throw error;
+      return v;
+    },
+    onSuccess: (v: string) => {
+      setForm((f) => ({ ...f, numero: v }));
+      setEditingNumero(false);
+      qc.invalidateQueries({ queryKey: ["reception_tickets_recent"] });
+      toast.success(`Numéro du ticket mis à jour : ${v}`);
+    },
+    onError: (e: any) =>
+      toast.error(
+        String(e.message ?? "").includes("déjà utilisé")
+          ? "Ce numéro de ticket existe déjà. Veuillez en saisir un autre."
+          : e.message ?? "Modification impossible",
+      ),
+  });
+
+
   const addPhoto = useMutation({
     mutationFn: async ({ slot, path }: { slot: number; path: string }) => {
       const { error } = await supabase.from("reception_ticket_photos" as any).insert({
