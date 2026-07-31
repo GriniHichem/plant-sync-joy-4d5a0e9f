@@ -103,6 +103,7 @@ export function AppSidebar() {
   const visibleGpao = filterByPerm(gpaoItems);
   const visibleQualite = filterByPerm(qualiteItems);
   const visibleInventaire = filterByPerm(inventaireItems);
+  const visibleDirection = filterByPerm(directionItems);
   const visibleAdmin = filterByPerm(adminItems);
 
   const isActive = (path: string) =>
@@ -114,6 +115,8 @@ export function AppSidebar() {
   const isQualiteActive = visibleQualite.some((i) => isActive(i.url));
   const isAdminActive = visibleAdmin.some((i) => isActive(i.url));
   const isInventaireActive = visibleInventaire.some((i) => isActive(i.url));
+  const isDirectionActive = visibleDirection.some((i) => isActive(i.url));
+  const showDirection = visibleDirection.length > 0;
   const showQualite = visibleQualite.length > 0;
   const showInventaire = visibleInventaire.length > 0;
   const showGmao = visibleGmao.length > 0;
@@ -231,6 +234,13 @@ export function AppSidebar() {
           <>
             <div className="mx-3 my-1 h-px bg-gradient-to-r from-transparent via-sidebar-border/50 to-transparent" />
             {renderGroup("Inventaire", ClipboardList, visibleInventaire, isInventaireActive)}
+          </>
+        )}
+
+        {showDirection && (
+          <>
+            <div className="mx-3 my-1 h-px bg-gradient-to-r from-transparent via-sidebar-border/50 to-transparent" />
+            {renderGroup("Direction", IconChart, visibleDirection, isDirectionActive)}
           </>
         )}
 
