@@ -24,6 +24,7 @@ import { StickyActionBar } from "@/components/responsive/StickyActionBar";
 import { receptionDraftStore, DRAFT_KEY, DRAFT_MAX_AGE_MS } from "./receptionDraftStore";
 import { OrientationsAdvisorDialog } from "@/components/reception/OrientationsAdvisorDialog";
 import { getTicketSequenceWarning } from "./ticketSequence";
+import { computeDurationMinutes, formatDuration, isOverdue } from "@/lib/reception";
 
 export default function ReceptionQualitative() {
   const qc = useQueryClient();
