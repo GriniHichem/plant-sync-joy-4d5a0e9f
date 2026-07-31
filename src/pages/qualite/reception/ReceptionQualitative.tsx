@@ -247,6 +247,7 @@ export default function ReceptionQualitative() {
     onSuccess: (res: any) => {
       toast.success(`Ticket N°${res?.numero ?? ""} clôturé avec succès`);
       setTicketId(undefined);
+      setEditingNumero(false);
       setForm({ numero: "", campaign_id: defaultCampaign?.id ?? "", supplier_id: "", heure_debut: "", heure_fin: "", taux_abattement: "", commentaire: "" });
       try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
       qc.invalidateQueries({ queryKey: ["reception_tickets_recent"] });
@@ -264,6 +265,7 @@ export default function ReceptionQualitative() {
       toast.success("Ticket annulé — page réinitialisée");
       setTicketId(undefined);
       setCancelMotif("");
+      setEditingNumero(false);
       setForm({ numero: "", campaign_id: defaultCampaign?.id ?? "", supplier_id: "", heure_debut: "", heure_fin: "", taux_abattement: "", commentaire: "" });
       try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
       qc.invalidateQueries({ queryKey: ["reception_photos", ticketId] });
