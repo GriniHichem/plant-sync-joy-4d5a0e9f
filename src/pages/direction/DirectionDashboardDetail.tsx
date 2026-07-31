@@ -21,12 +21,13 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { ResponsiveDialog } from "@/components/responsive/ResponsiveDialog";
 import { toast } from "sonner";
 import {
-  ArrowLeft, Check, History, LayoutGrid, Plus, RefreshCw, Save, Settings2, Sparkles, X,
+  ArrowLeft, Check, History, LayoutGrid, Plus, RefreshCw, Save, Settings2, Share2, Sparkles, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DirectionWidget, ACCENT_KEYS } from "@/components/direction/DirectionWidget";
 import { DirectionFilterBar } from "@/components/direction/DirectionFilterBar";
 import { WidgetLibraryPanel } from "@/components/direction/WidgetLibraryPanel";
+import { ShareDashboardDialog } from "@/components/direction/ShareDashboardDialog";
 import { WIDGETS, WIDGET_MAP, type LayoutItem } from "@/lib/direction/widgetCatalog";
 import { PERIOD_OPTIONS, type DashboardFilters } from "@/lib/direction/filters";
 import { DASHBOARD_TEMPLATES, buildLayout } from "@/lib/direction/templates";
