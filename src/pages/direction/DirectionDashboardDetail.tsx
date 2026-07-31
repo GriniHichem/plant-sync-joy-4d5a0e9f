@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Responsive, WidthProvider } from "react-grid-layout";
+import { Responsive as ResponsiveGrid } from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,8 +19,6 @@ import { toast } from "sonner";
 import { ArrowLeft, Check, LayoutGrid, Plus, RefreshCw, Save, Search, Settings2 } from "lucide-react";
 import { DirectionWidget } from "@/components/direction/DirectionWidget";
 import { WIDGETS, WIDGET_CATEGORIES, WIDGET_MAP, type LayoutItem } from "@/lib/direction/widgetCatalog";
-
-const ResponsiveGrid = WidthProvider(Responsive);
 
 const REFRESH_OPTIONS = [
   { v: 0, l: "Manuel" }, { v: 30, l: "30 s" }, { v: 60, l: "1 min" },
