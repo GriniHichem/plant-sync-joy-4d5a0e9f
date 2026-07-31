@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/hooks/usePermissions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +13,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { ResponsiveDialog } from "@/components/responsive/ResponsiveDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Copy, Eye, Globe, LayoutDashboard, Lock, Plus, Trash2, Users } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Copy, Eye, Globe, LayoutDashboard, Lock, Plus, Sparkles, Trash2, Users } from "lucide-react";
+import { DASHBOARD_TEMPLATES, buildLayout } from "@/lib/direction/templates";
+import { WIDGETS, WIDGET_MAP } from "@/lib/direction/widgetCatalog";
 
 interface Dashboard {
   id: string;
@@ -29,10 +33,12 @@ interface Dashboard {
 export default function DirectionDashboards() {
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, roles } = useAuth();
+  const { canView } = usePermissions();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [templateId, setTemplateId] = useState("direction");
 
   const { data: dashboards = [], isLoading } = useQuery({
     queryKey: ["direction_dashboards"],
@@ -49,16 +55,28 @@ export default function DirectionDashboards() {
   const create = useMutation({
     mutationFn: async () => {
       if (!name.trim()) throw new Error("Nom requis");
+      const tpl = DASHBOARD_TEMPLATES.find((t) => t.id === templateId);
+      const allowed = (tpl?.widgets ?? []).filter((w) => {
+        const def = WIDGET_MAP.get(w.widgetId);
+        return def && (roles.includes("admin") || canView(def.permissionModule));
+      });
+      const layout = buildLayout(allowed, (wid) => WIDGET_MAP.get(wid)?.defaultSize ?? { w: 3, h: 4 });
       const { data, error } = await supabase
         .from("direction_dashboards" as any)
-        .insert({ name: name.trim(), description: description.trim() || null, owner_id: user?.id })
+        .insert({
+          name: name.trim(),
+          description: description.trim() || null,
+          owner_id: user?.id,
+          layout: layout as any,
+          global_filters: (tpl?.filters ?? { period: "7d" }) as any,
+        })
         .select("id")
         .single();
       if (error) throw error;
       return data as any;
     },
     onSuccess: (d: any) => {
-      setOpen(false); setName(""); setDescription("");
+      setOpen(false); setName(""); setDescription(""); setTemplateId("direction");
       qc.invalidateQueries({ queryKey: ["direction_dashboards"] });
       navigate(`/direction/dashboards/${d.id}?edit=1`);
     },
@@ -97,6 +115,10 @@ export default function DirectionDashboards() {
 
   const mine = useMemo(() => dashboards.filter((d) => d.owner_id === user?.id), [dashboards, user?.id]);
   const shared = useMemo(() => dashboards.filter((d) => d.owner_id !== user?.id), [dashboards, user?.id]);
+  const widgetCount = useMemo(
+    () => WIDGETS.filter((w) => roles.includes("admin") || canView(w.permissionModule)).length,
+    [canView, roles],
+  );
 
   const VisibilityBadge = ({ v }: { v: Dashboard["visibility"] }) => (
     <Badge variant="outline" className="gap-1 text-[10px]">
@@ -144,7 +166,7 @@ export default function DirectionDashboards() {
         <div className="flex-1 min-w-0">
           <h1 className="text-2xl font-bold">Dashboard Direction</h1>
           <p className="text-sm text-muted-foreground">
-            Composez vos tableaux de bord à partir des indicateurs de tous les modules — lecture seule.
+            Composez vos tableaux de bord à partir des {widgetCount} indicateurs accessibles — lecture seule.
           </p>
         </div>
         <Button onClick={() => setOpen(true)}>
@@ -162,7 +184,7 @@ export default function DirectionDashboards() {
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Mes dashboards</h2>
             {mine.length === 0 ? (
               <Card><CardContent className="py-8 text-center text-sm text-muted-foreground">
-                Aucun dashboard. Créez-en un pour commencer.
+                Aucun dashboard. Créez-en un à partir d'un modèle prédéfini.
               </CardContent></Card>
             ) : (
               <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">{mine.map((d) => renderCard(d, true))}</div>
@@ -178,15 +200,40 @@ export default function DirectionDashboards() {
         </>
       )}
 
-      <ResponsiveDialog open={open} onOpenChange={setOpen} title="Nouveau dashboard" description="Vous pourrez ajouter les widgets ensuite.">
+      <ResponsiveDialog
+        open={open} onOpenChange={setOpen}
+        title="Nouveau dashboard"
+        description="Choisissez un modèle de départ, tout reste personnalisable ensuite."
+        className="max-w-2xl"
+      >
         <div className="space-y-3">
           <div>
             <Label>Nom *</Label>
-            <Input className="h-11" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex : Production Direction" />
+            <Input className="h-11" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex : Pilotage Direction" />
           </div>
           <div>
             <Label>Description</Label>
             <Textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
+          </div>
+          <div>
+            <Label className="flex items-center gap-1.5"><Sparkles className="h-4 w-4" /> Modèle</Label>
+            <div className="grid gap-2 sm:grid-cols-2 mt-1.5 max-h-[40vh] overflow-auto">
+              {DASHBOARD_TEMPLATES.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setTemplateId(t.id)}
+                  className={cn(
+                    "text-left rounded-md border p-2.5 transition-colors",
+                    templateId === t.id ? "border-primary bg-accent/50" : "hover:bg-accent/40",
+                  )}
+                >
+                  <p className="text-sm font-medium">{t.name}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{t.description}</p>
+                  <Badge variant="outline" className="mt-1.5 text-[10px]">{t.widgets.length} widget(s)</Badge>
+                </button>
+              ))}
+            </div>
           </div>
           <Button className="w-full h-11" disabled={!name.trim() || create.isPending} onClick={() => create.mutate()}>
             Créer et composer
