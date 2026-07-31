@@ -371,6 +371,9 @@ const App = () => (
               <Route path="/inventaire/campagnes/nouvelle" element={<InventoryCampaignNew />} />
               <Route path="/inventaire/campagnes/:id" element={<InventoryCampaignDetail />} />
               <Route path="/inventaire/compter/:campaignId" element={<InventoryCountScreen />} />
+              {/* Direction */}
+              <Route path="/direction/dashboards" element={<DirectionDashboards />} />
+              <Route path="/direction/dashboards/:id" element={<DirectionDashboardDetail />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
