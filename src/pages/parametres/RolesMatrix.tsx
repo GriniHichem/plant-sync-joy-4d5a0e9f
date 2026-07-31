@@ -88,6 +88,14 @@ const MODULE_GROUPS = [
     ],
   },
   {
+    label: "Direction",
+    icon: ShieldCheck,
+    modules: [
+      { key: "direction", label: "Module Direction (umbrella)" },
+      { key: "direction_dashboards", label: "Dashboards Direction" },
+    ],
+  },
+  {
     label: "Gouvernance",
     icon: ShieldCheck,
     modules: [
