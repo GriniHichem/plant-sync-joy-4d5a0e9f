@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Responsive as ResponsiveGrid } from "react-grid-layout";
+import { Responsive as ResponsiveGrid, useContainerWidth } from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,6 +32,7 @@ export default function DirectionDashboardDetail() {
   const { user, roles } = useAuth();
   const { canView } = usePermissions();
   const [params] = useSearchParams();
+  const { width: gridWidth, containerRef: gridRef } = useContainerWidth();
 
   const [editing, setEditing] = useState(params.get("edit") === "1");
   const [items, setItems] = useState<LayoutItem[]>([]);
@@ -184,7 +185,9 @@ export default function DirectionDashboardDetail() {
           )}
         </CardContent></Card>
       ) : (
+        <div ref={gridRef as any}>
         <ResponsiveGrid
+          width={gridWidth}
           className="layout"
           layouts={{ lg: visibleItems.map(({ i, x, y, w, h }) => ({ i, x, y, w, h, minW: 2, minH: 3 })) }}
           breakpoints={{ lg: 1200, md: 900, sm: 640, xs: 0 }}
@@ -207,6 +210,7 @@ export default function DirectionDashboardDetail() {
             </div>
           ))}
         </ResponsiveGrid>
+        </div>
       )}
 
       {/* Bibliothèque de composants */}
