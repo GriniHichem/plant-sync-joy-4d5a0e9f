@@ -191,9 +191,8 @@ export default function DirectionDashboardDetail() {
           cols={{ lg: 12, md: 8, sm: 4, xs: 2 }}
           rowHeight={30}
           margin={[12, 12]}
-          isDraggable={editing}
-          isResizable={editing}
-          draggableHandle=".drag-handle"
+          dragConfig={{ enabled: editing, handle: ".drag-handle" }}
+          resizeConfig={{ enabled: editing }}
           onLayoutChange={onLayoutChange}
         >
           {visibleItems.map((it) => (
