@@ -460,6 +460,41 @@ export type Database = {
         }
         Relationships: []
       }
+      direction_dashboard_shares: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          dashboard_id: string
+          id: string
+          shared_role: Database["public"]["Enums"]["app_role"] | null
+          shared_user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          dashboard_id: string
+          id?: string
+          shared_role?: Database["public"]["Enums"]["app_role"] | null
+          shared_user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          dashboard_id?: string
+          id?: string
+          shared_role?: Database["public"]["Enums"]["app_role"] | null
+          shared_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "direction_dashboard_shares_dashboard_id_fkey"
+            columns: ["dashboard_id"]
+            isOneToOne: false
+            referencedRelation: "direction_dashboards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       direction_dashboard_versions: {
         Row: {
           created_at: string
@@ -7269,6 +7304,11 @@ export type Database = {
           p_qte_consomme: number
         }
         Returns: undefined
+      }
+      dashboard_is_mine: { Args: { _dashboard_id: string }; Returns: boolean }
+      dashboard_is_shared_with_me: {
+        Args: { _dashboard_id: string }
+        Returns: boolean
       }
       derive_shift_type_from_now: {
         Args: never
