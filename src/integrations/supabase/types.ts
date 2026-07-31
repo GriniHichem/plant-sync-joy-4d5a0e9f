@@ -460,16 +460,62 @@ export type Database = {
         }
         Relationships: []
       }
+      direction_dashboard_versions: {
+        Row: {
+          created_at: string
+          created_by: string
+          dashboard_id: string
+          global_filters: Json
+          id: string
+          layout: Json
+          name: string
+          theme: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          dashboard_id: string
+          global_filters?: Json
+          id?: string
+          layout?: Json
+          name: string
+          theme?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          dashboard_id?: string
+          global_filters?: Json
+          id?: string
+          layout?: Json
+          name?: string
+          theme?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "direction_dashboard_versions_dashboard_id_fkey"
+            columns: ["dashboard_id"]
+            isOneToOne: false
+            referencedRelation: "direction_dashboards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       direction_dashboards: {
         Row: {
           allowed_roles: Database["public"]["Enums"]["app_role"][]
           created_at: string
           description: string | null
+          global_filters: Json
           id: string
           layout: Json
           name: string
           owner_id: string
           refresh_seconds: number
+          theme: Json
           updated_at: string
           visibility: string
         }
@@ -477,11 +523,13 @@ export type Database = {
           allowed_roles?: Database["public"]["Enums"]["app_role"][]
           created_at?: string
           description?: string | null
+          global_filters?: Json
           id?: string
           layout?: Json
           name: string
           owner_id?: string
           refresh_seconds?: number
+          theme?: Json
           updated_at?: string
           visibility?: string
         }
@@ -489,11 +537,13 @@ export type Database = {
           allowed_roles?: Database["public"]["Enums"]["app_role"][]
           created_at?: string
           description?: string | null
+          global_filters?: Json
           id?: string
           layout?: Json
           name?: string
           owner_id?: string
           refresh_seconds?: number
+          theme?: Json
           updated_at?: string
           visibility?: string
         }
