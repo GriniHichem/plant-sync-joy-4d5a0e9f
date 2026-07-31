@@ -16,6 +16,7 @@ export const UMBRELLAS: Record<string, string[]> = {
     "reception_global", "reception_settings",
   ],
   inventaire: ["inventaire_campagnes"],
+  direction: ["direction_dashboards"],
 };
 
 interface Permission {

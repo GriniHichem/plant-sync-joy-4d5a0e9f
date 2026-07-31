@@ -23,7 +23,7 @@ type AppModule = {
   description: string;
   url: string;
   icon: React.FC<{ size?: number; className?: string }>;
-  category: "Maintenance" | "Stock PDR" | "Production" | "Qualité" | "Inventaire" | "Configuration";
+  category: "Maintenance" | "Stock PDR" | "Production" | "Qualité" | "Inventaire" | "Direction" | "Configuration";
   permissionModule?: string;
   badge?: string;
   accent: string; // tailwind gradient classes
@@ -74,6 +74,7 @@ const MODULES: AppModule[] = [
   // ===== Inventaire (gris) =====
   { title: "Dashboard Inventaire", description: "Vue d'ensemble des campagnes d'inventaire", url: "/inventaire", icon: IconInventory, category: "Inventaire", permissionModule: "inventaire", accent: "from-gray-500/15 to-gray-500/5 text-gray-500" },
   { title: "Campagnes d'inventaire", description: "Double comptage A/B avec arbitrage C", url: "/inventaire/campagnes", icon: IconCampaign, category: "Inventaire", permissionModule: "inventaire_campagnes", accent: "from-gray-600/15 to-gray-600/5 text-gray-600" },
+  { title: "Dashboards Direction", description: "Tableaux de bord personnalisables multi-modules", url: "/direction/dashboards", icon: IconChart, category: "Direction", permissionModule: "direction_dashboards", accent: "from-indigo-500/15 to-indigo-500/5 text-indigo-500" },
 
   // ===== Configuration (mauve) =====
   { title: "Dashboard audit et système", description: "Journal complet des actions, sécurité et corrections", url: "/audit", icon: IconAudit, category: "Configuration", permissionModule: "audit", accent: "from-violet-600/15 to-violet-600/5 text-violet-600" },
@@ -84,7 +85,7 @@ const MODULES: AppModule[] = [
   { title: "Recherche globale", description: "Recherche transverse sur tous les modules", url: "/recherche", icon: IconSearch, category: "Configuration", permissionModule: "recherche", accent: "from-fuchsia-600/15 to-fuchsia-600/5 text-fuchsia-600" },
 ];
 
-const CATEGORIES: Array<AppModule["category"] | "Tous"> = ["Tous", "Maintenance", "Stock PDR", "Production", "Qualité", "Inventaire", "Configuration"];
+const CATEGORIES: Array<AppModule["category"] | "Tous"> = ["Tous", "Maintenance", "Stock PDR", "Production", "Qualité", "Inventaire", "Direction", "Configuration"];
 
 const CATEGORY_ICONS: Record<string, React.FC<{ size?: number; className?: string }>> = {
   Maintenance: IconMaintenance,
@@ -92,6 +93,7 @@ const CATEGORY_ICONS: Record<string, React.FC<{ size?: number; className?: strin
   Production: IconProduction,
   Qualité: IconControl,
   Inventaire: IconInventory,
+  Direction: IconChart,
   Configuration: IconSettings,
 };
 

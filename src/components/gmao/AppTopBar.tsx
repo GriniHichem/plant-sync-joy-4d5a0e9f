@@ -73,6 +73,10 @@ const inventaireItems: NavItem[] = [
   { title: "Campagnes", url: "/inventaire/campagnes", icon: ClipboardList, module: "inventaire_campagnes" },
 ];
 
+const directionItems: NavItem[] = [
+  { title: "Mes dashboards", url: "/direction/dashboards", icon: IconAnalytics, module: "direction_dashboards" },
+];
+
 const configItems: NavItem[] = [
   { title: "Paramètres", url: "/parametres", icon: IconSettings, module: "parametres" },
   { title: "Sécurité & Accès", url: "/securite", icon: Lock, module: "securite" },
@@ -150,12 +154,14 @@ function MobileNav({
   visibleGpao,
   visibleQualite,
   visibleInventaire,
+  visibleDirection,
   visibleConfig,
 }: {
   visibleGmao: NavItem[];
   visibleGpao: NavItem[];
   visibleQualite: NavItem[];
   visibleInventaire: NavItem[];
+  visibleDirection: NavItem[];
   visibleConfig: NavItem[];
 }) {
   const [open, setOpen] = useState(false);
@@ -195,6 +201,7 @@ function MobileNav({
     { label: "Production", items: visibleGpao },
     { label: "Qualité", items: visibleQualite },
     { label: "Inventaire", items: visibleInventaire },
+    { label: "Direction", items: visibleDirection },
     { label: "Configuration", items: visibleConfig },
   ].filter((g) => g.items.length > 0);
 
@@ -251,18 +258,21 @@ export function AppTopBar() {
   const visibleGpao = filterByPerm(gpaoItems);
   const visibleQualite = filterByPerm(qualiteItems);
   const visibleInventaire = filterByPerm(inventaireItems);
+  const visibleDirection = filterByPerm(directionItems);
   const visibleConfig = filterByPerm(configItems);
 
   const isGmaoActive = visibleGmao.some((i) => isActive(location.pathname, i.url));
   const isGpaoActive = visibleGpao.some((i) => isActive(location.pathname, i.url));
   const isQualiteActive = visibleQualite.some((i) => isActive(location.pathname, i.url));
   const isInventaireActive = visibleInventaire.some((i) => isActive(location.pathname, i.url));
+  const isDirectionActive = visibleDirection.some((i) => isActive(location.pathname, i.url));
   const isConfigActive = visibleConfig.some((i) => isActive(location.pathname, i.url));
 
   const showInventaire = visibleInventaire.length > 0;
   const showQualite = visibleQualite.length > 0;
   const showGmao = visibleGmao.length > 0;
   const showGpao = visibleGpao.length > 0;
+  const showDirection = visibleDirection.length > 0;
   const showConfig = visibleConfig.length > 0;
 
   const displayName = profile
@@ -289,6 +299,7 @@ export function AppTopBar() {
           visibleGpao={visibleGpao}
           visibleQualite={visibleQualite}
           visibleInventaire={visibleInventaire}
+          visibleDirection={visibleDirection}
           visibleConfig={visibleConfig}
         />
 
@@ -324,6 +335,9 @@ export function AppTopBar() {
           {showQualite && <MegaMenu label="Qualité" GroupIcon={ClipboardCheck} items={visibleQualite} active={isQualiteActive} />}
           {showInventaire && (
             <MegaMenu label="Inventaire" GroupIcon={ClipboardList} items={visibleInventaire} active={isInventaireActive} />
+          )}
+          {showDirection && (
+            <MegaMenu label="Direction" GroupIcon={IconAnalytics} items={visibleDirection} active={isDirectionActive} />
           )}
           {showConfig && <MegaMenu label="Configuration" GroupIcon={Cog} items={visibleConfig} active={isConfigActive} />}
         </nav>

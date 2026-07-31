@@ -460,6 +460,45 @@ export type Database = {
         }
         Relationships: []
       }
+      direction_dashboards: {
+        Row: {
+          allowed_roles: Database["public"]["Enums"]["app_role"][]
+          created_at: string
+          description: string | null
+          id: string
+          layout: Json
+          name: string
+          owner_id: string
+          refresh_seconds: number
+          updated_at: string
+          visibility: string
+        }
+        Insert: {
+          allowed_roles?: Database["public"]["Enums"]["app_role"][]
+          created_at?: string
+          description?: string | null
+          id?: string
+          layout?: Json
+          name: string
+          owner_id?: string
+          refresh_seconds?: number
+          updated_at?: string
+          visibility?: string
+        }
+        Update: {
+          allowed_roles?: Database["public"]["Enums"]["app_role"][]
+          created_at?: string
+          description?: string | null
+          id?: string
+          layout?: Json
+          name?: string
+          owner_id?: string
+          refresh_seconds?: number
+          updated_at?: string
+          visibility?: string
+        }
+        Relationships: []
+      }
       document_audit_logs: {
         Row: {
           action: string
