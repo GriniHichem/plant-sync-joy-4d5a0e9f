@@ -74,6 +74,7 @@ const MODULES: AppModule[] = [
   // ===== Inventaire (gris) =====
   { title: "Dashboard Inventaire", description: "Vue d'ensemble des campagnes d'inventaire", url: "/inventaire", icon: IconInventory, category: "Inventaire", permissionModule: "inventaire", accent: "from-gray-500/15 to-gray-500/5 text-gray-500" },
   { title: "Campagnes d'inventaire", description: "Double comptage A/B avec arbitrage C", url: "/inventaire/campagnes", icon: IconCampaign, category: "Inventaire", permissionModule: "inventaire_campagnes", accent: "from-gray-600/15 to-gray-600/5 text-gray-600" },
+  { title: "Dashboards Direction", description: "Tableaux de bord personnalisables multi-modules", url: "/direction/dashboards", icon: IconChart, category: "Direction", permissionModule: "direction_dashboards", accent: "from-indigo-500/15 to-indigo-500/5 text-indigo-500" },
 
   // ===== Configuration (mauve) =====
   { title: "Dashboard audit et système", description: "Journal complet des actions, sécurité et corrections", url: "/audit", icon: IconAudit, category: "Configuration", permissionModule: "audit", accent: "from-violet-600/15 to-violet-600/5 text-violet-600" },
