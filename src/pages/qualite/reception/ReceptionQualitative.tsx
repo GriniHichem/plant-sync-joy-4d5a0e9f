@@ -412,17 +412,48 @@ export default function ReceptionQualitative() {
             </div>
             <div className="min-w-0">
               <Label className="text-xs">N° ticket *</Label>
-              <Input
-                className="h-11 w-full"
-                value={form.numero}
-                disabled={!!ticketId}
-                maxLength={50}
-                placeholder="10001"
-                onChange={(e) => {
-                  setIgnoredSequenceFor(null);
-                  setForm({ ...form, numero: e.target.value });
-                }}
-              />
+              {ticketId && editingNumero ? (
+                <div className="flex gap-1 min-w-0">
+                  <Input
+                    className="h-11 flex-1 min-w-0 font-mono"
+                    value={numeroDraft}
+                    maxLength={50}
+                    autoFocus
+                    onChange={(e) => setNumeroDraft(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") renameTicket.mutate(numeroDraft); }}
+                  />
+                  <Button type="button" size="icon" className="h-11 w-11 shrink-0" title="Valider"
+                    disabled={renameTicket.isPending || !numeroDraft.trim()}
+                    onClick={() => renameTicket.mutate(numeroDraft)}>
+                    {renameTicket.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                  </Button>
+                  <Button type="button" variant="outline" size="icon" className="h-11 w-11 shrink-0" title="Annuler"
+                    onClick={() => setEditingNumero(false)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex gap-1 min-w-0">
+                  <Input
+                    className="h-11 flex-1 min-w-0"
+                    value={form.numero}
+                    disabled={!!ticketId}
+                    maxLength={50}
+                    placeholder="10001"
+                    onChange={(e) => {
+                      setIgnoredSequenceFor(null);
+                      setForm({ ...form, numero: e.target.value });
+                    }}
+                  />
+                  {ticketId && (
+                    <Button type="button" variant="outline" size="icon" className="h-11 w-11 shrink-0"
+                      title="Modifier le numéro (avant clôture)"
+                      onClick={() => { setNumeroDraft(form.numero); setEditingNumero(true); }}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
             <div className="min-w-0">
               <Label className="text-xs">Heure début *</Label>
@@ -441,8 +472,18 @@ export default function ReceptionQualitative() {
                   <Clock className="h-4 w-4" />
                 </Button>
               </div>
+              {(() => {
+                const d = computeDurationMinutes(form.heure_debut, form.heure_fin);
+                if (d == null) return null;
+                return (
+                  <p className={`text-xs mt-1 tabular-nums ${isOverdue(d) ? "text-destructive font-medium" : "text-muted-foreground"}`}>
+                    Durée : {formatDuration(d)}{isOverdue(d) ? " — hors délai (> 20 min)" : ""}
+                  </p>
+                );
+              })()}
             </div>
           </div>
+
 
           {showSequenceWarning && sequenceWarning && (
             <div
