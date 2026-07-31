@@ -38,6 +38,8 @@ export default function ReceptionQualitative() {
   const [supplierOpen, setSupplierOpen] = useState(false);
   const [advisorOpen, setAdvisorOpen] = useState(false);
   const [ignoredSequenceFor, setIgnoredSequenceFor] = useState<string | null>(null);
+  const [editingNumero, setEditingNumero] = useState(false);
+  const [numeroDraft, setNumeroDraft] = useState("");
   const [form, setForm] = useState({
     numero: "",
     campaign_id: "",
