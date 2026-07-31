@@ -76,6 +76,10 @@ const inventaireItems: NavItem[] = [
   { title: "Campagnes", url: "/inventaire/campagnes", icon: ClipboardList, module: "inventaire_campagnes" },
 ];
 
+const directionItems: NavItem[] = [
+  { title: "Mes dashboards", url: "/direction/dashboards", icon: IconChart, module: "direction_dashboards" },
+];
+
 const adminItems: NavItem[] = [
   { title: "Sécurité & Accès", url: "/securite", icon: Lock, module: "securite" },
   { title: "Validations", url: "/validations", icon: CheckSquare, module: "validations" },
