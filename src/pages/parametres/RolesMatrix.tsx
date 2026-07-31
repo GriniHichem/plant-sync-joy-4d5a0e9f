@@ -193,32 +193,33 @@ const LOG_MODS = ["pdr_demandes", "shift_magasin", "journal_stock"];
 const PROD_MODS = ["gpao_dashboard", "of", "produits", "articles", "recettes", "shift_production", "consommations", "arrets"];
 const QUALITY_MODS = ["qualite", "qualite_dashboard", "qualite_of", "qualite_indicateurs", "qualite_controles", "qualite_nc", "qualite_actions", "qualite_recettes", "qualite_tracabilite", "qualite_rapports", "qualite_shift", "reception"];
 const INV_MODS = ["inventaire", "inventaire_campagnes"];
+const DIR_MODS = ["direction", "direction_dashboards"];
 const GOV_MODS = ["audit", "validations", "validations_rules", "notifications", "notifications_rules", "securite"];
 const CFG_MODS = ["parametres", "utilisateurs", "referentiels", "documents", "pdr_stock_config", "qualite_parametres", "smtp", "general", "images", "recherche", "apps"];
-const ALL_KEYS = [...MAINT_MODS, ...LOG_MODS, ...PROD_MODS, ...QUALITY_MODS, ...INV_MODS, ...GOV_MODS, ...CFG_MODS];
+const ALL_KEYS = [...MAINT_MODS, ...LOG_MODS, ...PROD_MODS, ...QUALITY_MODS, ...INV_MODS, ...DIR_MODS, ...GOV_MODS, ...CFG_MODS];
 
 const ROLE_DEFAULTS: Record<string, Record<string, Preset>> = {
   admin: ap(ALL_KEYS, FULL),
   responsable_si: ap(ALL_KEYS, FULL),
   auditeur: ap(ALL_KEYS, RO),
 
-  resp_maintenance: { ...ap(MAINT_MODS, FULL), ...ap(PROD_MODS, RO), qualite: RO, inventaire: RO, audit: RO, validations: RW, notifications: RW, apps: RO, recherche: RO, parametres: RO, referentiels: RO },
+  resp_maintenance: { ...ap(DIR_MODS, FULL), ...ap(MAINT_MODS, FULL), ...ap(PROD_MODS, RO), qualite: RO, inventaire: RO, audit: RO, validations: RW, notifications: RW, apps: RO, recherche: RO, parametres: RO, referentiels: RO },
   maintenancier: { ...ap(MAINT_MODS, RW), tickets: FULL, journal: RO, historique: RO, analytiques: RO, notifications: RO, apps: RO, recherche: RO },
   bureau_methode: { ...ap(MAINT_MODS, RW), preventif: FULL, recettes: RW, analytiques: RO, notifications: RO, apps: RO, recherche: RO },
 
-  resp_production: { ...ap(PROD_MODS, FULL), ...ap(MAINT_MODS, RO), tickets: RC, qualite: RO, inventaire: RO, analytiques: RO, audit: RO, validations: RW, notifications: RW, apps: RO, recherche: RO, parametres: RO },
+  resp_production: { ...ap(DIR_MODS, FULL), ...ap(PROD_MODS, FULL), ...ap(MAINT_MODS, RO), tickets: RC, qualite: RO, inventaire: RO, analytiques: RO, audit: RO, validations: RW, notifications: RW, apps: RO, recherche: RO, parametres: RO },
   chef_ligne: { ...ap(PROD_MODS, RW), of: RW, dashboard: RO, machines: RO, equipements: RO, organes: RO, lignes: RO, tickets: RC, analytiques: RO, notifications: RO, apps: RO, recherche: RO },
   operateur: { gpao_dashboard: RO, of: RO, produits: RO, articles: RO, recettes: RO, shift_production: RW, arrets: RW, consommations: RW, dashboard: RO, machines: RO, lignes: RO, tickets: RC, notifications: RO, apps: RO, recherche: RO },
 
-  directeur_qualite: { ...ap(QUALITY_MODS, FULL), ...ap(PROD_MODS, RO), ...ap(MAINT_MODS, RO), qualite_parametres: RW, analytiques: RO, audit: RO, validations: RW, notifications: RW, apps: RO, recherche: RO, parametres: RO },
-  responsable_controle_qualite: { ...ap(QUALITY_MODS, FULL), of: RO, produits: RO, articles: RO, recettes: RO, dashboard: RO, machines: RO, lignes: RO, analytiques: RO, qualite_parametres: RW, notifications: RW, apps: RO, recherche: RO },
+  directeur_qualite: { ...ap(DIR_MODS, FULL), ...ap(QUALITY_MODS, FULL), ...ap(PROD_MODS, RO), ...ap(MAINT_MODS, RO), qualite_parametres: RW, analytiques: RO, audit: RO, validations: RW, notifications: RW, apps: RO, recherche: RO, parametres: RO },
+  responsable_controle_qualite: { ...ap(DIR_MODS, FULL), ...ap(QUALITY_MODS, FULL), of: RO, produits: RO, articles: RO, recettes: RO, dashboard: RO, machines: RO, lignes: RO, analytiques: RO, qualite_parametres: RW, notifications: RW, apps: RO, recherche: RO },
   controleur_qualite: { qualite: RW, qualite_dashboard: RO, qualite_of: RO, qualite_indicateurs: RO, qualite_controles: RW, qualite_nc: RW, qualite_actions: RO, qualite_recettes: RO, qualite_tracabilite: RO, qualite_rapports: RO, qualite_shift: RW, of: RO, produits: RO, lignes: RO, machines: RO, notifications: RO, apps: RO, recherche: RO },
   agent_pont_bascule: { reception: RO, qualite: RO, qualite_dashboard: RO, notifications: RO, apps: RO, recherche: RO },
   agreeur: { reception: RW, qualite: RO, notifications: RO, apps: RO, recherche: RO },
 
   gestionnaire_magasin: { pdr: FULL, pdr_demandes: RW, shift_magasin: RW, journal_stock: RO, articles: RW, dashboard: RO, machines: RO, equipements: RO, organes: RO, inventaire: RW, inventaire_campagnes: RW, notifications: RO, apps: RO, recherche: RO },
-  responsable_magasin: { pdr: FULL, pdr_demandes: FULL, shift_magasin: FULL, journal_stock: FULL, articles: RW, dashboard: RO, machines: RO, equipements: RO, organes: RO, pdr_stock_config: FULL, journal: RO, historique: RO, analytiques: RO, documents: RO, audit: RO, inventaire: RW, inventaire_campagnes: RW, notifications: RW, apps: RO, recherche: RO },
-  responsable_inventaire: { inventaire: FULL, inventaire_campagnes: FULL, pdr: RW, articles: RO, dashboard: RO, machines: RO, organes: RO, analytiques: RO, notifications: RW, apps: RO, recherche: RO },
+  responsable_magasin: { ...ap(DIR_MODS, FULL), pdr: FULL, pdr_demandes: FULL, shift_magasin: FULL, journal_stock: FULL, articles: RW, dashboard: RO, machines: RO, equipements: RO, organes: RO, pdr_stock_config: FULL, journal: RO, historique: RO, analytiques: RO, documents: RO, audit: RO, inventaire: RW, inventaire_campagnes: RW, notifications: RW, apps: RO, recherche: RO },
+  responsable_inventaire: { ...ap(DIR_MODS, FULL), inventaire: FULL, inventaire_campagnes: FULL, pdr: RW, articles: RO, dashboard: RO, machines: RO, organes: RO, analytiques: RO, notifications: RW, apps: RO, recherche: RO },
   agent_inventaire: { inventaire: RW, inventaire_campagnes: RW, pdr: RO, articles: RO, machines: RO, organes: RO, apps: RO, recherche: RO },
 };
 
