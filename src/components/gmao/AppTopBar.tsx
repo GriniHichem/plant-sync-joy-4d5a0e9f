@@ -252,6 +252,7 @@ export function AppTopBar() {
   const navigate = useNavigate();
   const { profile, roles, realRoles, signOut, hasRole } = useAuth();
   const { canView, loading: permsLoading } = usePermissions();
+  const { data: sharedCount = 0 } = useSharedDashboardsCount();
   const [impersonationOpen, setImpersonationOpen] = useState(false);
   const isRealAdmin = realRoles.includes("admin" as any);
 
