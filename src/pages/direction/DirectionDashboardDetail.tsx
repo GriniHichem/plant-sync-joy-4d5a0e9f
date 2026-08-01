@@ -122,7 +122,14 @@ export default function DirectionDashboardDetail() {
     return () => window.removeEventListener("beforeunload", h);
   }, [dirty]);
 
-  const isOwner = dashboard?.owner_id === user?.id || roles.includes("admin");
+  const isAdmin = roles.includes("admin");
+  const isOwner = !!dashboard && (dashboard.owner_id === user?.id || isAdmin);
+  // Lecture seule : dashboard partagé, ou droit "Modifier" absent sur le module.
+  const canModify = isOwner && (isAdmin || canEdit("direction_dashboards"));
+
+  useEffect(() => {
+    if (!canModify && editing) setEditing(false);
+  }, [canModify, editing]);
 
   const save = useMutation({
     mutationFn: async (patch: Record<string, any>) => {
