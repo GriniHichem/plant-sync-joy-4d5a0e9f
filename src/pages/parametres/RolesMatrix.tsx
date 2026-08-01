@@ -91,8 +91,8 @@ const MODULE_GROUPS = [
     label: "Direction",
     icon: ShieldCheck,
     modules: [
-      { key: "direction", label: "Module Direction (umbrella)" },
-      { key: "direction_dashboards", label: "Dashboards Direction" },
+      { key: "direction", label: "Module Dashboard Design (umbrella)" },
+      { key: "direction_dashboards", label: "Dashboard Design" },
     ],
   },
   {

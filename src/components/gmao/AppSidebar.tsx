@@ -1,6 +1,7 @@
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSharedDashboardsCount } from "@/hooks/useSharedDashboards";
 import { usePermissions } from "@/hooks/usePermissions";
 import logoEntreprise from "@/assets/logo-entreprise.jpg";
 import {
@@ -77,8 +78,12 @@ const inventaireItems: NavItem[] = [
 ];
 
 const directionItems: NavItem[] = [
-  { title: "Mes dashboards", url: "/direction/dashboards", icon: IconChart, module: "direction_dashboards" },
+  { title: "Dashboard Design", url: "/dashboard-design/dashboards", icon: IconChart, module: "direction_dashboards" },
 ];
+
+const sharedDashboardItem: NavItem = {
+  title: "Mes Dashboards", url: "/dashboard-design/partages", icon: IconChart,
+};
 
 const adminItems: NavItem[] = [
   { title: "Sécurité & Accès", url: "/securite", icon: Lock, module: "securite" },
@@ -92,6 +97,7 @@ export function AppSidebar() {
   const location = useLocation();
   const { profile, roles, signOut, hasRole } = useAuth();
   const { canView, loading: permsLoading } = usePermissions();
+  const { data: sharedCount = 0 } = useSharedDashboardsCount();
 
   const filterByPerm = (items: NavItem[]) => {
     if (permsLoading) return [];
@@ -103,7 +109,10 @@ export function AppSidebar() {
   const visibleGpao = filterByPerm(gpaoItems);
   const visibleQualite = filterByPerm(qualiteItems);
   const visibleInventaire = filterByPerm(inventaireItems);
-  const visibleDirection = filterByPerm(directionItems);
+  const visibleDirection = [
+    ...filterByPerm(directionItems),
+    ...(sharedCount > 0 ? [sharedDashboardItem] : []),
+  ];
   const visibleAdmin = filterByPerm(adminItems);
 
   const isActive = (path: string) =>
@@ -240,7 +249,7 @@ export function AppSidebar() {
         {showDirection && (
           <>
             <div className="mx-3 my-1 h-px bg-gradient-to-r from-transparent via-sidebar-border/50 to-transparent" />
-            {renderGroup("Direction", IconChart, visibleDirection, isDirectionActive)}
+            {renderGroup("Dashboard Design", IconChart, visibleDirection, isDirectionActive)}
           </>
         )}
 
