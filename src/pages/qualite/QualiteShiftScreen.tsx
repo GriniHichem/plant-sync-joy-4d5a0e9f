@@ -54,7 +54,11 @@ export default function QualiteShiftScreen() {
   const [ofs, setOfs] = useState<OfItem[]>([]);
   const [ofsLoading, setOfsLoading] = useState(false);
   const [selectedOfId, setSelectedOfId] = useState<string>("");
-  const [stats, setStats] = useState({ checks: 0, conforms: 0, ncs: 0, ofs: 0 });
+  const [stats, setStats] = useState({ checks: 0, conforms: 0, nonConforms: 0, ncs: 0, ofs: 0, conformityRate: null as number | null });
+
+  const criticalOverdue = useMemo(() => ofs.reduce((s, o) => s + (o.criticalOverdue ?? 0), 0), [ofs]);
+  useCriticalOverdueAlarm(criticalOverdue, !!shift);
+
 
   const canStart =
     hasRole("admin") ||
