@@ -303,13 +303,14 @@ describe("non-régression — intégration dans les écrans de shift", () => {
   });
 
 
-  it("les écrans de shift lisent le plan de contrôle via la RPC unique", () => {
+  it("les écrans de saisie lisent le plan de contrôle via la RPC unique", () => {
     ["src/pages/shift/QualityShiftCheck.tsx",
      "src/pages/qualite/QualiteSaisieLigne.tsx",
-     "src/pages/qualite/QualiteShiftScreen.tsx"].forEach((f) => {
+     "src/components/qualite/OfControlsPanel.tsx"].forEach((f) => {
       expect(read(f)).toMatch(/get_quality_indicators_for_of/);
     });
   });
+
 
   it("aucun écran qualité n'écrit dans les tables de production", () => {
     ["src/pages/shift/QualityShiftCheck.tsx",
