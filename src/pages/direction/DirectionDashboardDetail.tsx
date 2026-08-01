@@ -457,7 +457,7 @@ export default function DirectionDashboardDetail() {
                   <Button size="sm" variant="outline" onClick={() => {
                     setItems(Array.isArray(v.layout) ? v.layout : []);
                     setFilters(v.global_filters ?? { period: "7d" });
-                    setDirty(true);
+                    if (canModify) setDirty(true);
                     setVersionsOpen(false);
                     toast.success(`Version « ${v.name} » chargée`);
                   }}>Charger</Button>
