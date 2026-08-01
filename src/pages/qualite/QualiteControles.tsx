@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { usePermissions } from "@/hooks/usePermissions";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ResponsiveDialog } from "@/components/responsive/ResponsiveDialog";
-import { ClipboardList, Plus, RotateCcw, Search, Download, AlertOctagon } from "lucide-react";
+import { ClipboardList, RotateCcw, Search, Download, AlertOctagon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { exportToCsv } from "@/lib/exportCsv";
 import { logAudit } from "@/lib/audit";
@@ -195,7 +194,6 @@ const labelOf = (r?: { name?: string | null; designation?: string | null; code?:
 
 export default function QualiteControles() {
   const { user } = useAuth();
-  const { canCreate } = usePermissions();
   const { toast } = useToast();
   const { shift: activeQualityShift } = useActiveQualityShift();
 
@@ -289,7 +287,6 @@ export default function QualiteControles() {
     });
   }, [currentIndicator, form.value_text, form.value_boolean]);
 
-  const openNew = () => { setForm(emptyCheckForm()); setApplicable([]); setOpen(true); };
 
   const handleSave = async () => {
     const err = validateCheck(form, currentIndicator?.indicator_type);
@@ -395,9 +392,6 @@ export default function QualiteControles() {
           <Button variant="outline" onClick={handleExport} disabled={filtered.length === 0}>
             <Download className="h-4 w-4" /> Export CSV
           </Button>
-          {canCreate("qualite") && (
-            <Button onClick={openNew}><Plus className="h-4 w-4" /> Nouveau contrôle</Button>
-          )}
         </div>
       </div>
 
