@@ -3,12 +3,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Eye, LayoutDashboard, Share2 } from "lucide-react";
+import { Eye, LayoutDashboard, Share2, Star } from "lucide-react";
+import { useDefaultDashboard, useSetDefaultDashboard } from "@/hooks/useDefaultDashboard";
+import { cn } from "@/lib/utils";
 import { useSharedDashboards } from "@/hooks/useSharedDashboards";
 
 export default function SharedDashboards() {
   const navigate = useNavigate();
   const { data: dashboards = [], isLoading } = useSharedDashboards();
+  const { data: defaultDashboard } = useDefaultDashboard();
+  const setDefault = useSetDefaultDashboard();
 
   return (
     <div className="p-4 md:p-6 space-y-6">
@@ -43,6 +47,11 @@ export default function SharedDashboards() {
                     <CardTitle className="text-base truncate">{d.name}</CardTitle>
                     <CardDescription className="truncate">{d.description || "—"}</CardDescription>
                   </div>
+                  {defaultDashboard?.id === d.id && (
+                    <Badge className="gap-1 text-[10px] bg-amber-500 text-white hover:bg-amber-500 shrink-0">
+                      <Star className="h-3 w-3 fill-current" /> Défaut
+                    </Badge>
+                  )}
                   <Badge variant="outline" className="text-[10px] shrink-0">Lecture seule</Badge>
                 </div>
               </CardHeader>
@@ -51,6 +60,15 @@ export default function SharedDashboards() {
                   {Array.isArray(d.layout) ? d.layout.length : 0} widget(s)
                 </Badge>
                 <div className="flex-1" />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  title={defaultDashboard?.id === d.id ? "Retirer le défaut" : "Définir comme dashboard par défaut"}
+                  disabled={setDefault.isPending}
+                  onClick={() => setDefault.mutate(defaultDashboard?.id === d.id ? null : d.id)}
+                >
+                  <Star className={cn("h-4 w-4", defaultDashboard?.id === d.id && "fill-amber-400 text-amber-500")} />
+                </Button>
                 <Button size="sm" onClick={() => navigate(`/dashboard-design/dashboards/${d.id}`)}>
                   <Eye className="h-4 w-4 mr-1" /> Consulter
                 </Button>
