@@ -330,7 +330,9 @@ export default function QualiteShiftScreen() {
                     >
                       <div className="flex items-center justify-between gap-2">
                         <span className="font-medium truncate">{o.numero}</span>
-                        {o.overdue > 0 ? (
+                        {o.criticalOverdue > 0 ? (
+                          <Badge variant="destructive" className="text-[10px] animate-pulse">⚠ {o.criticalOverdue} critique</Badge>
+                        ) : o.overdue > 0 ? (
                           <Badge variant="destructive" className="text-[10px]">{o.overdue} retard</Badge>
                         ) : o.due > 0 ? (
                           <Badge variant="outline" className="border-amber-500 text-amber-600 text-[10px]">{o.due} à saisir</Badge>
@@ -338,6 +340,7 @@ export default function QualiteShiftScreen() {
                           <Badge variant="outline" className="text-[10px] text-muted-foreground">à jour</Badge>
                         )}
                       </div>
+
                       <div className="text-xs text-muted-foreground truncate">{o.productLabel} · {o.lineLabel}</div>
                       {o.onCoveredLine && <span className="text-[10px] text-primary">Ligne couverte</span>}
                     </button>
