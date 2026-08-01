@@ -79,14 +79,15 @@ export default function QualiteShiftScreen() {
 
   // Shift KPIs
   useEffect(() => {
-    if (!shift) { setStats({ checks: 0, conforms: 0, ncs: 0, ofs: 0 }); return; }
+    if (!shift) { setStats({ checks: 0, conforms: 0, nonConforms: 0, ncs: 0, ofs: 0, conformityRate: null }); return; }
     (async () => {
       const [checksRes, ncRes] = await Promise.all([
         supabase.from("quality_checks" as any).select("id, is_conform, of_id").eq("quality_shift_id", shift.id),
         supabase.from("quality_non_conformities" as any).select("id").eq("quality_shift_id", shift.id),
       ]);
       const k = computeShiftKpis((checksRes.data as any[]) ?? [], ((ncRes.data as any[]) ?? []).length);
-      setStats({ checks: k.checks, conforms: k.conforms, ncs: k.ncs, ofs: k.ofs });
+      setStats({ checks: k.checks, conforms: k.conforms, nonConforms: k.nonConforms, ncs: k.ncs, ofs: k.ofs, conformityRate: k.conformityRate });
+
     })();
   }, [shift, ofs]);
 
