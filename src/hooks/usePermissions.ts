@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 // a sub-module is explicitly configured in role_permissions.
 export const UMBRELLAS: Record<string, string[]> = {
   qualite: [
-    "qualite_dashboard", "qualite_of", "qualite_indicateurs",
+    "qualite_dashboard", "qualite_of", "qualite_indicateurs", "qualite_plan_controle",
     "qualite_controles", "qualite_nc", "qualite_actions",
     "qualite_recettes", "qualite_tracabilite", "qualite_rapports", "qualite_shift",
     "reception",

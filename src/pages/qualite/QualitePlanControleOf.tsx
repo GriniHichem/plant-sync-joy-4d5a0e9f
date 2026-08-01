@@ -56,7 +56,7 @@ const SCOPE_LABEL: Record<string, string> = {
 export default function QualitePlanControleOf() {
   const { user } = useAuth();
   const { canEdit, canCreate } = usePermissions();
-  const mayManage = canCreate("qualite_indicateurs") || canEdit("qualite_indicateurs");
+  const mayManage = canCreate("qualite_plan_controle") || canEdit("qualite_plan_controle");
 
   const [ofs, setOfs] = useState<OfRow[]>([]);
   const [ofId, setOfId] = useState<string>("");

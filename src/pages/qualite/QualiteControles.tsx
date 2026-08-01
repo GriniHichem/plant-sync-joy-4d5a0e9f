@@ -387,9 +387,9 @@ export default function QualiteControles() {
         <div>
           <h1 className="text-2xl font-semibold flex items-center gap-2">
             <ClipboardList className="h-6 w-6 text-primary" />
-            Contrôles qualité
+            Historique des contrôles
           </h1>
-          <p className="text-sm text-muted-foreground">Saisie et suivi des contrôles par OF</p>
+          <p className="text-sm text-muted-foreground">Journal et suivi des contrôles réalisés par OF</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={handleExport} disabled={filtered.length === 0}>
