@@ -35,11 +35,16 @@ export default function DirectionDashboards() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const { user, roles } = useAuth();
-  const { canView } = usePermissions();
+  const { canView, canCreate, canDelete } = usePermissions();
   const [open, setOpen] = useState(false);
+  const [shareId, setShareId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [templateId, setTemplateId] = useState("direction");
+  const isAdmin = roles.includes("admin");
+  const mayCreate = isAdmin || canCreate("direction_dashboards");
+  const mayDelete = isAdmin || canDelete("direction_dashboards");
+
 
   const { data: dashboards = [], isLoading } = useQuery({
     queryKey: ["direction_dashboards"],
