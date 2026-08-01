@@ -14,7 +14,8 @@ import { ResponsiveDialog } from "@/components/responsive/ResponsiveDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { Copy, Eye, Globe, LayoutDashboard, Lock, Plus, Share2, Sparkles, Trash2, Users } from "lucide-react";
+import { Copy, Eye, Globe, LayoutDashboard, Lock, Plus, Share2, Sparkles, Star, Trash2, Users } from "lucide-react";
+import { useDefaultDashboard, useSetDefaultDashboard } from "@/hooks/useDefaultDashboard";
 import { DASHBOARD_TEMPLATES, buildLayout } from "@/lib/direction/templates";
 import { WIDGETS, WIDGET_MAP } from "@/lib/direction/widgetCatalog";
 import { ShareDashboardDialog } from "@/components/direction/ShareDashboardDialog";
@@ -36,6 +37,8 @@ export default function DirectionDashboards() {
   const navigate = useNavigate();
   const { user, roles } = useAuth();
   const { canView, canCreate, canDelete } = usePermissions();
+  const { data: defaultDashboard } = useDefaultDashboard();
+  const setDefault = useSetDefaultDashboard();
   const [open, setOpen] = useState(false);
   const [shareId, setShareId] = useState<string | null>(null);
   const [name, setName] = useState("");
@@ -142,6 +145,11 @@ export default function DirectionDashboards() {
             <CardTitle className="text-base truncate">{d.name}</CardTitle>
             <CardDescription className="truncate">{d.description || "—"}</CardDescription>
           </div>
+          {defaultDashboard?.id === d.id && (
+            <Badge className="gap-1 text-[10px] bg-amber-500 text-white hover:bg-amber-500 shrink-0">
+              <Star className="h-3 w-3 fill-current" /> Défaut
+            </Badge>
+          )}
           {owned ? <VisibilityBadge v={d.visibility} /> : <Badge variant="secondary" className="text-[10px]">Lecture seule</Badge>}
         </div>
       </CardHeader>
@@ -152,6 +160,15 @@ export default function DirectionDashboards() {
         <div className="flex-1" />
         <Button size="sm" onClick={() => navigate(`/dashboard-design/dashboards/${d.id}`)}>
           <Eye className="h-4 w-4 mr-1" /> Ouvrir
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          title={defaultDashboard?.id === d.id ? "Retirer le défaut" : "Définir comme dashboard par défaut"}
+          disabled={setDefault.isPending}
+          onClick={() => setDefault.mutate(defaultDashboard?.id === d.id ? null : d.id)}
+        >
+          <Star className={cn("h-4 w-4", defaultDashboard?.id === d.id && "fill-amber-400 text-amber-500")} />
         </Button>
         {owned && (
           <Button size="sm" variant="outline" title="Partager" onClick={() => setShareId(d.id)}>

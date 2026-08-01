@@ -6598,6 +6598,35 @@ export type Database = {
           },
         ]
       }
+      user_dashboard_preferences: {
+        Row: {
+          created_at: string
+          default_dashboard_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          default_dashboard_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          default_dashboard_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_dashboard_preferences_default_dashboard_id_fkey"
+            columns: ["default_dashboard_id"]
+            isOneToOne: false
+            referencedRelation: "direction_dashboards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_notification_preferences: {
         Row: {
           created_at: string
