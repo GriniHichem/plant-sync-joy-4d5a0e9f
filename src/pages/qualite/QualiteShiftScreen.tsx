@@ -83,48 +83,39 @@ export default function QualiteShiftScreen() {
     })();
   }, [shift, ofs]);
 
-  // Active OFs + due status
+  // Active OFs + due status — une seule RPC batch pour tous les OF
   const loadOfs = async () => {
     setOfsLoading(true);
-    const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
-    const [ofRes, prodRes, lineRes, checkRes] = await Promise.all([
-      (supabase as any).from("ordres_fabrication").select("id, numero, product_id, line_id")
-        .eq("statut", "en_cours").order("created_at", { ascending: false }).limit(60),
-      (supabase as any).from("products").select("id, name, designation, code"),
-      (supabase as any).from("production_lines").select("id, name, designation, code"),
-      (supabase as any).from("quality_checks").select("of_id, indicator_id, control_time")
-        .gte("control_time", todayStart.toISOString()).limit(2000),
-    ]);
-    const prodById = new Map((prodRes.data || []).map((p: any) => [p.id, p]));
-    const lineById = new Map((lineRes.data || []).map((l: any) => [l.id, l]));
-    const checks: any[] = checkRes.data || [];
-    const coveredLineIds = new Set((shift?.lines ?? []).map((l) => l.id));
-    const rawOfs: any[] = ofRes.data || [];
-
-    const items = await Promise.all(rawOfs.map(async (of) => {
-      const { data } = await (supabase as any).rpc("get_quality_indicators_for_of", { p_of_id: of.id });
-      const lastByInd = lastCheckByIndicator(checks.filter((c) => c.of_id === of.id));
-      const { due, overdue } = computeOfDueCounts(data || [], lastByInd);
-      return {
-        id: of.id,
-        numero: of.numero,
-        product_id: of.product_id,
-        line_id: of.line_id,
-        productLabel: lbl(prodById.get(of.product_id || "") as any),
-        lineLabel: lbl(lineById.get(of.line_id || "") as any),
-        onCoveredLine: isOfCovered(of.line_id, Array.from(coveredLineIds)),
-        due,
-        overdue,
-      } as OfItem;
+    const { data, error } = await (supabase as any).rpc("get_quality_due_for_shift", {
+      p_quality_shift_id: shift?.id ?? null,
+      p_limit: 60,
+    });
+    if (error) {
+      toast({ title: "Erreur de chargement des OF", description: error.message, variant: "destructive" });
+      setOfsLoading(false);
+      return;
+    }
+    const items: OfItem[] = ((data as any[]) ?? []).map((r) => ({
+      id: r.of_id,
+      numero: r.numero,
+      product_id: r.product_id,
+      line_id: r.line_id,
+      productLabel: r.product_label ?? "—",
+      lineLabel: r.line_label ?? "—",
+      onCoveredLine: !!r.on_covered_line,
+      due: r.due ?? 0,
+      overdue: r.overdue ?? 0,
+      criticalOverdue: r.critical_overdue ?? 0,
     }));
 
-    setOfs(sortOfsByPriority(items));
     const sorted = sortOfsByPriority(items);
+    setOfs(sorted);
     if (sorted.length > 0 && !sorted.some((o) => o.id === selectedOfId)) {
       setSelectedOfId(sorted[0].id);
     }
     setOfsLoading(false);
   };
+
 
   useEffect(() => {
     loadOfs();
