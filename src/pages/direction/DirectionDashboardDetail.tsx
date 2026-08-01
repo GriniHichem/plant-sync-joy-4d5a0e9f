@@ -56,6 +56,7 @@ export default function DirectionDashboardDetail() {
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [configId, setConfigId] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [versionsOpen, setVersionsOpen] = useState(false);
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const [versionName, setVersionName] = useState("");
