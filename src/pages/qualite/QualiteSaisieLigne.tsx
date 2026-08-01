@@ -16,6 +16,7 @@ import { notifyCheckOutOfTolerance } from "@/lib/qualityNotifications";
 import { useActiveQualityShift } from "@/hooks/useActiveQualityShift";
 import { parseDecimal, CATEGORIES } from "@/pages/qualite/QualiteIndicateurs";
 import { computeConformity } from "@/pages/qualite/QualiteControles";
+import { dueInfo, requiredIndicators, lastCheckByIndicator } from "@/lib/qualityShiftLogic";
 
 interface OFRow {
   id: string;
@@ -53,17 +54,6 @@ interface Draft {
 const emptyDraft = (): Draft => ({ value_text: "", value_boolean: "", selected_value: "", comment: "" });
 
 const catLabel = (v: string) => CATEGORIES.find((c) => c.value === v)?.label ?? v;
-
-function dueInfo(lastAt: string | null, minutes: number | null) {
-  if (!minutes || minutes <= 0) {
-    return { level: lastAt ? "ok" : "todo", label: lastAt ? "À la demande" : "À saisir", minsLeft: null as number | null };
-  }
-  if (!lastAt) return { level: "todo", label: "À saisir maintenant", minsLeft: 0 };
-  const elapsed = (Date.now() - new Date(lastAt).getTime()) / 60000;
-  const left = Math.round(minutes - elapsed);
-  if (left <= 0) return { level: "overdue", label: `En retard de ${Math.abs(left)} min`, minsLeft: left };
-  return { level: "ok", label: `Prochain dans ${left} min`, minsLeft: left };
-}
 
 export default function QualiteSaisieLigne() {
   const { user } = useAuth();
@@ -110,13 +100,9 @@ export default function QualiteSaisieLigne() {
         .order("control_time", { ascending: false }),
     ]);
     if (ind.error) toast({ title: "Erreur", description: ind.error.message, variant: "destructive" });
-    const list: ApplicableIndicator[] = (ind.data || []).filter((i: ApplicableIndicator) => i.effective_is_required);
+    const list: ApplicableIndicator[] = requiredIndicators<ApplicableIndicator>(ind.data || []);
     setIndicators(list);
-    const last: Record<string, string> = {};
-    (checks.data || []).forEach((c: any) => {
-      if (!last[c.indicator_id]) last[c.indicator_id] = c.control_time;
-    });
-    setLastByIndicator(last);
+    setLastByIndicator(lastCheckByIndicator(checks.data || []));
     setDrafts((d) => {
       const next = { ...d };
       list.forEach((i) => { if (!next[i.indicator_id]) next[i.indicator_id] = emptyDraft(); });
