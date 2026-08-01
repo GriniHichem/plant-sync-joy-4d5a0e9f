@@ -395,9 +395,6 @@ export default function QualiteControles() {
           <Button variant="outline" onClick={handleExport} disabled={filtered.length === 0}>
             <Download className="h-4 w-4" /> Export CSV
           </Button>
-          {canCreate("qualite") && (
-            <Button onClick={openNew}><Plus className="h-4 w-4" /> Nouveau contrôle</Button>
-          )}
         </div>
       </div>
 
