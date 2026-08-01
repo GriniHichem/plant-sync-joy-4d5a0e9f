@@ -5022,6 +5022,66 @@ export type Database = {
           },
         ]
       }
+      quality_of_indicator_overrides: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          frequency_minutes: number | null
+          id: string
+          indicator_id: string
+          is_blocking: boolean
+          is_required: boolean
+          mode: string
+          notes: string
+          of_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          frequency_minutes?: number | null
+          id?: string
+          indicator_id: string
+          is_blocking?: boolean
+          is_required?: boolean
+          mode: string
+          notes?: string
+          of_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          frequency_minutes?: number | null
+          id?: string
+          indicator_id?: string
+          is_blocking?: boolean
+          is_required?: boolean
+          mode?: string
+          notes?: string
+          of_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quality_of_indicator_overrides_indicator_id_fkey"
+            columns: ["indicator_id"]
+            isOneToOne: false
+            referencedRelation: "quality_indicators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quality_of_indicator_overrides_of_id_fkey"
+            columns: ["of_id"]
+            isOneToOne: false
+            referencedRelation: "ordres_fabrication"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quality_permissions: {
         Row: {
           can_close_action: boolean
