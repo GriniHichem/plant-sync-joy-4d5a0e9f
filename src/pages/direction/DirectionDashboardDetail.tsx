@@ -325,10 +325,10 @@ export default function DirectionDashboardDetail() {
 
         <DirectionFilterBar
           value={filters}
-          onChange={(f) => { setFilters(f); setDirty(true); }}
+          onChange={(f) => { setFilters(f); if (canModify) setDirty(true); }}
           contexts={contexts.length ? contexts : ["line", "product", "supplier", "campaign"]}
           favorites={favorites}
-          onApplyFavorite={(f) => { setFilters(f); setDirty(true); }}
+          onApplyFavorite={(f) => { setFilters(f); if (canModify) setDirty(true); }}
           onSaveFavorite={() => {
             const name = window.prompt("Nom du filtre favori ?");
             if (!name?.trim()) return;
