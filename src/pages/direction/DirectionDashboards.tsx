@@ -14,9 +14,10 @@ import { ResponsiveDialog } from "@/components/responsive/ResponsiveDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { Copy, Eye, Globe, LayoutDashboard, Lock, Plus, Sparkles, Trash2, Users } from "lucide-react";
+import { Copy, Eye, Globe, LayoutDashboard, Lock, Plus, Share2, Sparkles, Trash2, Users } from "lucide-react";
 import { DASHBOARD_TEMPLATES, buildLayout } from "@/lib/direction/templates";
 import { WIDGETS, WIDGET_MAP } from "@/lib/direction/widgetCatalog";
+import { ShareDashboardDialog } from "@/components/direction/ShareDashboardDialog";
 
 interface Dashboard {
   id: string;
