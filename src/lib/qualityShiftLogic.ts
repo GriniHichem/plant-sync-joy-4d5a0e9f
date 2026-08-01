@@ -101,11 +101,40 @@ export function computeOfDueCounts(
   return { due, overdue, total: req.length };
 }
 
+/**
+ * Retard « critique » : indicateur bloquant dont le retard dépasse 2× sa fréquence.
+ * Déclenche l'alerte sonore / visuelle du tableau de shift.
+ */
+export function isCriticalOverdue(
+  indicator: Pick<ApplicableIndicator, "effective_frequency_minutes" | "effective_is_blocking">,
+  lastAt: string | null | undefined,
+  now: number = Date.now(),
+): boolean {
+  if (indicator.effective_is_blocking !== true) return false;
+  const freq = indicator.effective_frequency_minutes;
+  if (!freq || freq <= 0) return false;
+  if (!lastAt) return false; // jamais saisi : signalé comme "à saisir", pas comme retard x2
+  const elapsed = (now - new Date(lastAt).getTime()) / 60000;
+  return elapsed >= 2 * freq;
+}
+
+/** Nombre d'indicateurs bloquants en retard > 2× la fréquence. */
+export function countCriticalOverdue(
+  indicators: ApplicableIndicator[] | null | undefined,
+  lastByIndicator: Record<string, string>,
+  now: number = Date.now(),
+): number {
+  return requiredIndicators(indicators).filter((i) =>
+    isCriticalOverdue(i, lastByIndicator[i.indicator_id] ?? null, now),
+  ).length;
+}
+
 export interface OfPriorityItem {
   onCoveredLine: boolean;
   overdue: number;
   due: number;
 }
+
 
 /** Priorité d'affichage : lignes couvertes par le shift, puis retards, puis contrôles dus. */
 export function sortOfsByPriority<T extends OfPriorityItem>(items: T[]): T[] {
