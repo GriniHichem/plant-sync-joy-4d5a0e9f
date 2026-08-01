@@ -431,7 +431,7 @@ export default function DirectionDashboardDetail() {
       <ResponsiveDialog open={versionsOpen} onOpenChange={setVersionsOpen} title="Versions du dashboard"
         description="Enregistrez plusieurs compositions (Hebdo, Mensuelle…) et rechargez-les à la demande.">
         <div className="space-y-3">
-          {isOwner && (
+          {canModify && (
             <div className="flex gap-2">
               <Input className="h-11" placeholder="Nom de la version (ex : Hebdo)" value={versionName}
                 onChange={(e) => setVersionName(e.target.value)} />
