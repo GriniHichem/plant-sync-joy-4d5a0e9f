@@ -114,7 +114,7 @@ export default function DirectionDashboards() {
   });
 
   const mine = useMemo(() => dashboards.filter((d) => d.owner_id === user?.id), [dashboards, user?.id]);
-  const shared = useMemo(() => dashboards.filter((d) => d.owner_id !== user?.id), [dashboards, user?.id]);
+  const others = useMemo(() => dashboards.filter((d) => d.owner_id !== user?.id), [dashboards, user?.id]);
   const widgetCount = useMemo(
     () => WIDGETS.filter((w) => roles.includes("admin") || canView(w.permissionModule)).length,
     [canView, roles],
@@ -136,7 +136,7 @@ export default function DirectionDashboards() {
             <CardTitle className="text-base truncate">{d.name}</CardTitle>
             <CardDescription className="truncate">{d.description || "—"}</CardDescription>
           </div>
-          <VisibilityBadge v={d.visibility} />
+          {owned ? <VisibilityBadge v={d.visibility} /> : <Badge variant="secondary" className="text-[10px]">Lecture seule</Badge>}
         </div>
       </CardHeader>
       <CardContent className="flex flex-wrap items-center gap-2">
@@ -144,13 +144,20 @@ export default function DirectionDashboards() {
           {Array.isArray(d.layout) ? d.layout.length : 0} widget(s)
         </Badge>
         <div className="flex-1" />
-        <Button size="sm" onClick={() => navigate(`/direction/dashboards/${d.id}`)}>
+        <Button size="sm" onClick={() => navigate(`/dashboard-design/dashboards/${d.id}`)}>
           <Eye className="h-4 w-4 mr-1" /> Ouvrir
         </Button>
-        <Button size="sm" variant="outline" onClick={() => duplicate.mutate(d)}>
-          <Copy className="h-4 w-4" />
-        </Button>
         {owned && (
+          <Button size="sm" variant="outline" title="Partager" onClick={() => setShareId(d.id)}>
+            <Share2 className="h-4 w-4" />
+          </Button>
+        )}
+        {mayCreate && (
+          <Button size="sm" variant="outline" title="Dupliquer" onClick={() => duplicate.mutate(d)}>
+            <Copy className="h-4 w-4" />
+          </Button>
+        )}
+        {owned && mayDelete && (
           <Button size="sm" variant="ghost" className="text-destructive"
             onClick={() => { if (confirm(`Supprimer « ${d.name} » ?`)) remove.mutate(d.id); }}>
             <Trash2 className="h-4 w-4" />
@@ -164,14 +171,19 @@ export default function DirectionDashboards() {
     <div className="p-4 md:p-6 space-y-6">
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex-1 min-w-0">
-          <h1 className="text-2xl font-bold">Dashboard Direction</h1>
+          <h1 className="text-2xl font-bold">Dashboard Design</h1>
           <p className="text-sm text-muted-foreground">
-            Composez vos tableaux de bord à partir des {widgetCount} indicateurs accessibles — lecture seule.
+            Composez vos tableaux de bord à partir des {widgetCount} indicateurs accessibles — lecture seule sur les données.
           </p>
         </div>
-        <Button onClick={() => setOpen(true)}>
-          <Plus className="h-4 w-4 mr-1" /> Nouveau dashboard
+        <Button variant="outline" onClick={() => navigate("/dashboard-design/partages")}>
+          <Share2 className="h-4 w-4 mr-1" /> Mes Dashboards
         </Button>
+        {mayCreate && (
+          <Button onClick={() => setOpen(true)}>
+            <Plus className="h-4 w-4 mr-1" /> Nouveau dashboard
+          </Button>
+        )}
       </div>
 
       {isLoading ? (
@@ -181,22 +193,23 @@ export default function DirectionDashboards() {
       ) : (
         <>
           <section className="space-y-3">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Mes dashboards</h2>
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Mes créations</h2>
             {mine.length === 0 ? (
               <Card><CardContent className="py-8 text-center text-sm text-muted-foreground">
-                Aucun dashboard. Créez-en un à partir d'un modèle prédéfini.
+                {mayCreate ? "Aucun dashboard. Créez-en un à partir d'un modèle prédéfini." : "Aucun dashboard."}
               </CardContent></Card>
             ) : (
               <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">{mine.map((d) => renderCard(d, true))}</div>
             )}
           </section>
 
-          {shared.length > 0 && (
+          {others.length > 0 && (
             <section className="space-y-3">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Partagés avec moi</h2>
-              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">{shared.map((d) => renderCard(d, false))}</div>
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Accessibles / partagés</h2>
+              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">{others.map((d) => renderCard(d, false))}</div>
             </section>
           )}
+        </>
         </>
       )}
 
