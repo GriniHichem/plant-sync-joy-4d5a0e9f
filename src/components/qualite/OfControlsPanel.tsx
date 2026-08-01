@@ -14,6 +14,8 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Save, CheckCircle2, XCircle, Clock, AlertTriangle, Pin, PinOff, LayoutGrid, Table2 } from "lucide-react";
 import { logAudit } from "@/lib/audit";
 import { notifyCheckOutOfTolerance } from "@/lib/qualityNotifications";
+import { createDraftNcForCheck } from "@/lib/qualityNc";
+
 import { parseDecimal, CATEGORIES } from "@/pages/qualite/QualiteIndicateurs";
 import { computeConformity } from "@/pages/qualite/QualiteControles";
 import type { ActiveQualityShift } from "@/hooks/useActiveQualityShift";
