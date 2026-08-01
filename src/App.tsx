@@ -373,9 +373,13 @@ const App = () => (
               <Route path="/inventaire/campagnes/nouvelle" element={<InventoryCampaignNew />} />
               <Route path="/inventaire/campagnes/:id" element={<InventoryCampaignDetail />} />
               <Route path="/inventaire/compter/:campaignId" element={<InventoryCountScreen />} />
-              {/* Direction */}
-              <Route path="/direction/dashboards" element={<DirectionDashboards />} />
-              <Route path="/direction/dashboards/:id" element={<DirectionDashboardDetail />} />
+              {/* Dashboard Design */}
+              <Route path="/dashboard-design/dashboards" element={<DirectionDashboards />} />
+              <Route path="/dashboard-design/partages" element={<SharedDashboards />} />
+              <Route path="/dashboard-design/dashboards/:id" element={<DirectionDashboardDetail />} />
+              {/* Anciennes URLs */}
+              <Route path="/direction/dashboards" element={<Navigate to="/dashboard-design/dashboards" replace />} />
+              <Route path="/direction/dashboards/:id" element={<LegacyDashboardRedirect />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
