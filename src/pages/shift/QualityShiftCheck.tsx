@@ -14,6 +14,7 @@ import { ClipboardCheck, Save, ArrowLeft } from "lucide-react";
 import { logAudit } from "@/lib/audit";
 import { parseNumericInput } from "@/lib/formValidation";
 import { useShiftRealtime } from "@/hooks/useShiftRealtime";
+import { buildQualityCheckPayload, validateDraft } from "@/lib/qualityShiftLogic";
 
 /**
  * Quick quality check entry — auto fills team_id, shift_id, quality_shift_id from active context.
@@ -40,7 +41,7 @@ export default function QualityShiftCheck() {
     if (lineIds.length === 0) { setOfs([]); return; }
     supabase
       .from("ordres_fabrication")
-      .select("id, numero, line_id, products(code, designation), production_lines(id, code)")
+      .select("id, numero, line_id, product_id, products(code, designation), production_lines(id, code)")
       .in("line_id", lineIds)
       .eq("statut", "en_cours" as any)
       .order("numero")
@@ -87,40 +88,27 @@ export default function QualityShiftCheck() {
       return;
     }
 
-    // Build payload depending on indicator type
-    const payload: any = {
-      of_id: ofId,
-      indicator_id: indicatorId,
-      controlled_by: user?.id,
-      control_time: new Date().toISOString(),
-      comment: comment || "",
-      status: "submitted",
-      validation_status: "not_required",
-      // Auto-context from active shift:
-      quality_shift_id: qualityShift.id,
-      team_id: qualityShift.shift_team_id,
-      shift_id: qualityShift.production_shift_ids[0] ?? null,
-      production_line_id: ofs.find((o) => o.id === ofId)?.line_id ?? null,
-      target_value: indicator.target_value,
-      min_value: indicator.min_value,
-      max_value: indicator.max_value,
-      unit: indicator.unit,
+    const draft = {
+      value_text: indicator.indicator_type === "numeric" ? valueNum : valueText,
+      value_boolean: valueBool,
+      selected_value: valueText,
+      comment,
     };
+    const err = validateDraft(indicator.indicator_type, draft);
+    if (err) { toast({ title: err, variant: "destructive" }); return; }
 
-    if (indicator.indicator_type === "numeric") {
-      const v = parseNumericInput(valueNum);
-      if (v === null) { toast({ title: "Valeur numérique requise", variant: "destructive" }); return; }
-      payload.measured_value_numeric = v;
-    } else if (indicator.indicator_type === "boolean") {
-      if (valueBool === "") { toast({ title: "Choisir Conforme ou Non conforme", variant: "destructive" }); return; }
-      payload.measured_value_boolean = valueBool === "true";
-    } else if (indicator.indicator_type === "select") {
-      if (!valueText) { toast({ title: "Sélectionner une valeur", variant: "destructive" }); return; }
-      payload.selected_value = valueText;
-    } else {
-      if (!valueText.trim()) { toast({ title: "Valeur requise", variant: "destructive" }); return; }
-      payload.measured_value_text = valueText;
-    }
+    const ofRow = ofs.find((o) => o.id === ofId);
+    const payload = buildQualityCheckPayload({
+      of: { of_id: ofId, product_id: ofRow?.product_id ?? null, line_id: ofRow?.line_id ?? null },
+      indicator,
+      draft,
+      shift: {
+        qualityShiftId: qualityShift.id,
+        teamId: qualityShift.shift_team_id,
+        productionShiftId: qualityShift.production_shift_ids[0] ?? null,
+        controllerId: user?.id ?? null,
+      },
+    });
 
     setSubmitting(true);
     try {
