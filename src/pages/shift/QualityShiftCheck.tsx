@@ -15,6 +15,8 @@ import { logAudit } from "@/lib/audit";
 import { parseNumericInput } from "@/lib/formValidation";
 import { useShiftRealtime } from "@/hooks/useShiftRealtime";
 import { buildQualityCheckPayload, validateDraft } from "@/lib/qualityShiftLogic";
+import { createDraftNcForCheck } from "@/lib/qualityNc";
+
 
 /**
  * Quick quality check entry — auto fills team_id, shift_id, quality_shift_id from active context.
