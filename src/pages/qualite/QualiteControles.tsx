@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { usePermissions } from "@/hooks/usePermissions";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -195,7 +194,6 @@ const labelOf = (r?: { name?: string | null; designation?: string | null; code?:
 
 export default function QualiteControles() {
   const { user } = useAuth();
-  const { canCreate } = usePermissions();
   const { toast } = useToast();
   const { shift: activeQualityShift } = useActiveQualityShift();
 
