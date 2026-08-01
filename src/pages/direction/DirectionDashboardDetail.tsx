@@ -649,6 +649,11 @@ export default function DirectionDashboardDetail() {
           </Button>
         </div>
       </ResponsiveDialog>
+
+      {/* Partage */}
+      {isOwner && id && (
+        <ShareDashboardDialog dashboardId={id} open={shareOpen} onOpenChange={setShareOpen} />
+      )}
     </div>
   );
 }
