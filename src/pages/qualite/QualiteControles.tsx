@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ResponsiveDialog } from "@/components/responsive/ResponsiveDialog";
-import { ClipboardList, Plus, RotateCcw, Search, Download, AlertOctagon } from "lucide-react";
+import { ClipboardList, RotateCcw, Search, Download, AlertOctagon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { exportToCsv } from "@/lib/exportCsv";
 import { logAudit } from "@/lib/audit";
@@ -289,7 +289,6 @@ export default function QualiteControles() {
     });
   }, [currentIndicator, form.value_text, form.value_boolean]);
 
-  const openNew = () => { setForm(emptyCheckForm()); setApplicable([]); setOpen(true); };
 
   const handleSave = async () => {
     const err = validateCheck(form, currentIndicator?.indicator_type);
