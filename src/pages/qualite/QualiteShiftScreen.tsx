@@ -15,7 +15,8 @@ import { OfControlsPanel } from "@/components/qualite/OfControlsPanel";
 import { MaintenanceRiskPanel } from "@/components/qualite/MaintenanceRiskPanel";
 import { ShiftHistoryPanel } from "@/components/qualite/ShiftHistoryPanel";
 import { logAudit } from "@/lib/audit";
-import { computeOfDueCounts, lastCheckByIndicator, sortOfsByPriority, isOfCovered, computeShiftKpis } from "@/lib/qualityShiftLogic";
+import { sortOfsByPriority, computeShiftKpis } from "@/lib/qualityShiftLogic";
+import { useCriticalOverdueAlarm } from "@/hooks/useCriticalOverdueAlarm";
 
 interface OfItem {
   id: string;
@@ -27,7 +28,9 @@ interface OfItem {
   onCoveredLine: boolean;
   due: number;
   overdue: number;
+  criticalOverdue: number;
 }
+
 
 const lbl = (r?: { name?: string | null; designation?: string | null; code?: string | null } | null) =>
   r ? (r.name || r.designation || r.code || "—") : "—";
