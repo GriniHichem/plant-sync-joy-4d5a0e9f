@@ -198,13 +198,23 @@ export function OfControlsPanel({ ofId, ofNumero, productId, lineId, activeQuali
     if (data.is_conform === false) {
       await notifyCheckOutOfTolerance({ entity_id: data.id, entity_label: ind.code, of_label: ofNumero ?? null });
     }
+    const nc = await createDraftNcForCheck({
+      check: { id: data.id, ...payload },
+      indicator: ind,
+      ofNumero: ofNumero ?? null,
+      declaredBy: user?.id ?? null,
+      isConform: data.is_conform ?? null,
+    });
     toast({
       title: "Contrôle enregistré",
-      description: data.is_conform === false
-        ? (ind.effective_is_blocking ? "⚠ Non conforme BLOQUANT — risque de retard, créez un ticket." : "⚠ Non conforme — pensez à créer une NC.")
-        : undefined,
+      description: nc
+        ? `⚠ Non conforme BLOQUANT — NC brouillon ${nc.nc_number ?? ""} créée automatiquement.`
+        : data.is_conform === false
+          ? (ind.effective_is_blocking ? "⚠ Non conforme BLOQUANT — créez une NC / un ticket." : "⚠ Non conforme — pensez à créer une NC.")
+          : undefined,
       variant: data.is_conform === false ? "destructive" : undefined,
     });
+
     setDraft(ind.indicator_id, { value_text: "", value_boolean: "", selected_value: "", comment: "" });
     setLastByIndicator((l) => ({ ...l, [ind.indicator_id]: payload.control_time }));
     setSavingId(null);
