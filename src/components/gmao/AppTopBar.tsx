@@ -1,6 +1,7 @@
 import { NavLink as RRNavLink, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSharedDashboardsCount } from "@/hooks/useSharedDashboards";
 import { usePermissions } from "@/hooks/usePermissions";
 import { ImpersonationDialog } from "@/components/admin/ImpersonationDialog";
 import { Eye } from "lucide-react";
@@ -74,8 +75,12 @@ const inventaireItems: NavItem[] = [
 ];
 
 const directionItems: NavItem[] = [
-  { title: "Mes dashboards", url: "/direction/dashboards", icon: IconAnalytics, module: "direction_dashboards" },
+  { title: "Dashboard Design", url: "/dashboard-design/dashboards", icon: IconAnalytics, module: "direction_dashboards" },
 ];
+
+const sharedDashboardItem: NavItem = {
+  title: "Mes Dashboards", url: "/dashboard-design/partages", icon: IconAnalytics,
+};
 
 const configItems: NavItem[] = [
   { title: "Paramètres", url: "/parametres", icon: IconSettings, module: "parametres" },
@@ -201,7 +206,7 @@ function MobileNav({
     { label: "Production", items: visibleGpao },
     { label: "Qualité", items: visibleQualite },
     { label: "Inventaire", items: visibleInventaire },
-    { label: "Direction", items: visibleDirection },
+    { label: "Dashboard Design", items: visibleDirection },
     { label: "Configuration", items: visibleConfig },
   ].filter((g) => g.items.length > 0);
 
@@ -247,6 +252,7 @@ export function AppTopBar() {
   const navigate = useNavigate();
   const { profile, roles, realRoles, signOut, hasRole } = useAuth();
   const { canView, loading: permsLoading } = usePermissions();
+  const sharedCount = useSharedDashboardsCount();
   const [impersonationOpen, setImpersonationOpen] = useState(false);
   const isRealAdmin = realRoles.includes("admin" as any);
 
@@ -258,7 +264,10 @@ export function AppTopBar() {
   const visibleGpao = filterByPerm(gpaoItems);
   const visibleQualite = filterByPerm(qualiteItems);
   const visibleInventaire = filterByPerm(inventaireItems);
-  const visibleDirection = filterByPerm(directionItems);
+  const visibleDirection = [
+    ...filterByPerm(directionItems),
+    ...(sharedCount > 0 ? [sharedDashboardItem] : []),
+  ];
   const visibleConfig = filterByPerm(configItems);
 
   const isGmaoActive = visibleGmao.some((i) => isActive(location.pathname, i.url));
@@ -337,7 +346,7 @@ export function AppTopBar() {
             <MegaMenu label="Inventaire" GroupIcon={ClipboardList} items={visibleInventaire} active={isInventaireActive} />
           )}
           {showDirection && (
-            <MegaMenu label="Direction" GroupIcon={IconAnalytics} items={visibleDirection} active={isDirectionActive} />
+            <MegaMenu label="Dashboard Design" GroupIcon={IconAnalytics} items={visibleDirection} active={isDirectionActive} />
           )}
           {showConfig && <MegaMenu label="Configuration" GroupIcon={Cog} items={visibleConfig} active={isConfigActive} />}
         </nav>

@@ -21,12 +21,13 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { ResponsiveDialog } from "@/components/responsive/ResponsiveDialog";
 import { toast } from "sonner";
 import {
-  ArrowLeft, Check, History, LayoutGrid, Plus, RefreshCw, Save, Settings2, Sparkles, X,
+  ArrowLeft, Check, History, LayoutGrid, Plus, RefreshCw, Save, Settings2, Share2, Sparkles, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DirectionWidget, ACCENT_KEYS } from "@/components/direction/DirectionWidget";
 import { DirectionFilterBar } from "@/components/direction/DirectionFilterBar";
 import { WidgetLibraryPanel } from "@/components/direction/WidgetLibraryPanel";
+import { ShareDashboardDialog } from "@/components/direction/ShareDashboardDialog";
 import { WIDGETS, WIDGET_MAP, type LayoutItem } from "@/lib/direction/widgetCatalog";
 import { PERIOD_OPTIONS, type DashboardFilters } from "@/lib/direction/filters";
 import { DASHBOARD_TEMPLATES, buildLayout } from "@/lib/direction/templates";
@@ -43,7 +44,7 @@ export default function DirectionDashboardDetail() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { user, roles } = useAuth();
-  const { canView } = usePermissions();
+  const { canView, canEdit } = usePermissions();
   const isMobile = useIsMobile();
   const [params] = useSearchParams();
   const { width: gridWidth, containerRef: gridRef } = useContainerWidth();
@@ -55,6 +56,7 @@ export default function DirectionDashboardDetail() {
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [configId, setConfigId] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [versionsOpen, setVersionsOpen] = useState(false);
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const [versionName, setVersionName] = useState("");
@@ -120,7 +122,14 @@ export default function DirectionDashboardDetail() {
     return () => window.removeEventListener("beforeunload", h);
   }, [dirty]);
 
-  const isOwner = dashboard?.owner_id === user?.id || roles.includes("admin");
+  const isAdmin = roles.includes("admin");
+  const isOwner = !!dashboard && (dashboard.owner_id === user?.id || isAdmin);
+  // Lecture seule : dashboard partagé, ou droit "Modifier" absent sur le module.
+  const canModify = isOwner && (isAdmin || canEdit("direction_dashboards"));
+
+  useEffect(() => {
+    if (!canModify && editing) setEditing(false);
+  }, [canModify, editing]);
 
   const save = useMutation({
     mutationFn: async (patch: Record<string, any>) => {
@@ -258,7 +267,8 @@ export default function DirectionDashboardDetail() {
       {/* En-tête collant */}
       <div className="sticky top-0 z-20 bg-background/95 backdrop-blur border-b px-3 md:px-6 py-2.5 space-y-2.5">
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/direction/dashboards")}>
+          <Button variant="ghost" size="icon"
+            onClick={() => navigate(isOwner ? "/dashboard-design/dashboards" : "/dashboard-design/partages")}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="min-w-0 flex-1">
@@ -266,15 +276,23 @@ export default function DirectionDashboardDetail() {
             {meta.description && <p className="text-xs md:text-sm text-muted-foreground truncate">{meta.description}</p>}
           </div>
           {dirty && <Badge variant="destructive" className="text-[10px]">Non enregistré</Badge>}
+          {!isOwner && <Badge variant="secondary" className="text-[10px]">Partagé · lecture seule</Badge>}
           <Badge variant="outline" className="gap-1 text-[11px]">
             <RefreshCw className="h-3 w-3" />
             {REFRESH_OPTIONS.find((o) => o.v === meta.refresh_seconds)?.l ?? "Manuel"}
           </Badge>
           {isOwner && (
             <>
+              <Button variant="outline" size="sm" onClick={() => setShareOpen(true)}>
+                <Share2 className="h-4 w-4 md:mr-1" /><span className="hidden md:inline">Partager</span>
+              </Button>
               <Button variant="outline" size="sm" onClick={() => setVersionsOpen(true)}>
                 <History className="h-4 w-4 md:mr-1" /><span className="hidden md:inline">Versions</span>
               </Button>
+            </>
+          )}
+          {canModify && (
+            <>
               <Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)}>
                 <Settings2 className="h-4 w-4 md:mr-1" /><span className="hidden md:inline">Réglages</span>
               </Button>
@@ -307,10 +325,10 @@ export default function DirectionDashboardDetail() {
 
         <DirectionFilterBar
           value={filters}
-          onChange={(f) => { setFilters(f); setDirty(true); }}
+          onChange={(f) => { setFilters(f); if (canModify) setDirty(true); }}
           contexts={contexts.length ? contexts : ["line", "product", "supplier", "campaign"]}
           favorites={favorites}
-          onApplyFavorite={(f) => { setFilters(f); setDirty(true); }}
+          onApplyFavorite={(f) => { setFilters(f); if (canModify) setDirty(true); }}
           onSaveFavorite={() => {
             const name = window.prompt("Nom du filtre favori ?");
             if (!name?.trim()) return;
@@ -340,7 +358,7 @@ export default function DirectionDashboardDetail() {
                 <p className="text-sm text-muted-foreground">
                   Aucun widget. Partez d'un modèle prédéfini ou ajoutez vos indicateurs.
                 </p>
-                {isOwner && (
+                {canModify && (
                   <div className="flex flex-wrap gap-2 justify-center">
                     <Button onClick={() => setTemplatesOpen(true)}><Sparkles className="h-4 w-4 mr-1" /> Choisir un modèle</Button>
                     <Button variant="outline" onClick={() => { setEditing(true); if (isMobile) setLibraryOpen(true); }}>
@@ -413,7 +431,7 @@ export default function DirectionDashboardDetail() {
       <ResponsiveDialog open={versionsOpen} onOpenChange={setVersionsOpen} title="Versions du dashboard"
         description="Enregistrez plusieurs compositions (Hebdo, Mensuelle…) et rechargez-les à la demande.">
         <div className="space-y-3">
-          {isOwner && (
+          {canModify && (
             <div className="flex gap-2">
               <Input className="h-11" placeholder="Nom de la version (ex : Hebdo)" value={versionName}
                 onChange={(e) => setVersionName(e.target.value)} />
@@ -439,11 +457,11 @@ export default function DirectionDashboardDetail() {
                   <Button size="sm" variant="outline" onClick={() => {
                     setItems(Array.isArray(v.layout) ? v.layout : []);
                     setFilters(v.global_filters ?? { period: "7d" });
-                    setDirty(true);
+                    if (canModify) setDirty(true);
                     setVersionsOpen(false);
                     toast.success(`Version « ${v.name} » chargée`);
                   }}>Charger</Button>
-                  {isOwner && (
+                  {canModify && (
                     <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deleteVersion.mutate(v.id)}>
                       <X className="h-4 w-4" />
                     </Button>
@@ -631,6 +649,11 @@ export default function DirectionDashboardDetail() {
           </Button>
         </div>
       </ResponsiveDialog>
+
+      {/* Partage */}
+      {isOwner && id && (
+        <ShareDashboardDialog dashboardId={id} open={shareOpen} onOpenChange={setShareOpen} />
+      )}
     </div>
   );
 }

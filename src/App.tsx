@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate, useLocation, useParams } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -103,6 +103,7 @@ import QualiteShiftScreen from "@/pages/qualite/QualiteShiftScreen";
 import ReceptionPage from "@/pages/qualite/reception/ReceptionPage";
 import DirectionDashboards from "@/pages/direction/DirectionDashboards";
 import DirectionDashboardDetail from "@/pages/direction/DirectionDashboardDetail";
+import SharedDashboards from "@/pages/direction/SharedDashboards";
 import InventoryDashboard from "@/pages/inventaire/InventoryDashboard";
 import InventoryCampaignsList from "@/pages/inventaire/InventoryCampaignsList";
 import InventoryCampaignNew from "@/pages/inventaire/InventoryCampaignNew";
@@ -122,6 +123,11 @@ import MagasinShiftHome from "@/pages/magasin/MagasinShiftHome";
 import MagasinKiosk from "@/pages/magasin/MagasinKiosk";
 import MagasinJournal from "@/pages/magasin/MagasinJournal";
 import HomeRoute from "@/components/HomeRoute";
+
+function LegacyDashboardRedirect() {
+  const { id } = useParams();
+  return <Navigate to={`/dashboard-design/dashboards/${id}`} replace />;
+}
 
 const queryClient = new QueryClient();
 
@@ -373,9 +379,13 @@ const App = () => (
               <Route path="/inventaire/campagnes/nouvelle" element={<InventoryCampaignNew />} />
               <Route path="/inventaire/campagnes/:id" element={<InventoryCampaignDetail />} />
               <Route path="/inventaire/compter/:campaignId" element={<InventoryCountScreen />} />
-              {/* Direction */}
-              <Route path="/direction/dashboards" element={<DirectionDashboards />} />
-              <Route path="/direction/dashboards/:id" element={<DirectionDashboardDetail />} />
+              {/* Dashboard Design */}
+              <Route path="/dashboard-design/dashboards" element={<DirectionDashboards />} />
+              <Route path="/dashboard-design/partages" element={<SharedDashboards />} />
+              <Route path="/dashboard-design/dashboards/:id" element={<DirectionDashboardDetail />} />
+              {/* Anciennes URLs */}
+              <Route path="/direction/dashboards" element={<Navigate to="/dashboard-design/dashboards" replace />} />
+              <Route path="/direction/dashboards/:id" element={<LegacyDashboardRedirect />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
