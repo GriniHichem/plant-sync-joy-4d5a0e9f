@@ -455,8 +455,9 @@ export default function QualiteShiftScreen() {
   );
 }
 
-function KpiBox({ label, value, variant = "default" }: { label: string; value: number; variant?: "default" | "success" | "warning" }) {
-  const colorClass = variant === "success" ? "text-success" : variant === "warning" ? "text-warning" : "text-foreground";
+function KpiBox({ label, value, variant = "default" }: { label: string; value: number | string; variant?: "default" | "success" | "warning" | "danger" }) {
+  const colorClass = variant === "success" ? "text-success" : variant === "warning" ? "text-warning" : variant === "danger" ? "text-destructive" : "text-foreground";
+
   return (
     <div className="border rounded-lg p-3 text-center">
       <div className={`text-2xl font-bold tabular-nums ${colorClass}`}>{value}</div>
