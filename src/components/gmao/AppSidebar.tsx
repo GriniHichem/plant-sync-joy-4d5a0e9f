@@ -97,7 +97,7 @@ export function AppSidebar() {
   const location = useLocation();
   const { profile, roles, signOut, hasRole } = useAuth();
   const { canView, loading: permsLoading } = usePermissions();
-  const { data: sharedCount = 0 } = useSharedDashboardsCount();
+  const sharedCount = useSharedDashboardsCount();
 
   const filterByPerm = (items: NavItem[]) => {
     if (permsLoading) return [];
