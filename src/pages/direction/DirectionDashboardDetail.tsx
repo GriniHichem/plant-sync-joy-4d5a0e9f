@@ -44,7 +44,7 @@ export default function DirectionDashboardDetail() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { user, roles } = useAuth();
-  const { canView } = usePermissions();
+  const { canView, canEdit } = usePermissions();
   const isMobile = useIsMobile();
   const [params] = useSearchParams();
   const { width: gridWidth, containerRef: gridRef } = useContainerWidth();
