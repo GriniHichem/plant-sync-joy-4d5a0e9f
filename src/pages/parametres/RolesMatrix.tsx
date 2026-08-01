@@ -69,7 +69,8 @@ const MODULE_GROUPS = [
       { key: "qualite_dashboard", label: "Dashboard Qualité" },
       { key: "qualite_of", label: "OF Qualité" },
       { key: "qualite_indicateurs", label: "Indicateurs" },
-      { key: "qualite_controles", label: "Contrôles" },
+      { key: "qualite_plan_controle", label: "Plan de contrôle OF" },
+      { key: "qualite_controles", label: "Historique des contrôles" },
       { key: "qualite_nc", label: "Non-conformités" },
       { key: "qualite_actions", label: "Actions correctives" },
       { key: "qualite_recettes", label: "Recettes & nomenclatures" },
@@ -191,7 +192,7 @@ function ap(modules: string[], preset: Preset, base: Record<string, Preset> = {}
 const MAINT_MODS = ["dashboard", "machines", "equipements", "organes", "lignes", "pdr", "tickets", "preventif", "shift_maintenance", "journal", "historique", "analytiques"];
 const LOG_MODS = ["pdr_demandes", "shift_magasin", "journal_stock"];
 const PROD_MODS = ["gpao_dashboard", "of", "produits", "articles", "recettes", "shift_production", "consommations", "arrets"];
-const QUALITY_MODS = ["qualite", "qualite_dashboard", "qualite_of", "qualite_indicateurs", "qualite_controles", "qualite_nc", "qualite_actions", "qualite_recettes", "qualite_tracabilite", "qualite_rapports", "qualite_shift", "reception"];
+const QUALITY_MODS = ["qualite", "qualite_dashboard", "qualite_of", "qualite_indicateurs", "qualite_plan_controle", "qualite_controles", "qualite_nc", "qualite_actions", "qualite_recettes", "qualite_tracabilite", "qualite_rapports", "qualite_shift", "reception"];
 const INV_MODS = ["inventaire", "inventaire_campagnes"];
 const DIR_MODS = ["direction", "direction_dashboards"];
 const GOV_MODS = ["audit", "validations", "validations_rules", "notifications", "notifications_rules", "securite"];
@@ -213,7 +214,7 @@ const ROLE_DEFAULTS: Record<string, Record<string, Preset>> = {
 
   directeur_qualite: { ...ap(DIR_MODS, FULL), ...ap(QUALITY_MODS, FULL), ...ap(PROD_MODS, RO), ...ap(MAINT_MODS, RO), qualite_parametres: RW, analytiques: RO, audit: RO, validations: RW, notifications: RW, apps: RO, recherche: RO, parametres: RO },
   responsable_controle_qualite: { ...ap(DIR_MODS, FULL), ...ap(QUALITY_MODS, FULL), of: RO, produits: RO, articles: RO, recettes: RO, dashboard: RO, machines: RO, lignes: RO, analytiques: RO, qualite_parametres: RW, notifications: RW, apps: RO, recherche: RO },
-  controleur_qualite: { qualite: RW, qualite_dashboard: RO, qualite_of: RO, qualite_indicateurs: RO, qualite_controles: RW, qualite_nc: RW, qualite_actions: RO, qualite_recettes: RO, qualite_tracabilite: RO, qualite_rapports: RO, qualite_shift: RW, of: RO, produits: RO, lignes: RO, machines: RO, notifications: RO, apps: RO, recherche: RO },
+  controleur_qualite: { qualite: RW, qualite_dashboard: RO, qualite_of: RO, qualite_indicateurs: RO, qualite_plan_controle: RO, qualite_controles: RW, qualite_nc: RW, qualite_actions: RO, qualite_recettes: RO, qualite_tracabilite: RO, qualite_rapports: RO, qualite_shift: RW, of: RO, produits: RO, lignes: RO, machines: RO, notifications: RO, apps: RO, recherche: RO },
   agent_pont_bascule: { reception: RO, qualite: RO, qualite_dashboard: RO, notifications: RO, apps: RO, recherche: RO },
   agreeur: { reception: RW, qualite: RO, notifications: RO, apps: RO, recherche: RO },
 

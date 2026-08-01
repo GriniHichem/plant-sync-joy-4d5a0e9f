@@ -59,7 +59,8 @@ const gpaoItems: NavItem[] = [
 
 const qualiteItems: NavItem[] = [
   { title: "Dashboard", url: "/qualite", icon: IconDashboard, module: "qualite_dashboard" },
-  { title: "Contrôles", url: "/qualite/controles", icon: ClipboardCheck, module: "qualite_controles" },
+  { title: "Historique des contrôles", url: "/qualite/controles", icon: ClipboardCheck, module: "qualite_controles" },
+  { title: "Plan de contrôle OF", url: "/qualite/plan-controle", icon: ClipboardCheck, module: "qualite_plan_controle" },
   { title: "Non-conformités", url: "/qualite/non-conformites", icon: AlertTriangle, module: "qualite_nc" },
   { title: "Actions", url: "/qualite/actions", icon: ListChecks, module: "qualite_actions" },
   { title: "Indicateurs", url: "/qualite/indicateurs", icon: IconAnalytics, module: "qualite_indicateurs" },
