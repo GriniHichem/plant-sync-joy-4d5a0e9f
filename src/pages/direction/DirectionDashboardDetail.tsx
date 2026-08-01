@@ -358,7 +358,7 @@ export default function DirectionDashboardDetail() {
                 <p className="text-sm text-muted-foreground">
                   Aucun widget. Partez d'un modèle prédéfini ou ajoutez vos indicateurs.
                 </p>
-                {isOwner && (
+                {canModify && (
                   <div className="flex flex-wrap gap-2 justify-center">
                     <Button onClick={() => setTemplatesOpen(true)}><Sparkles className="h-4 w-4 mr-1" /> Choisir un modèle</Button>
                     <Button variant="outline" onClick={() => { setEditing(true); if (isMobile) setLibraryOpen(true); }}>
