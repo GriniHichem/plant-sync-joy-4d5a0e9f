@@ -15,6 +15,7 @@ import { OfControlsPanel } from "@/components/qualite/OfControlsPanel";
 import { MaintenanceRiskPanel } from "@/components/qualite/MaintenanceRiskPanel";
 import { ShiftHistoryPanel } from "@/components/qualite/ShiftHistoryPanel";
 import { logAudit } from "@/lib/audit";
+import { computeOfDueCounts, lastCheckByIndicator, sortOfsByPriority, isOfCovered, computeShiftKpis } from "@/lib/qualityShiftLogic";
 
 interface OfItem {
   id: string;
@@ -77,14 +78,8 @@ export default function QualiteShiftScreen() {
         supabase.from("quality_checks" as any).select("id, is_conform, of_id").eq("quality_shift_id", shift.id),
         supabase.from("quality_non_conformities" as any).select("id").eq("quality_shift_id", shift.id),
       ]);
-      const checks = (checksRes.data as any[]) ?? [];
-      const covered = new Set(checks.map((c) => c.of_id).filter(Boolean));
-      setStats({
-        checks: checks.length,
-        conforms: checks.filter((c) => c.is_conform === true).length,
-        ncs: ((ncRes.data as any[]) ?? []).length,
-        ofs: covered.size,
-      });
+      const k = computeShiftKpis((checksRes.data as any[]) ?? [], ((ncRes.data as any[]) ?? []).length);
+      setStats({ checks: k.checks, conforms: k.conforms, ncs: k.ncs, ofs: k.ofs });
     })();
   }, [shift, ofs]);
 
@@ -108,17 +103,8 @@ export default function QualiteShiftScreen() {
 
     const items = await Promise.all(rawOfs.map(async (of) => {
       const { data } = await (supabase as any).rpc("get_quality_indicators_for_of", { p_of_id: of.id });
-      const req = (data || []).filter((i: any) => i.effective_is_required);
-      const ofChecks = checks.filter((c) => c.of_id === of.id);
-      const lastByInd: Record<string, string> = {};
-      ofChecks.forEach((c) => { if (!lastByInd[c.indicator_id]) lastByInd[c.indicator_id] = c.control_time; });
-      let due = 0, overdue = 0;
-      req.forEach((i: any) => {
-        const last = lastByInd[i.indicator_id];
-        const mins = i.effective_frequency_minutes;
-        if (!last) { due += 1; return; }
-        if (mins && mins > 0 && (Date.now() - new Date(last).getTime()) / 60000 >= mins) { overdue += 1; due += 1; }
-      });
+      const lastByInd = lastCheckByIndicator(checks.filter((c) => c.of_id === of.id));
+      const { due, overdue } = computeOfDueCounts(data || [], lastByInd);
       return {
         id: of.id,
         numero: of.numero,
@@ -126,18 +112,16 @@ export default function QualiteShiftScreen() {
         line_id: of.line_id,
         productLabel: lbl(prodById.get(of.product_id || "") as any),
         lineLabel: lbl(lineById.get(of.line_id || "") as any),
-        onCoveredLine: of.line_id ? coveredLineIds.has(of.line_id) : false,
+        onCoveredLine: isOfCovered(of.line_id, Array.from(coveredLineIds)),
         due,
         overdue,
       } as OfItem;
     }));
 
-    items.sort((a, b) =>
-      (b.onCoveredLine ? 1 : 0) - (a.onCoveredLine ? 1 : 0) ||
-      b.overdue - a.overdue || b.due - a.due);
-    setOfs(items);
-    if (items.length > 0 && !items.some((o) => o.id === selectedOfId)) {
-      setSelectedOfId(items[0].id);
+    setOfs(sortOfsByPriority(items));
+    const sorted = sortOfsByPriority(items);
+    if (sorted.length > 0 && !sorted.some((o) => o.id === selectedOfId)) {
+      setSelectedOfId(sorted[0].id);
     }
     setOfsLoading(false);
   };
