@@ -112,7 +112,15 @@ export function AppSidebar() {
   const visibleDirection = [
     ...filterByPerm(directionItems),
     ...(sharedCount > 0 ? [sharedDashboardItem] : []),
+    ...(defaultDashboard
+      ? [{
+          title: "Mon dashboard",
+          url: `/dashboard-design/dashboards/${defaultDashboard.id}`,
+          icon: Star,
+        } as NavItem]
+      : []),
   ];
+
   const visibleAdmin = filterByPerm(adminItems);
 
   const isActive = (path: string) =>
