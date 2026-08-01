@@ -267,7 +267,8 @@ export default function DirectionDashboardDetail() {
       {/* En-tête collant */}
       <div className="sticky top-0 z-20 bg-background/95 backdrop-blur border-b px-3 md:px-6 py-2.5 space-y-2.5">
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/direction/dashboards")}>
+          <Button variant="ghost" size="icon"
+            onClick={() => navigate(isOwner ? "/dashboard-design/dashboards" : "/dashboard-design/partages")}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="min-w-0 flex-1">
@@ -275,15 +276,23 @@ export default function DirectionDashboardDetail() {
             {meta.description && <p className="text-xs md:text-sm text-muted-foreground truncate">{meta.description}</p>}
           </div>
           {dirty && <Badge variant="destructive" className="text-[10px]">Non enregistré</Badge>}
+          {!isOwner && <Badge variant="secondary" className="text-[10px]">Partagé · lecture seule</Badge>}
           <Badge variant="outline" className="gap-1 text-[11px]">
             <RefreshCw className="h-3 w-3" />
             {REFRESH_OPTIONS.find((o) => o.v === meta.refresh_seconds)?.l ?? "Manuel"}
           </Badge>
           {isOwner && (
             <>
+              <Button variant="outline" size="sm" onClick={() => setShareOpen(true)}>
+                <Share2 className="h-4 w-4 md:mr-1" /><span className="hidden md:inline">Partager</span>
+              </Button>
               <Button variant="outline" size="sm" onClick={() => setVersionsOpen(true)}>
                 <History className="h-4 w-4 md:mr-1" /><span className="hidden md:inline">Versions</span>
               </Button>
+            </>
+          )}
+          {canModify && (
+            <>
               <Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)}>
                 <Settings2 className="h-4 w-4 md:mr-1" /><span className="hidden md:inline">Réglages</span>
               </Button>
