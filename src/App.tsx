@@ -91,6 +91,7 @@ import { ManualProvider } from "@/contexts/ManualContext";
 import QualiteDashboard from "@/pages/qualite/QualiteDashboard";
 import QualiteOf from "@/pages/qualite/QualiteOf";
 import QualiteIndicateurs from "@/pages/qualite/QualiteIndicateurs";
+import QualitePlanControleOf from "@/pages/qualite/QualitePlanControleOf";
 import QualiteControles from "@/pages/qualite/QualiteControles";
 import QualiteSaisieLigne from "@/pages/qualite/QualiteSaisieLigne";
 import QualiteConsoleControle from "@/pages/qualite/QualiteConsoleControle";
@@ -364,6 +365,7 @@ const App = () => (
                 />
               } />
               <Route path="/qualite/indicateurs" element={<QualiteIndicateurs />} />
+              <Route path="/qualite/plan-controle" element={<QualitePlanControleOf />} />
               <Route path="/qualite/saisie" element={<QualiteSaisieLigne />} />
               <Route path="/qualite/console" element={<QualiteConsoleControle />} />
               <Route path="/qualite/controles" element={<QualiteControles />} />
