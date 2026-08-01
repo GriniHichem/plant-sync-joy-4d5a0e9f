@@ -258,6 +258,12 @@ export default function DirectionDashboards() {
           </Button>
         </div>
       </ResponsiveDialog>
+
+      <ShareDashboardDialog
+        dashboardId={shareId ?? ""}
+        open={!!shareId}
+        onOpenChange={(o) => { if (!o) setShareId(null); }}
+      />
     </div>
   );
 }
