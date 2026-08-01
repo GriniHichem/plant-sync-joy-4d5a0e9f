@@ -84,7 +84,7 @@ export default function DirectionDashboards() {
     onSuccess: (d: any) => {
       setOpen(false); setName(""); setDescription(""); setTemplateId("direction");
       qc.invalidateQueries({ queryKey: ["direction_dashboards"] });
-      navigate(`/direction/dashboards/${d.id}?edit=1`);
+      navigate(`/dashboard-design/dashboards/${d.id}?edit=1`);
     },
     onError: (e: any) => toast.error(e.message),
   });
