@@ -2,6 +2,7 @@ import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSharedDashboardsCount } from "@/hooks/useSharedDashboards";
+import { useDefaultDashboard } from "@/hooks/useDefaultDashboard";
 import { usePermissions } from "@/hooks/usePermissions";
 import logoEntreprise from "@/assets/logo-entreprise.jpg";
 import {
@@ -11,7 +12,7 @@ import {
   IconConsumption, IconStop, IconSettings, IconLogout,
   IconMaintenance, IconProduction, IconJournal,
 } from "@/components/icons/IndustrialIcons";
-import { ShieldCheck, ClipboardCheck, AlertTriangle, Wrench, FileText, Lock, CheckSquare, Cog, Timer, ClipboardList, Truck } from "lucide-react";
+import { ShieldCheck, ClipboardCheck, AlertTriangle, Wrench, FileText, Lock, CheckSquare, Cog, Timer, ClipboardList, Truck, Star } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup,
   SidebarGroupContent, SidebarGroupLabel, SidebarHeader,
@@ -98,6 +99,7 @@ export function AppSidebar() {
   const { profile, roles, signOut, hasRole } = useAuth();
   const { canView, loading: permsLoading } = usePermissions();
   const sharedCount = useSharedDashboardsCount();
+  const { data: defaultDashboard } = useDefaultDashboard();
 
   const filterByPerm = (items: NavItem[]) => {
     if (permsLoading) return [];
