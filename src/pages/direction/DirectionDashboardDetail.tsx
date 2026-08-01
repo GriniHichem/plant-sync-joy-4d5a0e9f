@@ -461,7 +461,7 @@ export default function DirectionDashboardDetail() {
                     setVersionsOpen(false);
                     toast.success(`Version « ${v.name} » chargée`);
                   }}>Charger</Button>
-                  {isOwner && (
+                  {canModify && (
                     <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deleteVersion.mutate(v.id)}>
                       <X className="h-4 w-4" />
                     </Button>
