@@ -7498,6 +7498,22 @@ export type Database = {
         }[]
       }
       get_position_counter: { Args: { p_position_id: string }; Returns: number }
+      get_quality_due_for_shift: {
+        Args: { p_limit?: number; p_quality_shift_id?: string }
+        Returns: {
+          critical_overdue: number
+          due: number
+          line_id: string
+          line_label: string
+          numero: string
+          of_id: string
+          on_covered_line: boolean
+          overdue: number
+          product_id: string
+          product_label: string
+          total: number
+        }[]
+      }
       get_quality_indicators_for_of: {
         Args: { p_of_id: string }
         Returns: {

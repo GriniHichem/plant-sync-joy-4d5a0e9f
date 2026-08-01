@@ -15,6 +15,8 @@ import { logAudit } from "@/lib/audit";
 import { parseNumericInput } from "@/lib/formValidation";
 import { useShiftRealtime } from "@/hooks/useShiftRealtime";
 import { buildQualityCheckPayload, validateDraft } from "@/lib/qualityShiftLogic";
+import { createDraftNcForCheck } from "@/lib/qualityNc";
+
 
 /**
  * Quick quality check entry — auto fills team_id, shift_id, quality_shift_id from active context.
@@ -124,11 +126,23 @@ export default function QualityShiftCheck() {
         new_values: { quality_shift_id: qualityShift.id, of_id: ofId, indicator_id: indicatorId },
       });
 
+      const nc = await createDraftNcForCheck({
+        check: { id: (data as any).id, ...payload },
+        indicator,
+        ofNumero: ofRow?.numero ?? null,
+        declaredBy: user?.id ?? null,
+        isConform: (data as any).is_conform ?? null,
+      });
+
       toast({
         title: "Contrôle enregistré",
-        description: (data as any).is_conform === false ? "⚠ Non conforme — pensez à créer une NC." : undefined,
+        description: nc
+          ? `⚠ Non conforme BLOQUANT — NC brouillon ${nc.nc_number ?? ""} créée automatiquement.`
+          : (data as any).is_conform === false ? "⚠ Non conforme — pensez à créer une NC." : undefined,
+        variant: (data as any).is_conform === false ? "destructive" : undefined,
       });
       setIndicatorId(""); setValueNum(""); setValueText(""); setValueBool(""); setComment("");
+
       await refresh();
     } catch (e: any) {
       toast({ title: "Erreur", description: e.message, variant: "destructive" });

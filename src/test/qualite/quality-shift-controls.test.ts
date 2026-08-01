@@ -284,20 +284,33 @@ describe("non-régression — intégration dans les écrans de shift", () => {
     expect(src).not.toMatch(/^function dueInfo/m);
   });
 
-  it("le tableau de shift utilise les compteurs et le tri partagés", () => {
+  it("le tableau de shift utilise la RPC batch et le tri partagé", () => {
     const src = read("src/pages/qualite/QualiteShiftScreen.tsx");
-    expect(src).toMatch(/computeOfDueCounts/);
+    expect(src).toMatch(/get_quality_due_for_shift/);
     expect(src).toMatch(/sortOfsByPriority/);
     expect(src).toMatch(/computeShiftKpis/);
+    expect(src).toMatch(/useCriticalOverdueAlarm/);
+    expect(src).toMatch(/conformityRate/);
+    // plus d'appel RPC par OF
+    expect(src).not.toMatch(/get_quality_indicators_for_of/);
   });
 
-  it("les écrans de shift lisent le plan de contrôle via la RPC unique", () => {
+  it("les saisies créent automatiquement une NC brouillon si bloquant non conforme", () => {
+    ["src/components/qualite/OfControlsPanel.tsx",
+     "src/pages/shift/QualityShiftCheck.tsx"].forEach((f) => {
+      expect(read(f)).toMatch(/createDraftNcForCheck/);
+    });
+  });
+
+
+  it("les écrans de saisie lisent le plan de contrôle via la RPC unique", () => {
     ["src/pages/shift/QualityShiftCheck.tsx",
      "src/pages/qualite/QualiteSaisieLigne.tsx",
-     "src/pages/qualite/QualiteShiftScreen.tsx"].forEach((f) => {
+     "src/components/qualite/OfControlsPanel.tsx"].forEach((f) => {
       expect(read(f)).toMatch(/get_quality_indicators_for_of/);
     });
   });
+
 
   it("aucun écran qualité n'écrit dans les tables de production", () => {
     ["src/pages/shift/QualityShiftCheck.tsx",
