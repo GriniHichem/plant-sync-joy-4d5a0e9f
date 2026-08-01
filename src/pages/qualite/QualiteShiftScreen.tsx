@@ -281,13 +281,29 @@ export default function QualiteShiftScreen() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <KpiBox label="Contrôles" value={stats.checks} />
-              <KpiBox label="Conformes" value={stats.conforms} variant="success" />
-              <KpiBox label="NC ouvertes" value={stats.ncs} variant={stats.ncs > 0 ? "warning" : "default"} />
-              <KpiBox label="OF couverts" value={stats.ofs} />
+            <CardContent className="space-y-3">
+              {criticalOverdue > 0 && (
+                <div className="flex items-center gap-2 rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 animate-pulse">
+                  <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
+                  <span className="text-sm font-medium text-destructive">
+                    {criticalOverdue} contrôle(s) bloquant(s) en retard critique (&gt; 2× la fréquence) — à saisir immédiatement.
+                  </span>
+                </div>
+              )}
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                <KpiBox label="Contrôles" value={stats.checks} />
+                <KpiBox label="Conformes" value={stats.conforms} variant="success" />
+                <KpiBox
+                  label="Taux conformité"
+                  value={stats.conformityRate == null ? "—" : `${stats.conformityRate}%`}
+                  variant={stats.conformityRate == null ? "default" : stats.conformityRate >= 95 ? "success" : stats.conformityRate >= 85 ? "warning" : "danger"}
+                />
+                <KpiBox label="NC ouvertes" value={stats.ncs} variant={stats.ncs > 0 ? "warning" : "default"} />
+                <KpiBox label="OF couverts" value={stats.ofs} />
+              </div>
             </CardContent>
           </Card>
+
 
           {/* Master-détail */}
           <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
