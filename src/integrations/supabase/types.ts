@@ -348,6 +348,8 @@ export type Database = {
           batch_number: string | null
           created_at: string
           declared_by: string | null
+          erp_ref: string | null
+          erp_synced_at: string | null
           expiry_date: string | null
           id: string
           lot_number: string | null
@@ -366,6 +368,8 @@ export type Database = {
           batch_number?: string | null
           created_at?: string
           declared_by?: string | null
+          erp_ref?: string | null
+          erp_synced_at?: string | null
           expiry_date?: string | null
           id?: string
           lot_number?: string | null
@@ -384,6 +388,8 @@ export type Database = {
           batch_number?: string | null
           created_at?: string
           declared_by?: string | null
+          erp_ref?: string | null
+          erp_synced_at?: string | null
           expiry_date?: string | null
           id?: string
           lot_number?: string | null
@@ -697,6 +703,113 @@ export type Database = {
         }
         Relationships: []
       }
+      email_logs: {
+        Row: {
+          body: string | null
+          cc: string[]
+          created_at: string
+          error_message: string | null
+          from_email: string | null
+          id: string
+          is_html: boolean
+          sent_at: string | null
+          sent_to: string[]
+          status: string
+          subject: string
+          template_id: string | null
+          template_name: string | null
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          cc?: string[]
+          created_at?: string
+          error_message?: string | null
+          from_email?: string | null
+          id?: string
+          is_html?: boolean
+          sent_at?: string | null
+          sent_to?: string[]
+          status?: string
+          subject: string
+          template_id?: string | null
+          template_name?: string | null
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          cc?: string[]
+          created_at?: string
+          error_message?: string | null
+          from_email?: string | null
+          id?: string
+          is_html?: boolean
+          sent_at?: string | null
+          sent_to?: string[]
+          status?: string
+          subject?: string
+          template_id?: string | null
+          template_name?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_logs_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "email_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_templates: {
+        Row: {
+          body: string
+          category: string
+          created_at: string
+          created_by: string | null
+          default_recipients: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          is_html: boolean
+          name: string
+          subject: string
+          updated_at: string
+          variables: string[]
+        }
+        Insert: {
+          body: string
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          default_recipients?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_html?: boolean
+          name: string
+          subject: string
+          updated_at?: string
+          variables?: string[]
+        }
+        Update: {
+          body?: string
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          default_recipients?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_html?: boolean
+          name?: string
+          subject?: string
+          updated_at?: string
+          variables?: string[]
+        }
+        Relationships: []
+      }
       entity_documents: {
         Row: {
           category_id: string
@@ -906,6 +1019,90 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      erp_sync_logs: {
+        Row: {
+          actor_email: string | null
+          actor_id: string | null
+          created_at: string
+          direction: string
+          duration_ms: number | null
+          error: string | null
+          id: string
+          method: string
+          ok: boolean
+          record_count: number
+          request_summary: Json
+          resource: string
+          response_summary: Json
+          status_code: number
+        }
+        Insert: {
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          direction: string
+          duration_ms?: number | null
+          error?: string | null
+          id?: string
+          method: string
+          ok?: boolean
+          record_count?: number
+          request_summary?: Json
+          resource: string
+          response_summary?: Json
+          status_code?: number
+        }
+        Update: {
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          direction?: string
+          duration_ms?: number | null
+          error?: string | null
+          id?: string
+          method?: string
+          ok?: boolean
+          record_count?: number
+          request_summary?: Json
+          resource?: string
+          response_summary?: Json
+          status_code?: number
+        }
+        Relationships: []
+      }
+      erp_sync_state: {
+        Row: {
+          created_at: string
+          id: string
+          last_error: string | null
+          last_error_at: string | null
+          last_record_count: number
+          last_success_at: string | null
+          resource: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          last_error_at?: string | null
+          last_record_count?: number
+          last_success_at?: string | null
+          resource: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          last_error_at?: string | null
+          last_record_count?: number
+          last_success_at?: string | null
+          resource?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       intervention_pdr: {
         Row: {
@@ -3379,6 +3576,7 @@ export type Database = {
         Row: {
           applied: boolean
           created_at: string
+          erp_synced_at: string | null
           id: string
           modified_at: string | null
           modified_by: string | null
@@ -3402,6 +3600,7 @@ export type Database = {
         Insert: {
           applied?: boolean
           created_at?: string
+          erp_synced_at?: string | null
           id?: string
           modified_at?: string | null
           modified_by?: string | null
@@ -3425,6 +3624,7 @@ export type Database = {
         Update: {
           applied?: boolean
           created_at?: string
+          erp_synced_at?: string | null
           id?: string
           modified_at?: string | null
           modified_by?: string | null
@@ -3941,6 +4141,8 @@ export type Database = {
         Row: {
           created_at: string
           declared_by: string | null
+          erp_ref: string | null
+          erp_synced_at: string | null
           heure_production: string
           id: string
           notes: string | null
@@ -3953,6 +4155,8 @@ export type Database = {
         Insert: {
           created_at?: string
           declared_by?: string | null
+          erp_ref?: string | null
+          erp_synced_at?: string | null
           heure_production: string
           id?: string
           notes?: string | null
@@ -3965,6 +4169,8 @@ export type Database = {
         Update: {
           created_at?: string
           declared_by?: string | null
+          erp_ref?: string | null
+          erp_synced_at?: string | null
           heure_production?: string
           id?: string
           notes?: string | null
@@ -6799,6 +7005,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_email_accounts: {
+        Row: {
+          connected_at: string | null
+          created_at: string
+          display_name: string | null
+          email: string
+          encrypted_password: string | null
+          id: string
+          is_connected: boolean
+          last_error: string | null
+          provider: string
+          smtp_host: string | null
+          smtp_port: number | null
+          smtp_secure: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          connected_at?: string | null
+          created_at?: string
+          display_name?: string | null
+          email: string
+          encrypted_password?: string | null
+          id?: string
+          is_connected?: boolean
+          last_error?: string | null
+          provider?: string
+          smtp_host?: string | null
+          smtp_port?: number | null
+          smtp_secure?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          connected_at?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string
+          encrypted_password?: string | null
+          id?: string
+          is_connected?: boolean
+          last_error?: string | null
+          provider?: string
+          smtp_host?: string | null
+          smtp_port?: number | null
+          smtp_secure?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_notification_preferences: {
         Row: {
