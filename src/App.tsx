@@ -86,6 +86,10 @@ import QualiteDefectTypesAdmin from "@/pages/parametres/qualite/QualiteDefectTyp
 import QualiteDecisionReasonsAdmin from "@/pages/parametres/qualite/QualiteDecisionReasonsAdmin";
 import QualiteShiftPlanAdmin from "@/pages/parametres/qualite/QualiteShiftPlanAdmin";
 import SearchPage from "@/pages/SearchPage";
+import QualiteEnquetesLot from "@/pages/qualite/QualiteEnquetesLot";
+import QualiteEnqueteLotDetail from "@/pages/qualite/QualiteEnqueteLotDetail";
+import EmailModule from "@/pages/email/EmailModule";
+import ErpSyncAdmin from "@/pages/parametres/ErpSyncAdmin";
 import { GlobalSearchProvider } from "@/components/search/GlobalSearchProvider";
 import { ManualProvider } from "@/contexts/ManualContext";
 import QualiteDashboard from "@/pages/qualite/QualiteDashboard";
@@ -343,6 +347,10 @@ const App = () => (
               <Route path="/parametres/smtp" element={<SmtpConfigAdmin />} />
               <Route path="/validations" element={<ValidationsPage />} />
               <Route path="/parametres/validations" element={<ValidationRulesAdmin />} />
+              <Route path="/parametres/erp-sync" element={<ErpSyncAdmin />} />
+              <Route path="/email" element={<EmailModule />} />
+              <Route path="/qualite/enquetes-lot" element={<QualiteEnquetesLot />} />
+              <Route path="/qualite/enquetes-lot/:id" element={<QualiteEnqueteLotDetail />} />
               <Route path="/parametres/qualite" element={<QualiteParametresHub />} />
               <Route path="/parametres/qualite/nc-categories" element={<QualiteNcCategoriesAdmin />} />
               <Route path="/parametres/qualite/action-categories" element={<QualiteActionCategoriesAdmin />} />

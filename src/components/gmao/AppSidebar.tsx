@@ -12,7 +12,7 @@ import {
   IconConsumption, IconStop, IconSettings, IconLogout,
   IconMaintenance, IconProduction, IconJournal,
 } from "@/components/icons/IndustrialIcons";
-import { ShieldCheck, ClipboardCheck, AlertTriangle, Wrench, FileText, Lock, CheckSquare, Cog, Timer, ClipboardList, Truck, Star } from "lucide-react";
+import { ShieldCheck, ClipboardCheck, AlertTriangle, Wrench, FileText, Lock, CheckSquare, Cog, Timer, ClipboardList, Truck, Star, Mail, RefreshCw } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup,
   SidebarGroupContent, SidebarGroupLabel, SidebarHeader,
@@ -70,6 +70,7 @@ const qualiteItems: NavItem[] = [
   { title: "Actions", url: "/qualite/actions", icon: Wrench, module: "qualite_actions" },
   { title: "Recettes & nomenclatures", url: "/qualite/recettes-nomenclatures", icon: IconRecipe, module: "qualite_recettes" },
   { title: "Traçabilité", url: "/qualite/tracabilite", icon: IconChart, module: "qualite_tracabilite" },
+  { title: "Enquêtes de lot", url: "/qualite/enquetes-lot", icon: FileText, module: "qualite_enquetes" },
   { title: "Rapports", url: "/qualite/rapports", icon: FileText, module: "qualite_rapports" },
   { title: "Réception F&L", url: "/qualite/reception", icon: Truck, module: "reception" },
 ];
@@ -89,6 +90,8 @@ const sharedDashboardItem: NavItem = {
 
 const adminItems: NavItem[] = [
   { title: "Sécurité & Accès", url: "/securite", icon: Lock, module: "securite" },
+  { title: "Email", url: "/email", icon: Mail, module: "email" },
+  { title: "Sync ERP", url: "/parametres/erp-sync", icon: RefreshCw, module: "erp_sync" },
   { title: "Validations", url: "/validations", icon: CheckSquare, module: "validations" },
   { title: "Paramètres", url: "/parametres", icon: IconSettings, module: "parametres" },
 ];
