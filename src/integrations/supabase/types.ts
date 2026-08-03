@@ -4852,6 +4852,119 @@ export type Database = {
         }
         Relationships: []
       }
+      quality_lot_investigation_logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          id: string
+          investigation_id: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          investigation_id: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          investigation_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quality_lot_investigation_logs_investigation_id_fkey"
+            columns: ["investigation_id"]
+            isOneToOne: false
+            referencedRelation: "quality_lot_investigations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quality_lot_investigations: {
+        Row: {
+          analysis: string | null
+          anomaly_description: string | null
+          closed_at: string | null
+          closed_by: string | null
+          conclusion: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          investigation_number: string | null
+          lot_reference: string | null
+          nc_id: string | null
+          product_id: string | null
+          production_date: string
+          production_time: string
+          reopened_at: string | null
+          status: string
+          updated_at: string
+          window_hours: number
+        }
+        Insert: {
+          analysis?: string | null
+          anomaly_description?: string | null
+          closed_at?: string | null
+          closed_by?: string | null
+          conclusion?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          investigation_number?: string | null
+          lot_reference?: string | null
+          nc_id?: string | null
+          product_id?: string | null
+          production_date: string
+          production_time: string
+          reopened_at?: string | null
+          status?: string
+          updated_at?: string
+          window_hours?: number
+        }
+        Update: {
+          analysis?: string | null
+          anomaly_description?: string | null
+          closed_at?: string | null
+          closed_by?: string | null
+          conclusion?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          investigation_number?: string | null
+          lot_reference?: string | null
+          nc_id?: string | null
+          product_id?: string | null
+          production_date?: string
+          production_time?: string
+          reopened_at?: string | null
+          status?: string
+          updated_at?: string
+          window_hours?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quality_lot_investigations_nc_id_fkey"
+            columns: ["nc_id"]
+            isOneToOne: false
+            referencedRelation: "quality_non_conformities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quality_lot_investigations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quality_nc_categories: {
         Row: {
           code: string
@@ -7275,6 +7388,10 @@ export type Database = {
           kind: string
         }[]
       }
+      can_manage_lot_investigation: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
       can_manage_notification_rule: {
         Args: { _module: string; _user_id: string }
         Returns: boolean
@@ -7707,6 +7824,18 @@ export type Database = {
       is_user_on_shift: {
         Args: { _at?: string; _scope?: string; _user_id: string }
         Returns: boolean
+      }
+      lot_investigation_events: {
+        Args: { p_from: string; p_to: string }
+        Returns: {
+          detail: string
+          duration_minutes: number
+          ended_at: string
+          event_type: string
+          occurred_at: string
+          ref_id: string
+          title: string
+        }[]
       }
       next_reception_ticket_no: { Args: never; Returns: string }
       next_reception_weighing_no: { Args: never; Returns: string }
