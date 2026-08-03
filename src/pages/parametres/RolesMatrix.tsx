@@ -75,6 +75,7 @@ const MODULE_GROUPS = [
       { key: "qualite_actions", label: "Actions correctives" },
       { key: "qualite_recettes", label: "Recettes & nomenclatures" },
       { key: "qualite_tracabilite", label: "Traçabilité" },
+      { key: "qualite_enquetes", label: "Enquêtes de lot" },
       { key: "qualite_rapports", label: "Rapports" },
       { key: "qualite_shift", label: "Shift contrôle" },
       { key: "reception", label: "Réception Fruits & Légumes" },
@@ -106,6 +107,8 @@ const MODULE_GROUPS = [
       { key: "notifications", label: "Notifications" },
       { key: "notifications_rules", label: "Règles de notification" },
       { key: "securite", label: "Sécurité & accès" },
+      { key: "erp_sync", label: "Synchronisation ERP" },
+      { key: "email", label: "Module Email" },
     ],
   },
   {
@@ -192,7 +195,7 @@ function ap(modules: string[], preset: Preset, base: Record<string, Preset> = {}
 const MAINT_MODS = ["dashboard", "machines", "equipements", "organes", "lignes", "pdr", "tickets", "preventif", "shift_maintenance", "journal", "historique", "analytiques"];
 const LOG_MODS = ["pdr_demandes", "shift_magasin", "journal_stock"];
 const PROD_MODS = ["gpao_dashboard", "of", "produits", "articles", "recettes", "shift_production", "consommations", "arrets"];
-const QUALITY_MODS = ["qualite", "qualite_dashboard", "qualite_of", "qualite_indicateurs", "qualite_plan_controle", "qualite_controles", "qualite_nc", "qualite_actions", "qualite_recettes", "qualite_tracabilite", "qualite_rapports", "qualite_shift", "reception"];
+const QUALITY_MODS = ["qualite", "qualite_dashboard", "qualite_of", "qualite_indicateurs", "qualite_plan_controle", "qualite_controles", "qualite_nc", "qualite_actions", "qualite_recettes", "qualite_tracabilite", "qualite_enquetes", "qualite_rapports", "qualite_shift", "reception"];
 const INV_MODS = ["inventaire", "inventaire_campagnes"];
 const DIR_MODS = ["direction", "direction_dashboards"];
 const GOV_MODS = ["audit", "validations", "validations_rules", "notifications", "notifications_rules", "securite"];
