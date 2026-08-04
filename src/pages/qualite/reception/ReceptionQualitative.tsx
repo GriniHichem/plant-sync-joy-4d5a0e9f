@@ -282,8 +282,11 @@ export default function ReceptionQualitative() {
 
 
 
+  // Historique allégé : uniquement les 10 derniers tickets clôturés.
   const { data: recent = [] } = useQuery({
     queryKey: ["reception_tickets_recent"],
+    staleTime: 60 * 1000,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const { data, error } = await supabase.from("v_reception_global")
         .select("*")
