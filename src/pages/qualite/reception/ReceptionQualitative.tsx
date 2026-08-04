@@ -50,9 +50,13 @@ export default function ReceptionQualitative() {
     commentaire: "",
   });
 
+  // Référentiels statiques : mis en cache 10 min pour éviter les appels répétés.
+  const REF_CACHE = { staleTime: 10 * 60 * 1000, gcTime: 30 * 60 * 1000, refetchOnWindowFocus: false } as const;
+
   // Campagne par défaut
   const { data: defaultCampaign } = useQuery({
     queryKey: ["reception_campaigns", "default"],
+    ...REF_CACHE,
     queryFn: async () => {
       const { data, error } = await supabase.from("reception_campaigns" as any)
         .select("*, reception_products(designation, code)")
@@ -64,6 +68,7 @@ export default function ReceptionQualitative() {
 
   const { data: campaigns = [] } = useQuery({
     queryKey: ["reception_campaigns", "active"],
+    ...REF_CACHE,
     queryFn: async () => {
       const { data, error } = await supabase.from("reception_campaigns" as any)
         .select("*, reception_products(designation, code)")
@@ -75,6 +80,7 @@ export default function ReceptionQualitative() {
 
   const { data: suppliers = [] } = useQuery({
     queryKey: ["reception_suppliers", "agree"],
+    ...REF_CACHE,
     queryFn: async () => {
       const { data, error } = await supabase.from("reception_suppliers" as any)
         .select("id, nom, code").eq("agree", true).eq("actif", true).order("nom");
@@ -90,6 +96,7 @@ export default function ReceptionQualitative() {
       (s.nom ?? "").toLowerCase().includes(q) || (s.code ?? "").toLowerCase().includes(q)
     );
   }, [suppliers, supplierSearch]);
+
 
   useEffect(() => {
     if (!form.campaign_id && defaultCampaign?.id) {
