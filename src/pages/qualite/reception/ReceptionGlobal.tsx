@@ -240,7 +240,7 @@ export default function ReceptionGlobal() {
       toast({ title: "Erreur", description: error.message, variant: "destructive" });
       return;
     }
-    setPurgeCount(Number((data as any)?.count ?? (data as any)?.deleted ?? data ?? 0));
+    setPurgeCount(Number(data ?? 0));
   };
 
   const openPurge = () => {
@@ -256,7 +256,7 @@ export default function ReceptionGlobal() {
         p_hours: Number(purgeHours), p_dry_run: false,
       });
       if (error) throw error;
-      const n = Number((data as any)?.count ?? (data as any)?.deleted ?? data ?? 0);
+      const n = Number(data ?? 0);
       toast({ title: "Suppression effectuée", description: `${n} ticket(s) importé(s) supprimé(s) (< ${purgeHours} h).` });
       setPurgeOpen(false);
       invalidate();
