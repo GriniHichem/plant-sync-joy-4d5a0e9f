@@ -663,7 +663,7 @@ export default function ReceptionQualitative() {
           {!ticketId && canCreateTicket && (
             <Button
               className="w-full h-12"
-              disabled={createTicket.isPending || !form.numero.trim() || !form.campaign_id || !form.supplier_id}
+              disabled={createTicket.isPending || !form.numero.trim() || !form.campaign_id || !form.supplier_id || numeroCheck === "taken"}
               onClick={() => createTicket.mutate()}
             >
               Ouvrir le ticket
