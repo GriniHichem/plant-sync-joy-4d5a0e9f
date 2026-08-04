@@ -484,6 +484,14 @@ export default function ReceptionQualitative() {
                   )}
                 </div>
               )}
+              {!ticketId && !editingNumero && numeroCheck !== "idle" && (
+                <p className={`text-xs mt-1 ${numeroCheck === "taken" ? "text-destructive font-medium" : "text-muted-foreground"}`}>
+                  {numeroCheck === "checking" && "Vérification du numéro…"}
+                  {numeroCheck === "free" && "Numéro disponible"}
+                  {numeroCheck === "taken" && "Ce numéro de ticket existe déjà"}
+                </p>
+              )}
+
             </div>
             <div className="min-w-0">
               <Label className="text-xs">Heure début *</Label>
