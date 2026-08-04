@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -50,9 +50,13 @@ export default function ReceptionQualitative() {
     commentaire: "",
   });
 
+  // Référentiels statiques : mis en cache 10 min pour éviter les appels répétés.
+  const REF_CACHE = { staleTime: 10 * 60 * 1000, gcTime: 30 * 60 * 1000, refetchOnWindowFocus: false } as const;
+
   // Campagne par défaut
   const { data: defaultCampaign } = useQuery({
     queryKey: ["reception_campaigns", "default"],
+    ...REF_CACHE,
     queryFn: async () => {
       const { data, error } = await supabase.from("reception_campaigns" as any)
         .select("*, reception_products(designation, code)")
@@ -64,6 +68,7 @@ export default function ReceptionQualitative() {
 
   const { data: campaigns = [] } = useQuery({
     queryKey: ["reception_campaigns", "active"],
+    ...REF_CACHE,
     queryFn: async () => {
       const { data, error } = await supabase.from("reception_campaigns" as any)
         .select("*, reception_products(designation, code)")
@@ -75,6 +80,7 @@ export default function ReceptionQualitative() {
 
   const { data: suppliers = [] } = useQuery({
     queryKey: ["reception_suppliers", "agree"],
+    ...REF_CACHE,
     queryFn: async () => {
       const { data, error } = await supabase.from("reception_suppliers" as any)
         .select("id, nom, code").eq("agree", true).eq("actif", true).order("nom");
@@ -90,6 +96,7 @@ export default function ReceptionQualitative() {
       (s.nom ?? "").toLowerCase().includes(q) || (s.code ?? "").toLowerCase().includes(q)
     );
   }, [suppliers, supplierSearch]);
+
 
   useEffect(() => {
     if (!form.campaign_id && defaultCampaign?.id) {
@@ -125,6 +132,24 @@ export default function ReceptionQualitative() {
   const showSequenceWarning = !!sequenceWarning
     && !ticketId
     && ignoredSequenceFor !== form.numero.trim();
+
+  // Validation asynchrone (non bloquante) de l'unicité du numéro de ticket.
+  const [numeroCheck, setNumeroCheck] = useState<"idle" | "checking" | "free" | "taken">("idle");
+  useEffect(() => {
+    const v = form.numero.trim();
+    if (ticketId || v.length < 2) { setNumeroCheck("idle"); return; }
+    let cancelled = false;
+    setNumeroCheck("checking");
+    const t = setTimeout(async () => {
+      const { data, error } = await supabase.from("reception_tickets")
+        .select("id").eq("numero", v).limit(1).maybeSingle();
+      if (cancelled) return;
+      if (error) { setNumeroCheck("idle"); return; }
+      setNumeroCheck(data ? "taken" : "free");
+    }, 450);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [form.numero, ticketId]);
+
 
   // Photos du ticket
   const { data: photos = [] } = useQuery({
@@ -275,8 +300,11 @@ export default function ReceptionQualitative() {
 
 
 
+  // Historique allégé : uniquement les 10 derniers tickets clôturés.
   const { data: recent = [] } = useQuery({
     queryKey: ["reception_tickets_recent"],
+    staleTime: 60 * 1000,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const { data, error } = await supabase.from("v_reception_global")
         .select("*")
@@ -382,18 +410,28 @@ export default function ReceptionQualitative() {
     },
   );
 
-  const photoBySlot = (slot: number) => photos.find((p) => p.slot === slot);
+  const photoBySlot = useCallback(
+    (slot: number) => photos.find((p) => p.slot === slot),
+    [photos],
+  );
   const nPhotos = photos.length;
-  const missingSlots = [1, 2, 3].filter((s) => !photoBySlot(s));
-  const missingReasons: string[] = [];
-  if (!form.supplier_id) missingReasons.push("Fournisseur");
-  if (!form.heure_debut) missingReasons.push("Heure de début");
-  if (!form.heure_fin) missingReasons.push("Heure de fin");
-  if (missingSlots.length > 0) missingReasons.push(`Photo${missingSlots.length > 1 ? "s" : ""} ${missingSlots.join(", ")}`);
+  const missingSlots = useMemo(() => [1, 2, 3].filter((s) => !photoBySlot(s)), [photoBySlot]);
   const abatValid = form.taux_abattement !== "" && !Number.isNaN(Number(form.taux_abattement)) && Number(form.taux_abattement) >= 0 && Number(form.taux_abattement) <= 100;
-  if (!abatValid) missingReasons.push("Taux d'abattement");
+  const missingReasons = useMemo(() => {
+    const r: string[] = [];
+    if (!form.supplier_id) r.push("Fournisseur");
+    if (!form.heure_debut) r.push("Heure de début");
+    if (!form.heure_fin) r.push("Heure de fin");
+    if (missingSlots.length > 0) r.push(`Photo${missingSlots.length > 1 ? "s" : ""} ${missingSlots.join(", ")}`);
+    if (!abatValid) r.push("Taux d'abattement");
+    return r;
+  }, [form.supplier_id, form.heure_debut, form.heure_fin, missingSlots, abatValid]);
   const canClose = !!ticketId && missingReasons.length === 0;
-  const selectedSupplier = suppliers.find((s: any) => s.id === form.supplier_id);
+  const selectedSupplier = useMemo(
+    () => suppliers.find((s: any) => s.id === form.supplier_id),
+    [suppliers, form.supplier_id],
+  );
+
 
 
   return (
@@ -456,6 +494,14 @@ export default function ReceptionQualitative() {
                   )}
                 </div>
               )}
+              {!ticketId && !editingNumero && numeroCheck !== "idle" && (
+                <p className={`text-xs mt-1 ${numeroCheck === "taken" ? "text-destructive font-medium" : "text-muted-foreground"}`}>
+                  {numeroCheck === "checking" && "Vérification du numéro…"}
+                  {numeroCheck === "free" && "Numéro disponible"}
+                  {numeroCheck === "taken" && "Ce numéro de ticket existe déjà"}
+                </p>
+              )}
+
             </div>
             <div className="min-w-0">
               <Label className="text-xs">Heure début *</Label>
@@ -627,7 +673,7 @@ export default function ReceptionQualitative() {
           {!ticketId && canCreateTicket && (
             <Button
               className="w-full h-12"
-              disabled={createTicket.isPending || !form.numero.trim() || !form.campaign_id || !form.supplier_id}
+              disabled={createTicket.isPending || !form.numero.trim() || !form.campaign_id || !form.supplier_id || numeroCheck === "taken"}
               onClick={() => createTicket.mutate()}
             >
               Ouvrir le ticket

@@ -25,6 +25,8 @@ const MAX_BYTES = 5 * 1024 * 1024;
 
 export function PhotoSlot({ ticketId, ticketNumero, supplierName, campaignId, slot, disabled, storagePath, onUploaded, onDeleted }: Props) {
   const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [phase, setPhase] = useState<"" | "compress" | "upload">("");
   const [preview, setPreview] = useState<string | null>(null);
   const [cameraOpen, setCameraOpen] = useState(false);
   const [zoomOpen, setZoomOpen] = useState(false);
@@ -48,26 +50,37 @@ export function PhotoSlot({ ticketId, ticketNumero, supplierName, campaignId, sl
       return;
     }
     setBusy(true);
+    setPhase("compress");
+    setProgress(10);
     try {
       const blob = await compressImage(file, 2560, 0.92, MAX_BYTES);
       if (blob.size > MAX_BYTES) {
         throw new Error("Photo > 5 Mo malgré compression — réessayez avec moins de zoom");
       }
+      setPhase("upload");
+      setProgress(45);
+      // Progression estimée pendant l'envoi (le SDK ne remonte pas d'événement).
+      const tick = setInterval(() => setProgress((p) => (p < 90 ? p + 5 : p)), 350);
       // Organisation Supabase: reception-photos/{campagne}/{ticket_id}/photoN-<uuid>.jpg
       const camp = campaignId ?? "sans-campagne";
       const path = `${camp}/${ticketId}/photo${slot}-${crypto.randomUUID()}.jpg`;
       const { error } = await supabase.storage
         .from("reception-photos")
         .upload(path, blob, { contentType: "image/jpeg", upsert: false });
+      clearInterval(tick);
       if (error) throw error;
+      setProgress(100);
       onUploaded(path);
       toast.success(`Photo ${slot} enregistrée (${(blob.size / 1024 / 1024).toFixed(2)} Mo)`);
     } catch (e: any) {
       toast.error(e.message ?? "Erreur d'envoi");
     } finally {
       setBusy(false);
+      setPhase("");
+      setProgress(0);
     }
   }
+
 
   async function handleDelete() {
     if (!storagePath) return;
@@ -110,9 +123,24 @@ export function PhotoSlot({ ticketId, ticketNumero, supplierName, campaignId, sl
           )}
         </>
       ) : (
-        <div className={cn("flex flex-col items-center gap-2", disabled && "opacity-50 pointer-events-none")}>
+        <div className={cn("flex flex-col items-center gap-2 w-full", disabled && "opacity-50 pointer-events-none")}>
           {busy ? <Loader2 className="h-8 w-8 animate-spin" /> : <Camera className="h-8 w-8 text-muted-foreground" />}
-          <span className="text-sm text-muted-foreground">Prendre la photo</span>
+          {busy ? (
+            <div className="w-full max-w-[180px]">
+              <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full bg-primary transition-all duration-300"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-1 text-center tabular-nums">
+                {phase === "compress" ? "Compression…" : "Envoi…"} {progress}%
+              </p>
+            </div>
+          ) : (
+            <span className="text-sm text-muted-foreground">Prendre la photo</span>
+          )}
+
           <Button
             type="button"
             size="sm"

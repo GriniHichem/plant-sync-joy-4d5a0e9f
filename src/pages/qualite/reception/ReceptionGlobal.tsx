@@ -224,6 +224,49 @@ export default function ReceptionGlobal() {
     }
   };
 
+  // ---- Suppression en masse des tickets importés (statut "pese_importe") ----
+  const canPurge = isAdmin || canDelete("reception_global");
+  const [purgeOpen, setPurgeOpen] = useState(false);
+  const [purgeHours, setPurgeHours] = useState("4");
+  const [purgeCount, setPurgeCount] = useState<number | null>(null);
+  const [purging, setPurging] = useState(false);
+
+  const countPurge = async (hours: string) => {
+    setPurgeCount(null);
+    const { data, error } = await supabase.rpc("purge_imported_reception_tickets" as any, {
+      p_hours: Number(hours), p_dry_run: true,
+    });
+    if (error) {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+      return;
+    }
+    setPurgeCount(Number(data ?? 0));
+  };
+
+  const openPurge = () => {
+    setPurgeOpen(true);
+    setPurgeHours("4");
+    countPurge("4");
+  };
+
+  const handlePurge = async () => {
+    setPurging(true);
+    try {
+      const { data, error } = await supabase.rpc("purge_imported_reception_tickets" as any, {
+        p_hours: Number(purgeHours), p_dry_run: false,
+      });
+      if (error) throw error;
+      const n = Number(data ?? 0);
+      toast({ title: "Suppression effectuée", description: `${n} ticket(s) importé(s) supprimé(s) (< ${purgeHours} h).` });
+      setPurgeOpen(false);
+      invalidate();
+    } catch (e: any) {
+      toast({ title: "Suppression impossible", description: e.message, variant: "destructive" });
+    } finally {
+      setPurging(false);
+    }
+  };
+
   // Saisie / mise à jour du poids brut depuis la consultation (tickets non pesés).
   // L'abattement et le poids net sont recalculés automatiquement par la base
   // à partir du taux d'abattement du ticket.
@@ -534,6 +577,13 @@ export default function ReceptionGlobal() {
                   </Button>
                 </>
               )}
+              {canPurge && (
+                <Button variant="outline" size="sm" className="text-destructive border-destructive/40"
+                  onClick={openPurge}>
+                  <Trash2 className="h-4 w-4 mr-1" />Supprimer les tickets importés
+                </Button>
+              )}
+
               <ExportCsvButton
                 filename="reception-global"
                 data={filtered.map((r) => ({
@@ -876,6 +926,57 @@ export default function ReceptionGlobal() {
             <AlertDialogCancel disabled={weighing}>Annuler</AlertDialogCancel>
             <AlertDialogAction disabled={weighing} onClick={(e) => { e.preventDefault(); handleWeigh(); }}>
               {weighing ? "Enregistrement…" : "Enregistrer"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Suppression en masse des tickets importés */}
+      <AlertDialog open={purgeOpen} onOpenChange={setPurgeOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer les tickets importés</AlertDialogTitle>
+            <AlertDialogDescription>
+              Seuls les tickets au statut <span className="font-semibold">pesé importé</span> (créés par importation CSV)
+              sont concernés. Les tickets saisis manuellement ne sont jamais supprimés.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-3">
+            <Label className="text-xs">Ancienneté</Label>
+            <RadioGroup
+              value={purgeHours}
+              onValueChange={(v) => { setPurgeHours(v); countPurge(v); }}
+              className="grid grid-cols-3 gap-2"
+            >
+              {["4", "8", "12"].map((h) => (
+                <Label key={h} htmlFor={`purge-${h}`}
+                  className="flex items-center justify-center gap-2 rounded-md border p-3 cursor-pointer has-[:checked]:border-primary">
+                  <RadioGroupItem value={h} id={`purge-${h}`} />
+                  <span>{h} heures</span>
+                </Label>
+              ))}
+            </RadioGroup>
+            <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm">
+              {purgeCount == null ? (
+                <span className="text-muted-foreground">Calcul du nombre de tickets…</span>
+              ) : (
+                <>
+                  <span className="font-semibold">{purgeCount}</span> ticket(s) importé(s) datant de moins de {purgeHours} h.
+                  <p className="mt-1 text-destructive">
+                    Cette action est irréversible. Voulez-vous vraiment supprimer {purgeCount} tickets importés ?
+                  </p>
+                </>
+              )}
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={purging}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={purging || !purgeCount}
+              onClick={(e) => { e.preventDefault(); handlePurge(); }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {purging ? "Suppression…" : "Confirmer"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
