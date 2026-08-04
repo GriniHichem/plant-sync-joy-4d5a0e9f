@@ -123,9 +123,24 @@ export function PhotoSlot({ ticketId, ticketNumero, supplierName, campaignId, sl
           )}
         </>
       ) : (
-        <div className={cn("flex flex-col items-center gap-2", disabled && "opacity-50 pointer-events-none")}>
+        <div className={cn("flex flex-col items-center gap-2 w-full", disabled && "opacity-50 pointer-events-none")}>
           {busy ? <Loader2 className="h-8 w-8 animate-spin" /> : <Camera className="h-8 w-8 text-muted-foreground" />}
-          <span className="text-sm text-muted-foreground">Prendre la photo</span>
+          {busy ? (
+            <div className="w-full max-w-[180px]">
+              <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full bg-primary transition-all duration-300"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-1 text-center tabular-nums">
+                {phase === "compress" ? "Compression…" : "Envoi…"} {progress}%
+              </p>
+            </div>
+          ) : (
+            <span className="text-sm text-muted-foreground">Prendre la photo</span>
+          )}
+
           <Button
             type="button"
             size="sm"
