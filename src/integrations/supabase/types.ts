@@ -8107,6 +8107,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      purge_imported_reception_tickets: {
+        Args: { p_dry_run?: boolean; p_hours: number }
+        Returns: number
+      }
       quality_shift_refresh_links: {
         Args: { p_quality_shift_id: string }
         Returns: number
