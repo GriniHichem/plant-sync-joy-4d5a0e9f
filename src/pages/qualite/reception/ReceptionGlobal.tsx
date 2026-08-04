@@ -931,6 +931,57 @@ export default function ReceptionGlobal() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Suppression en masse des tickets importés */}
+      <AlertDialog open={purgeOpen} onOpenChange={setPurgeOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer les tickets importés</AlertDialogTitle>
+            <AlertDialogDescription>
+              Seuls les tickets au statut <span className="font-semibold">pesé importé</span> (créés par importation CSV)
+              sont concernés. Les tickets saisis manuellement ne sont jamais supprimés.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-3">
+            <Label className="text-xs">Ancienneté</Label>
+            <RadioGroup
+              value={purgeHours}
+              onValueChange={(v) => { setPurgeHours(v); countPurge(v); }}
+              className="grid grid-cols-3 gap-2"
+            >
+              {["4", "8", "12"].map((h) => (
+                <Label key={h} htmlFor={`purge-${h}`}
+                  className="flex items-center justify-center gap-2 rounded-md border p-3 cursor-pointer has-[:checked]:border-primary">
+                  <RadioGroupItem value={h} id={`purge-${h}`} />
+                  <span>{h} heures</span>
+                </Label>
+              ))}
+            </RadioGroup>
+            <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm">
+              {purgeCount == null ? (
+                <span className="text-muted-foreground">Calcul du nombre de tickets…</span>
+              ) : (
+                <>
+                  <span className="font-semibold">{purgeCount}</span> ticket(s) importé(s) datant de moins de {purgeHours} h.
+                  <p className="mt-1 text-destructive">
+                    Cette action est irréversible. Voulez-vous vraiment supprimer {purgeCount} tickets importés ?
+                  </p>
+                </>
+              )}
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={purging}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={purging || !purgeCount}
+              onClick={(e) => { e.preventDefault(); handlePurge(); }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {purging ? "Suppression…" : "Confirmer"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
 
       <AlertDialog open={!!toDelete} onOpenChange={(o) => { if (!o) { setToDelete(null); setDeleteReason(""); } }}>
         <AlertDialogContent>
