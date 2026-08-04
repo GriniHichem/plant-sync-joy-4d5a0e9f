@@ -534,6 +534,13 @@ export default function ReceptionGlobal() {
                   </Button>
                 </>
               )}
+              {canPurge && (
+                <Button variant="outline" size="sm" className="text-destructive border-destructive/40"
+                  onClick={openPurge}>
+                  <Trash2 className="h-4 w-4 mr-1" />Supprimer les tickets importés
+                </Button>
+              )}
+
               <ExportCsvButton
                 filename="reception-global"
                 data={filtered.map((r) => ({
