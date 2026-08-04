@@ -133,6 +133,24 @@ export default function ReceptionQualitative() {
     && !ticketId
     && ignoredSequenceFor !== form.numero.trim();
 
+  // Validation asynchrone (non bloquante) de l'unicité du numéro de ticket.
+  const [numeroCheck, setNumeroCheck] = useState<"idle" | "checking" | "free" | "taken">("idle");
+  useEffect(() => {
+    const v = form.numero.trim();
+    if (ticketId || v.length < 2) { setNumeroCheck("idle"); return; }
+    let cancelled = false;
+    setNumeroCheck("checking");
+    const t = setTimeout(async () => {
+      const { data, error } = await supabase.from("reception_tickets")
+        .select("id").eq("numero", v).limit(1).maybeSingle();
+      if (cancelled) return;
+      if (error) { setNumeroCheck("idle"); return; }
+      setNumeroCheck(data ? "taken" : "free");
+    }, 450);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [form.numero, ticketId]);
+
+
   // Photos du ticket
   const { data: photos = [] } = useQuery({
     queryKey: ["reception_photos", ticketId],
