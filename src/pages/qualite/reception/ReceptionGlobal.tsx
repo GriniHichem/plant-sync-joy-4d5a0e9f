@@ -224,6 +224,49 @@ export default function ReceptionGlobal() {
     }
   };
 
+  // ---- Suppression en masse des tickets importés (statut "pese_importe") ----
+  const canPurge = isAdmin || canDelete("reception_global");
+  const [purgeOpen, setPurgeOpen] = useState(false);
+  const [purgeHours, setPurgeHours] = useState("4");
+  const [purgeCount, setPurgeCount] = useState<number | null>(null);
+  const [purging, setPurging] = useState(false);
+
+  const countPurge = async (hours: string) => {
+    setPurgeCount(null);
+    const { data, error } = await supabase.rpc("purge_imported_reception_tickets" as any, {
+      p_hours: Number(hours), p_dry_run: true,
+    });
+    if (error) {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+      return;
+    }
+    setPurgeCount(Number((data as any)?.count ?? (data as any)?.deleted ?? data ?? 0));
+  };
+
+  const openPurge = () => {
+    setPurgeOpen(true);
+    setPurgeHours("4");
+    countPurge("4");
+  };
+
+  const handlePurge = async () => {
+    setPurging(true);
+    try {
+      const { data, error } = await supabase.rpc("purge_imported_reception_tickets" as any, {
+        p_hours: Number(purgeHours), p_dry_run: false,
+      });
+      if (error) throw error;
+      const n = Number((data as any)?.count ?? (data as any)?.deleted ?? data ?? 0);
+      toast({ title: "Suppression effectuée", description: `${n} ticket(s) importé(s) supprimé(s) (< ${purgeHours} h).` });
+      setPurgeOpen(false);
+      invalidate();
+    } catch (e: any) {
+      toast({ title: "Suppression impossible", description: e.message, variant: "destructive" });
+    } finally {
+      setPurging(false);
+    }
+  };
+
   // Saisie / mise à jour du poids brut depuis la consultation (tickets non pesés).
   // L'abattement et le poids net sont recalculés automatiquement par la base
   // à partir du taux d'abattement du ticket.
