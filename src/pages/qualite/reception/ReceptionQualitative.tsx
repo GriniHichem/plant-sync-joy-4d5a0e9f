@@ -410,18 +410,28 @@ export default function ReceptionQualitative() {
     },
   );
 
-  const photoBySlot = (slot: number) => photos.find((p) => p.slot === slot);
+  const photoBySlot = useCallback(
+    (slot: number) => photos.find((p) => p.slot === slot),
+    [photos],
+  );
   const nPhotos = photos.length;
-  const missingSlots = [1, 2, 3].filter((s) => !photoBySlot(s));
-  const missingReasons: string[] = [];
-  if (!form.supplier_id) missingReasons.push("Fournisseur");
-  if (!form.heure_debut) missingReasons.push("Heure de début");
-  if (!form.heure_fin) missingReasons.push("Heure de fin");
-  if (missingSlots.length > 0) missingReasons.push(`Photo${missingSlots.length > 1 ? "s" : ""} ${missingSlots.join(", ")}`);
+  const missingSlots = useMemo(() => [1, 2, 3].filter((s) => !photoBySlot(s)), [photoBySlot]);
   const abatValid = form.taux_abattement !== "" && !Number.isNaN(Number(form.taux_abattement)) && Number(form.taux_abattement) >= 0 && Number(form.taux_abattement) <= 100;
-  if (!abatValid) missingReasons.push("Taux d'abattement");
+  const missingReasons = useMemo(() => {
+    const r: string[] = [];
+    if (!form.supplier_id) r.push("Fournisseur");
+    if (!form.heure_debut) r.push("Heure de début");
+    if (!form.heure_fin) r.push("Heure de fin");
+    if (missingSlots.length > 0) r.push(`Photo${missingSlots.length > 1 ? "s" : ""} ${missingSlots.join(", ")}`);
+    if (!abatValid) r.push("Taux d'abattement");
+    return r;
+  }, [form.supplier_id, form.heure_debut, form.heure_fin, missingSlots, abatValid]);
   const canClose = !!ticketId && missingReasons.length === 0;
-  const selectedSupplier = suppliers.find((s: any) => s.id === form.supplier_id);
+  const selectedSupplier = useMemo(
+    () => suppliers.find((s: any) => s.id === form.supplier_id),
+    [suppliers, form.supplier_id],
+  );
+
 
 
   return (
