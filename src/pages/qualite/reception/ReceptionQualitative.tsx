@@ -250,12 +250,13 @@ export default function ReceptionQualitative() {
   const { data: recent = [] } = useQuery({
     queryKey: ["reception_tickets_recent", user?.id],
     queryFn: async () => {
-      if (!user?.id) return [];
+      // On récupère les tickets clôturés par l'utilisateur OU créés par lui s'ils sont clôturés
+      // car certains tickets anciens n'ont peut-être pas cloture_by renseigné correctement
       const { data, error } = await supabase.from("v_reception_global")
         .select("*")
         .eq("statut", "cloture")
-        .eq("created_by", user.id) // Utilisation de created_by au lieu de cloture_by
-        .not("code_pesee", "ilike", "IMP-%")
+        .or(`cloture_by.eq.${user?.id},created_by.eq.${user?.id}`)
+        .order("cloture_at", { ascending: false })
         .order("created_at", { ascending: false })
         .limit(10);
       
@@ -304,43 +305,18 @@ export default function ReceptionQualitative() {
   const { data: kpis } = useQuery({
     queryKey: ["reception_user_kpis", user?.id, periodRange.start.toISOString(), periodRange.end.toISOString()],
     queryFn: async () => {
-      if (!user?.id) return null;
-      
-      const { data, error } = await supabase.from("v_reception_global")
-        .select("poids_brut_kg, poids_net_kg, poids_abattement_kg")
-        .eq("created_by", user.id)
-        .eq("statut", "cloture")
-        .not("code_pesee", "ilike", "IMP-%")
-        .gte("created_at", periodRange.start.toISOString())
-        .lt("created_at", periodRange.end.toISOString());
-
-      if (error) throw error;
-      if (!data || data.length === 0) return {
-        total_brut: 0,
-        total_net: 0,
-        total_abattement_kg: 0,
-        avg_abattement_pct: 0,
-        ticket_count: 0
-      };
-
-      let total_brut = 0;
-      let total_net = 0;
-      let total_abattement_kg = 0;
-
-      data.forEach(row => {
-        total_brut += Number(row.poids_brut_kg || 0);
-        total_net += Number(row.poids_net_kg || 0);
-        total_abattement_kg += Number(row.poids_abattement_kg || 0);
+      const { data, error } = await supabase.rpc("get_reception_user_kpis", {
+        p_user_id: user?.id,
+        p_start_time: periodRange.start.toISOString(),
+        p_end_time: periodRange.end.toISOString(),
       });
-
-      const avg_abattement_pct = total_brut > 0 ? (total_abattement_kg / total_brut) * 100 : 0;
-
-      return {
-        total_brut,
-        total_net,
-        total_abattement_kg,
-        avg_abattement_pct,
-        ticket_count: data.length
+      if (error) throw error;
+      return data?.[0] as {
+        total_brut: number;
+        total_net: number;
+        total_abattement_kg: number;
+        avg_abattement_pct: number;
+        ticket_count: number;
       };
     },
     enabled: !!user?.id,

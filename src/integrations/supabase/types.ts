@@ -466,30 +466,62 @@ export type Database = {
         }
         Relationships: []
       }
-      direction_dashboard_shares: {
+      direction_dashboard_defaults: {
         Row: {
           created_at: string
-          created_by: string | null
           dashboard_id: string
-          id: string
-          shared_role: Database["public"]["Enums"]["app_role"] | null
-          shared_user_id: string | null
+          updated_at: string
+          user_id: string
         }
         Insert: {
           created_at?: string
-          created_by?: string | null
           dashboard_id: string
-          id?: string
-          shared_role?: Database["public"]["Enums"]["app_role"] | null
-          shared_user_id?: string | null
+          updated_at?: string
+          user_id: string
         }
         Update: {
           created_at?: string
-          created_by?: string | null
+          dashboard_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "direction_dashboard_defaults_dashboard_id_fkey"
+            columns: ["dashboard_id"]
+            isOneToOne: false
+            referencedRelation: "direction_dashboards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      direction_dashboard_shares: {
+        Row: {
+          created_at: string
+          created_by: string
+          dashboard_id: string
+          id: string
+          shared_with_role: Database["public"]["Enums"]["app_role"] | null
+          shared_with_user_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          dashboard_id: string
+          id?: string
+          shared_with_role?: Database["public"]["Enums"]["app_role"] | null
+          shared_with_user_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
           dashboard_id?: string
           id?: string
-          shared_role?: Database["public"]["Enums"]["app_role"] | null
-          shared_user_id?: string | null
+          shared_with_role?: Database["public"]["Enums"]["app_role"] | null
+          shared_with_user_id?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -501,90 +533,40 @@ export type Database = {
           },
         ]
       }
-      direction_dashboard_versions: {
-        Row: {
-          created_at: string
-          created_by: string
-          dashboard_id: string
-          global_filters: Json
-          id: string
-          layout: Json
-          name: string
-          theme: Json
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          created_by?: string
-          dashboard_id: string
-          global_filters?: Json
-          id?: string
-          layout?: Json
-          name: string
-          theme?: Json
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          created_by?: string
-          dashboard_id?: string
-          global_filters?: Json
-          id?: string
-          layout?: Json
-          name?: string
-          theme?: Json
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "direction_dashboard_versions_dashboard_id_fkey"
-            columns: ["dashboard_id"]
-            isOneToOne: false
-            referencedRelation: "direction_dashboards"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       direction_dashboards: {
         Row: {
-          allowed_roles: Database["public"]["Enums"]["app_role"][]
+          allowed_roles: string[]
           created_at: string
           description: string | null
-          global_filters: Json
           id: string
+          is_default: boolean
           layout: Json
           name: string
           owner_id: string
-          refresh_seconds: number
-          theme: Json
           updated_at: string
           visibility: string
         }
         Insert: {
-          allowed_roles?: Database["public"]["Enums"]["app_role"][]
+          allowed_roles?: string[]
           created_at?: string
           description?: string | null
-          global_filters?: Json
           id?: string
+          is_default?: boolean
           layout?: Json
           name: string
           owner_id?: string
-          refresh_seconds?: number
-          theme?: Json
           updated_at?: string
           visibility?: string
         }
         Update: {
-          allowed_roles?: Database["public"]["Enums"]["app_role"][]
+          allowed_roles?: string[]
           created_at?: string
           description?: string | null
-          global_filters?: Json
           id?: string
+          is_default?: boolean
           layout?: Json
           name?: string
           owner_id?: string
-          refresh_seconds?: number
-          theme?: Json
           updated_at?: string
           visibility?: string
         }
@@ -5346,43 +5328,49 @@ export type Database = {
           created_at: string
           created_by: string | null
           frequency_minutes: number | null
+          frequency_type:
+            | Database["public"]["Enums"]["quality_frequency_type"]
+            | null
           id: string
           indicator_id: string
-          is_blocking: boolean
-          is_required: boolean
+          is_blocking: boolean | null
+          is_required: boolean | null
           mode: string
-          notes: string
+          notes: string | null
           of_id: string
           updated_at: string
-          updated_by: string | null
         }
         Insert: {
           created_at?: string
           created_by?: string | null
           frequency_minutes?: number | null
+          frequency_type?:
+            | Database["public"]["Enums"]["quality_frequency_type"]
+            | null
           id?: string
           indicator_id: string
-          is_blocking?: boolean
-          is_required?: boolean
-          mode: string
-          notes?: string
+          is_blocking?: boolean | null
+          is_required?: boolean | null
+          mode?: string
+          notes?: string | null
           of_id: string
           updated_at?: string
-          updated_by?: string | null
         }
         Update: {
           created_at?: string
           created_by?: string | null
           frequency_minutes?: number | null
+          frequency_type?:
+            | Database["public"]["Enums"]["quality_frequency_type"]
+            | null
           id?: string
           indicator_id?: string
-          is_blocking?: boolean
-          is_required?: boolean
+          is_blocking?: boolean | null
+          is_required?: boolean | null
           mode?: string
-          notes?: string
+          notes?: string | null
           of_id?: string
           updated_at?: string
-          updated_by?: string | null
         }
         Relationships: [
           {
@@ -6977,35 +6965,6 @@ export type Database = {
           },
         ]
       }
-      user_dashboard_preferences: {
-        Row: {
-          created_at: string
-          default_dashboard_id: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          default_dashboard_id?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          default_dashboard_id?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_dashboard_preferences_default_dashboard_id_fkey"
-            columns: ["default_dashboard_id"]
-            isOneToOne: false
-            referencedRelation: "direction_dashboards"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       user_email_accounts: {
         Row: {
           connected_at: string | null
@@ -7768,11 +7727,6 @@ export type Database = {
         }
         Returns: undefined
       }
-      dashboard_is_mine: { Args: { _dashboard_id: string }; Returns: boolean }
-      dashboard_is_shared_with_me: {
-        Args: { _dashboard_id: string }
-        Returns: boolean
-      }
       derive_shift_type_from_now: {
         Args: never
         Returns: Database["public"]["Enums"]["shift_type"]
@@ -7784,65 +7738,6 @@ export type Database = {
       ensure_production_shift_session: {
         Args: { p_of_id: string }
         Returns: string
-      }
-      filter_reception_tickets: {
-        Args: {
-          p_campaign_id?: string
-          p_conformite?: string
-          p_date_from?: string
-          p_date_to?: string
-          p_dt_from?: string
-          p_dt_to?: string
-          p_etat?: string
-          p_product_id?: string
-          p_search?: string
-          p_supplier_id?: string
-        }
-        Returns: {
-          campagne: string | null
-          campaign_id: string | null
-          cloture_at: string | null
-          cloture_by: string | null
-          cloture_by_name: string | null
-          code_digits: number | null
-          code_pesee: string | null
-          code_prefix: string | null
-          code_saisi: string | null
-          commentaire: string | null
-          created_at: string | null
-          created_by: string | null
-          created_by_name: string | null
-          date_ticket: string | null
-          duree_minutes: number | null
-          etat_pesee: string | null
-          fournisseur: string | null
-          heure_debut: string | null
-          heure_fin: string | null
-          id: string | null
-          nb_photos: number | null
-          numero: string | null
-          objectif_kg: number | null
-          poids_abattement_kg: number | null
-          poids_brut_kg: number | null
-          poids_net_kg: number | null
-          product_id: string | null
-          produit: string | null
-          produit_code: string | null
-          region: string | null
-          statut: string | null
-          supplier_code: string | null
-          supplier_id: string | null
-          taux_abattement: number | null
-          weighed_at: string | null
-          weighing_id: string | null
-          wilaya: string | null
-        }[]
-        SetofOptions: {
-          from: "*"
-          to: "v_reception_global"
-          isOneToOne: false
-          isSetofReturn: true
-        }
       }
       fts_build: { Args: { parts: string[] }; Returns: unknown }
       get_active_shift_context: {
@@ -7872,22 +7767,6 @@ export type Database = {
         }[]
       }
       get_position_counter: { Args: { p_position_id: string }; Returns: number }
-      get_quality_due_for_shift: {
-        Args: { p_limit?: number; p_quality_shift_id?: string }
-        Returns: {
-          critical_overdue: number
-          due: number
-          line_id: string
-          line_label: string
-          numero: string
-          of_id: string
-          on_covered_line: boolean
-          overdue: number
-          product_id: string
-          product_label: string
-          total: number
-        }[]
-      }
       get_quality_indicators_for_of: {
         Args: { p_of_id: string }
         Returns: {
@@ -7912,20 +7791,15 @@ export type Database = {
           unit: string
         }[]
       }
-      get_reception_kpis: {
-        Args: {
-          p_campaign_id?: string
-          p_conformite?: string
-          p_date_from?: string
-          p_date_to?: string
-          p_dt_from?: string
-          p_dt_to?: string
-          p_etat?: string
-          p_product_id?: string
-          p_search?: string
-          p_supplier_id?: string
-        }
-        Returns: Json
+      get_reception_user_kpis: {
+        Args: { p_end_time: string; p_start_time: string; p_user_id: string }
+        Returns: {
+          avg_abattement_pct: number
+          ticket_count: number
+          total_abattement_kg: number
+          total_brut: number
+          total_net: number
+        }[]
       }
       get_recipe_for_of: {
         Args: { p_of_id: string }
@@ -7975,6 +7849,10 @@ export type Database = {
       }
       has_audit_access: {
         Args: { _module: string; _user_id: string }
+        Returns: boolean
+      }
+      has_dashboard_share: {
+        Args: { _dashboard_id: string; _user_id: string }
         Returns: boolean
       }
       has_quality_permission: {
@@ -8078,6 +7956,10 @@ export type Database = {
         Args: { _module: string; _role: string }
         Returns: boolean
       }
+      is_dashboard_owner: {
+        Args: { _dashboard_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_user_on_shift: {
         Args: { _at?: string; _scope?: string; _user_id: string }
         Returns: boolean
@@ -8107,20 +7989,62 @@ export type Database = {
         }
         Returns: undefined
       }
-      purge_imported_reception_tickets: {
-        Args: { p_dry_run?: boolean; p_hours: number }
-        Returns: number
-      }
       quality_shift_refresh_links: {
         Args: { p_quality_shift_id: string }
         Returns: number
       }
-      refuse_request_item: {
-        Args: { p_item_id: string; p_motif: string }
+      reception_actor_label: { Args: never; Returns: string }
+      reception_count_imported_tickets: {
+        Args: { p_hours: number }
+        Returns: number
+      }
+      reception_delete_imported_tickets: {
+        Args: { p_hours: number }
+        Returns: number
+      }
+      reception_global_stats:
+        | {
+            Args: {
+              p_campaign?: string
+              p_conformite?: string
+              p_etat?: string
+              p_from?: string
+              p_product?: string
+              p_q?: string
+              p_supplier?: string
+              p_to?: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_campaign?: string
+              p_conformite?: string
+              p_etat?: string
+              p_from?: string
+              p_from_ts?: string
+              p_product?: string
+              p_q?: string
+              p_supplier?: string
+              p_to?: string
+              p_to_ts?: string
+            }
+            Returns: Json
+          }
+      reception_rename_ticket: {
+        Args: { p_new_numero: string; p_ticket_id: string }
         Returns: undefined
       }
-      rename_reception_ticket: {
-        Args: { p_new_numero: string; p_ticket_id: string }
+      reception_transfer_photos: {
+        Args: {
+          p_delete_source?: boolean
+          p_source_id: string
+          p_target_id: string
+        }
+        Returns: number
+      }
+      refuse_request_item: {
+        Args: { p_item_id: string; p_motif: string }
         Returns: undefined
       }
       reopen_preventive_action: {
@@ -8178,14 +8102,6 @@ export type Database = {
       start_or_join_preventive_action: {
         Args: { p_plan_id: string }
         Returns: string
-      }
-      transfer_reception_ticket_photos: {
-        Args: {
-          p_reason?: string
-          p_source_ticket_id: string
-          p_target_ticket_id: string
-        }
-        Returns: number
       }
       unaccent: { Args: { "": string }; Returns: string }
       user_has_role_text: {
