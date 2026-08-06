@@ -250,20 +250,16 @@ export default function ReceptionQualitative() {
   const { data: recent = [] } = useQuery({
     queryKey: ["reception_tickets_recent", user?.id],
     queryFn: async () => {
-      // On utilise filter pour les champs qui ne sont pas dans le typage strict ou poser problème
-      let query = supabase.from("v_reception_global")
+      if (!user?.id) return [];
+      const { data, error } = await supabase.from("v_reception_global")
         .select("*")
         .eq("statut", "cloture")
-        .eq("cloture_by", user?.id)
-        .order("cloture_at", { ascending: false })
+        .eq("created_by", user.id) // Utilisation de created_by au lieu de cloture_by
+        .not("code_pesee", "ilike", "IMP-%")
+        .order("created_at", { ascending: false })
         .limit(10);
       
-      const { data, error } = await query;
       if (error) throw error;
-
-      // Filtrage manuel pour les tickets importés car statut_tech n'est pas dans le type v_reception_global
-      // On assume que les tickets importés ont un poids_brut_kg = 0 ou une autre marque distinctive si statut_tech manque
-      // Mais ici on va juste retourner les data et laisser le typage se stabiliser
       return (data ?? []) as any[];
     },
     enabled: !!user?.id,
@@ -308,18 +304,43 @@ export default function ReceptionQualitative() {
   const { data: kpis } = useQuery({
     queryKey: ["reception_user_kpis", user?.id, periodRange.start.toISOString(), periodRange.end.toISOString()],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_reception_user_kpis", {
-        p_user_id: user?.id,
-        p_start_time: periodRange.start.toISOString(),
-        p_end_time: periodRange.end.toISOString(),
-      });
+      if (!user?.id) return null;
+      
+      const { data, error } = await supabase.from("v_reception_global")
+        .select("poids_brut_kg, poids_net_kg, poids_abattement_kg")
+        .eq("created_by", user.id)
+        .eq("statut", "cloture")
+        .not("code_pesee", "ilike", "IMP-%")
+        .gte("created_at", periodRange.start.toISOString())
+        .lt("created_at", periodRange.end.toISOString());
+
       if (error) throw error;
-      return data?.[0] as {
-        total_brut: number;
-        total_net: number;
-        total_abattement_kg: number;
-        avg_abattement_pct: number;
-        ticket_count: number;
+      if (!data || data.length === 0) return {
+        total_brut: 0,
+        total_net: 0,
+        total_abattement_kg: 0,
+        avg_abattement_pct: 0,
+        ticket_count: 0
+      };
+
+      let total_brut = 0;
+      let total_net = 0;
+      let total_abattement_kg = 0;
+
+      data.forEach(row => {
+        total_brut += Number(row.poids_brut_kg || 0);
+        total_net += Number(row.poids_net_kg || 0);
+        total_abattement_kg += Number(row.poids_abattement_kg || 0);
+      });
+
+      const avg_abattement_pct = total_brut > 0 ? (total_abattement_kg / total_brut) * 100 : 0;
+
+      return {
+        total_brut,
+        total_net,
+        total_abattement_kg,
+        avg_abattement_pct,
+        ticket_count: data.length
       };
     },
     enabled: !!user?.id,
