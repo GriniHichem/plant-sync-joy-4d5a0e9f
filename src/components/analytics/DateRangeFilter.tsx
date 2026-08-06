@@ -112,7 +112,7 @@ export function DateRangeFilter({
         </PopoverContent>
       </Popover>
 
-      {/* ajouter des nouveau ticket a la base donnée pour que e peu tester moi meme les 10 dernier ticket et kpi */}
+      {/* fix erreur on q qjouter les 10 ticket mais historique de 10 ticket et vide et abat moy et total de periode est 0 !! */}
       <Select value={granularity} onValueChange={(v) => setGranularity(v as Granularity)}>
         <SelectTrigger className="h-7 w-auto min-w-[100px] text-xs gap-1">
           <SelectValue />
