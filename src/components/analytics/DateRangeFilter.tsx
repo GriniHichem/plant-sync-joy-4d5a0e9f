@@ -112,7 +112,7 @@ export function DateRangeFilter({
         </PopoverContent>
       </Popover>
 
-      {/* fix erreur on q qjouter les 10 ticket mais historique de 10 ticket et vide et abat moy et total de periode est 0 !! */}
+      {/* il y a rien , tous les valeurs sont null , historique est vide + kpi de consultation sont null aussi 0 !! faire un plan efficace pour tester verifier et excuter le pour confirmer que les problemes sont regler a 100% */}
       <Select value={granularity} onValueChange={(v) => setGranularity(v as Granularity)}>
         <SelectTrigger className="h-7 w-auto min-w-[100px] text-xs gap-1">
           <SelectValue />
