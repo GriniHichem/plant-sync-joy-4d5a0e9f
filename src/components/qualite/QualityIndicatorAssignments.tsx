@@ -222,9 +222,29 @@ export default function QualityIndicatorAssignments() {
   const handleSave = async () => {
     const err = validateAssignment(form, explicitGlobal);
     if (err) { toast({ title: err, variant: "destructive" }); return; }
-    setSaving(true);
     const payload = buildAssignmentPayload(form);
     const isEdit = !!editId;
+
+    // Garde anti-doublon : même indicateur déjà affecté au même périmètre
+    const dup = rows.find(
+      (a) =>
+        a.id !== editId &&
+        a.indicator_id === payload.indicator_id &&
+        (a.product_id ?? null) === payload.product_id &&
+        (a.product_family_id ?? null) === payload.product_family_id &&
+        (a.production_line_id ?? null) === payload.production_line_id &&
+        (a.recipe_id ?? null) === payload.recipe_id,
+    );
+    if (dup) {
+      toast({
+        title: "Contrôle déjà affecté",
+        description: "Ce contrôle est déjà affecté à ce périmètre. Modifiez l'affectation existante.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSaving(true);
     const meta = isEdit
       ? { ...payload, updated_by: user?.id ?? null }
       : { ...payload, created_by: user?.id ?? null, updated_by: user?.id ?? null };
@@ -234,10 +254,18 @@ export default function QualityIndicatorAssignments() {
       : await (supabase as any).from("quality_indicator_assignments").insert(meta).select().single();
 
     if (res.error) {
-      toast({ title: "Erreur", description: res.error.message, variant: "destructive" });
+      const isDup = res.error.code === "23505" || /déjà existante|duplicate key/i.test(res.error.message ?? "");
+      toast({
+        title: isDup ? "Contrôle déjà affecté" : "Erreur",
+        description: isDup
+          ? "Ce contrôle est déjà affecté à ce périmètre. Modifiez l'affectation existante."
+          : res.error.message,
+        variant: "destructive",
+      });
       setSaving(false);
       return;
     }
+
 
     const ind = indById.get(payload.indicator_id);
     await logAudit({

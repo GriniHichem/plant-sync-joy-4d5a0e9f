@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Package, Search, Truck, X, Wand2, ImageIcon } from "lucide-react";
 
 export interface QuoteDraft {
@@ -73,6 +74,10 @@ function caracteristiques(p: PdrRow): string {
 
 export function PdrQuoteBuilder({ onDraft }: { onDraft: (d: QuoteDraft) => void }) {
   const [search, setSearch] = useState("");
+  const [machineId, setMachineId] = useState<string>("all");
+  const [familyId, setFamilyId] = useState<string>("all");
+  const [machines, setMachines] = useState<{ id: string; label: string }[]>([]);
+  const [families, setFamilies] = useState<{ id: string; label: string }[]>([]);
   const [results, setResults] = useState<PdrRow[]>([]);
   const [searching, setSearching] = useState(false);
   const [picked, setPicked] = useState<PdrRow[]>([]);
@@ -89,26 +94,50 @@ export function PdrQuoteBuilder({ onDraft }: { onDraft: (d: QuoteDraft) => void 
   const [packaging, setPackaging] = useState("");
   const [comments, setComments] = useState("");
 
-  // Recherche PDR
+  // Options de filtres (machines / familles)
+  useEffect(() => {
+    (async () => {
+      const [m, f] = await Promise.all([
+        supabase.from("machines").select("id, code, designation").order("code").limit(500),
+        supabase.from("pdr_families").select("id, name").eq("is_active", true).order("name").limit(500),
+      ]);
+      setMachines(((m.data ?? []) as any[]).map((r) => ({ id: r.id, label: `${r.code} — ${r.designation}` })));
+      setFamilies(((f.data ?? []) as any[]).map((r) => ({ id: r.id, label: r.name })));
+    })();
+  }, []);
+
+  // Recherche PDR (texte et/ou filtres machine/famille)
   useEffect(() => {
     const q = search.trim();
-    if (q.length < 2) { setResults([]); return; }
+    const hasFilter = machineId !== "all" || familyId !== "all";
+    if (q.length < 2 && !hasFilter) { setResults([]); return; }
     let cancelled = false;
     setSearching(true);
     const t = setTimeout(async () => {
-      const { data } = await supabase
+      let machinePdrIds: string[] | null = null;
+      if (machineId !== "all") {
+        const { data } = await supabase.from("machine_pdr").select("pdr_id").eq("machine_id", machineId);
+        machinePdrIds = ((data ?? []) as any[]).map((r) => r.pdr_id);
+        if (machinePdrIds.length === 0) {
+          if (!cancelled) { setResults([]); setSearching(false); }
+          return;
+        }
+      }
+      let query = supabase
         .from("pdr")
         .select("id, reference, designation, marque, modele, reference_constructeur, matiere, unite_stock, description, commentaire_technique, family_id")
-        .eq("is_active", true)
-        .or(`reference.ilike.%${q}%,designation.ilike.%${q}%`)
-        .order("reference")
-        .limit(20);
+        .eq("is_active", true);
+      if (familyId !== "all") query = query.eq("family_id", familyId);
+      if (machinePdrIds) query = query.in("id", machinePdrIds);
+      if (q.length >= 2) query = query.or(`reference.ilike.%${q}%,designation.ilike.%${q}%`);
+      const { data } = await query.order("reference").limit(hasFilter ? 100 : 20);
       if (cancelled) return;
       setResults((data as PdrRow[]) ?? []);
       setSearching(false);
     }, 300);
     return () => { cancelled = true; clearTimeout(t); };
-  }, [search]);
+  }, [search, machineId, familyId]);
+
 
   const pickedIds = useMemo(() => picked.map((p) => p.id), [picked]);
   const idsKey = pickedIds.join("|");
@@ -211,14 +240,51 @@ export function PdrQuoteBuilder({ onDraft }: { onDraft: (d: QuoteDraft) => void 
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base"><Package className="h-4 w-4 text-primary" />1. Sélection des PDR</CardTitle>
-          <CardDescription>Recherchez par référence ou désignation.</CardDescription>
+          <CardDescription>Filtrez par machine et/ou famille, ou recherchez par référence / désignation.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Machine</Label>
+              <Select value={machineId} onValueChange={setMachineId}>
+                <SelectTrigger className="h-11"><SelectValue placeholder="Toutes les machines" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toutes les machines</SelectItem>
+                  {machines.map((m) => <SelectItem key={m.id} value={m.id}>{m.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Famille PDR</Label>
+              <Select value={familyId} onValueChange={setFamilyId}>
+                <SelectTrigger className="h-11"><SelectValue placeholder="Toutes les familles" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toutes les familles</SelectItem>
+                  {families.map((f) => <SelectItem key={f.id} value={f.id}>{f.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher un PDR…" className="h-11 pl-9" />
             {searching && <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />}
           </div>
+          {(machineId !== "all" || familyId !== "all") && (
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="secondary" className="text-[11px]">{results.length} PDR trouvé(s)</Badge>
+              <Button variant="outline" size="sm" className="h-8" onClick={() => setPicked((prev) => {
+                const map = new Map(prev.map((p) => [p.id, p]));
+                results.forEach((r) => map.set(r.id, r));
+                return Array.from(map.values());
+              })} disabled={results.length === 0}>
+                Tout sélectionner
+              </Button>
+              <Button variant="ghost" size="sm" className="h-8" onClick={() => { setMachineId("all"); setFamilyId("all"); }}>
+                Réinitialiser les filtres
+              </Button>
+            </div>
+          )}
           {results.length > 0 && (
             <div className="max-h-56 divide-y overflow-y-auto rounded-md border">
               {results.map((r) => (
@@ -237,6 +303,7 @@ export function PdrQuoteBuilder({ onDraft }: { onDraft: (d: QuoteDraft) => void 
               ))}
             </div>
           )}
+
           {picked.length > 0 && (
             <div className="overflow-x-auto rounded-md border">
               <table className="w-full text-sm">

@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Search, X } from "lucide-react";
+import { Eye, Search, X, Mail, MailOpen, MailCheck, FileSpreadsheet, Cog } from "lucide-react";
 import {
   IconDashboard, IconMachine, IconEquipment, IconFactory, IconSpare,
   IconTicket, IconPreventive, IconShift, IconAnalytics, IconChart,
@@ -23,11 +23,31 @@ type AppModule = {
   description: string;
   url: string;
   icon: React.FC<{ size?: number; className?: string }>;
-  category: "Maintenance" | "Stock PDR" | "Production" | "Qualité" | "Inventaire" | "Dashboard Design" | "Configuration";
+  category: "Maintenance" | "Stock PDR" | "Production" | "Qualité" | "Inventaire" | "Direction" | "Communication" | "Configuration";
   permissionModule?: string;
   badge?: string;
   accent: string; // tailwind gradient classes
 };
+
+const IconEye = ({ size, className }: { size?: number; className?: string }) => (
+  <Eye size={size} className={className} />
+);
+const IconMail = ({ size, className }: { size?: number; className?: string }) => (
+  <Mail size={size} className={className} />
+);
+const IconMailTemplate = ({ size, className }: { size?: number; className?: string }) => (
+  <MailOpen size={size} className={className} />
+);
+const IconQuote = ({ size, className }: { size?: number; className?: string }) => (
+  <FileSpreadsheet size={size} className={className} />
+);
+const IconMailHistory = ({ size, className }: { size?: number; className?: string }) => (
+  <MailCheck size={size} className={className} />
+);
+const IconMailSettings = ({ size, className }: { size?: number; className?: string }) => (
+  <Cog size={size} className={className} />
+);
+
 
 const MODULES: AppModule[] = [
   // ===== Maintenance (dégradations de bleu) =====
@@ -62,13 +82,13 @@ const MODULES: AppModule[] = [
   { title: "Dashboard Qualité", description: "Indicateurs et synthèse qualité", url: "/qualite", icon: IconKpi, category: "Qualité", permissionModule: "qualite_dashboard", accent: "from-orange-500/15 to-orange-500/5 text-orange-500" },
   { title: "OF Qualité", description: "Suivi qualité par ordre de fabrication", url: "/qualite/of", icon: IconControl, category: "Qualité", permissionModule: "qualite_of", accent: "from-orange-400/15 to-orange-400/5 text-orange-400" },
   { title: "Indicateurs qualité", description: "Catalogue des indicateurs et tolérances", url: "/qualite/indicateurs", icon: IconAnalytics, category: "Qualité", permissionModule: "qualite_indicateurs", accent: "from-amber-500/15 to-amber-500/5 text-amber-500" },
-  { title: "Plan de contrôle OF", description: "Affectation des contrôles par produit et dérogations par OF", url: "/qualite/plan-controle", icon: IconControl, category: "Qualité", permissionModule: "qualite_plan_controle", accent: "from-amber-400/15 to-amber-400/5 text-amber-400" },
-  { title: "Historique des contrôles", description: "Journal et historique des contrôles qualité réalisés", url: "/qualite/controles", icon: IconPreventive, category: "Qualité", permissionModule: "qualite_controles", accent: "from-orange-600/15 to-orange-600/5 text-orange-600" },
+  { title: "Affectation des contrôles", description: "Contrôles par produit fini (héritage OF) et dérogations par OF", url: "/qualite/affectations", icon: IconControl, category: "Qualité", permissionModule: "qualite_indicateurs", accent: "from-amber-500/15 to-amber-500/5 text-amber-500" },
+  { title: "Historique des contrôles", description: "Traçabilité des contrôles qualité réalisés", url: "/qualite/controles", icon: IconPreventive, category: "Qualité", permissionModule: "qualite_controles", accent: "from-orange-600/15 to-orange-600/5 text-orange-600" },
   { title: "Non-conformités", description: "Déclaration, décisions et lots bloqués", url: "/qualite/non-conformites", icon: IconNc, category: "Qualité", permissionModule: "qualite_nc", accent: "from-red-400/15 to-red-400/5 text-red-400" },
   { title: "Actions qualité", description: "Plans d'actions correctives et préventives", url: "/qualite/actions", icon: IconAction, category: "Qualité", permissionModule: "qualite_actions", accent: "from-amber-600/15 to-amber-600/5 text-amber-600" },
   { title: "Recettes & Nomenclatures", description: "Versions recettes et BOM côté qualité", url: "/qualite/recettes-nomenclatures", icon: IconRecipe, category: "Qualité", permissionModule: "qualite_recettes", accent: "from-yellow-600/15 to-yellow-600/5 text-yellow-600" },
   { title: "Traçabilité", description: "Fiche traçabilité complète par OF", url: "/qualite/tracabilite", icon: IconTrace, category: "Qualité", permissionModule: "qualite_tracabilite", accent: "from-orange-700/15 to-orange-700/5 text-orange-700" },
-  { title: "Enquêtes de lot", description: "Analyse chronologique des événements autour d'un lot", url: "/qualite/enquetes-lot", icon: IconTrace, category: "Qualité", permissionModule: "qualite_enquetes", accent: "from-orange-700/15 to-orange-700/5 text-orange-700" },
+  { title: "Enquêtes de lot", description: "Investigation des anomalies et lien avec les non-conformités", url: "/qualite/enquetes-lot", icon: IconTrace, category: "Qualité", permissionModule: "qualite_enquetes", accent: "from-rose-600/15 to-rose-600/5 text-rose-600" },
   { title: "Shift contrôle", description: "Saisie temps réel par contrôleur qualité", url: "/qualite/shift", icon: IconTimer, category: "Qualité", permissionModule: "qualite_shift", badge: "Live", accent: "from-amber-700/15 to-amber-700/5 text-amber-700" },
   { title: "Rapports qualité", description: "Conformité, NC, actions, théorique vs réel", url: "/qualite/rapports", icon: IconReport, category: "Qualité", permissionModule: "qualite_rapports", accent: "from-orange-300/15 to-orange-300/5 text-orange-300" },
   { title: "Réception F&L", description: "Tickets qualitatifs, pont-bascule et consultation globale", url: "/qualite/reception", icon: IconTrace, category: "Qualité", permissionModule: "reception", accent: "from-lime-500/15 to-lime-500/5 text-lime-600" },
@@ -76,20 +96,26 @@ const MODULES: AppModule[] = [
   // ===== Inventaire (gris) =====
   { title: "Dashboard Inventaire", description: "Vue d'ensemble des campagnes d'inventaire", url: "/inventaire", icon: IconInventory, category: "Inventaire", permissionModule: "inventaire", accent: "from-gray-500/15 to-gray-500/5 text-gray-500" },
   { title: "Campagnes d'inventaire", description: "Double comptage A/B avec arbitrage C", url: "/inventaire/campagnes", icon: IconCampaign, category: "Inventaire", permissionModule: "inventaire_campagnes", accent: "from-gray-600/15 to-gray-600/5 text-gray-600" },
-  { title: "Dashboard Design", description: "Tableaux de bord personnalisables multi-modules", url: "/dashboard-design/dashboards", icon: IconChart, category: "Dashboard Design", permissionModule: "direction_dashboards", accent: "from-indigo-500/15 to-indigo-500/5 text-indigo-500" },
 
   // ===== Configuration (mauve) =====
+  { title: "Mes Dashboards", description: "Tableaux de bord partagés avec vous en lecture seule", url: "/direction/mes-dashboards", icon: IconEye, category: "Direction", permissionModule: "mes_dashboards", accent: "from-rose-400/15 to-rose-400/5 text-rose-500" },
+  { title: "Dashboard Design", description: "Tableaux de bord personnalisables multi-modules", url: "/direction/dashboards", icon: IconDashboard, category: "Direction", permissionModule: "direction", accent: "from-rose-500/15 to-rose-500/5 text-rose-500" },
   { title: "Dashboard audit et système", description: "Journal complet des actions, sécurité et corrections", url: "/audit", icon: IconAudit, category: "Configuration", permissionModule: "audit", accent: "from-violet-600/15 to-violet-600/5 text-violet-600" },
   { title: "Sécurité & Accès", description: "Hub centralisé : utilisateurs, rôles, permissions, audit, self-hosting", url: "/securite", icon: IconSecurity, category: "Configuration", permissionModule: "securite", accent: "from-violet-500/15 to-violet-500/5 text-violet-500" },
-  { title: "Email", description: "Compte email, modèles et historique des envois", url: "/email", icon: IconSecurity, category: "Configuration", permissionModule: "email", accent: "from-sky-500/15 to-sky-500/5 text-sky-500" },
-  { title: "Synchronisation ERP", description: "API d'échange avec l'ERP : clés, journal et état", url: "/parametres/erp-sync", icon: IconSecurity, category: "Configuration", permissionModule: "erp_sync", accent: "from-slate-500/15 to-slate-500/5 text-slate-500" },
   { title: "Validations", description: "Demandes d'approbation et règles", url: "/validations", icon: IconValidation, category: "Configuration", permissionModule: "validations", accent: "from-purple-500/15 to-purple-500/5 text-purple-500" },
   { title: "Paramètres", description: "Référentiels, utilisateurs et configuration", url: "/parametres", icon: IconSettings, category: "Configuration", permissionModule: "parametres", accent: "from-fuchsia-500/15 to-fuchsia-500/5 text-fuchsia-500" },
   { title: "Notifications", description: "Centre d'alertes, règles par rôle et événements", url: "/notifications", icon: IconBell, category: "Configuration", permissionModule: "notifications", accent: "from-purple-600/15 to-purple-600/5 text-purple-600" },
   { title: "Recherche globale", description: "Recherche transverse sur tous les modules", url: "/recherche", icon: IconSearch, category: "Configuration", permissionModule: "recherche", accent: "from-fuchsia-600/15 to-fuchsia-600/5 text-fuchsia-600" },
+
+  // ===== Communication (sky/cyan) =====
+  { title: "Modèles d'email", description: "Bibliothèque de modèles par module", url: "/email", icon: IconMailTemplate, category: "Communication", permissionModule: "email", accent: "from-sky-500/15 to-sky-500/5 text-sky-500" },
+  { title: "Devis PDR", description: "Assistant de demande de devis pièces de rechange", url: "/email/devis-pdr", icon: IconQuote, category: "Communication", permissionModule: "email", accent: "from-cyan-500/15 to-cyan-500/5 text-cyan-500" },
+  { title: "Envoyer un email", description: "Composer et envoyer depuis votre compte", url: "/email/envoyer", icon: IconMail, category: "Communication", permissionModule: "email", accent: "from-sky-600/15 to-sky-600/5 text-sky-600" },
+  { title: "Historique des envois", description: "Traçabilité des emails envoyés", url: "/email/historique", icon: IconMailHistory, category: "Communication", permissionModule: "email", accent: "from-cyan-600/15 to-cyan-600/5 text-cyan-600" },
+  { title: "Paramètres email", description: "Connexion du compte SMTP et signature", url: "/email/parametres", icon: IconMailSettings, category: "Communication", permissionModule: "email", accent: "from-sky-400/15 to-sky-400/5 text-sky-500" },
 ];
 
-const CATEGORIES: Array<AppModule["category"] | "Tous"> = ["Tous", "Maintenance", "Stock PDR", "Production", "Qualité", "Inventaire", "Dashboard Design", "Configuration"];
+const CATEGORIES: Array<AppModule["category"] | "Tous"> = ["Tous", "Maintenance", "Stock PDR", "Production", "Qualité", "Inventaire", "Direction", "Communication", "Configuration"];
 
 const CATEGORY_ICONS: Record<string, React.FC<{ size?: number; className?: string }>> = {
   Maintenance: IconMaintenance,
@@ -97,7 +123,8 @@ const CATEGORY_ICONS: Record<string, React.FC<{ size?: number; className?: strin
   Production: IconProduction,
   Qualité: IconControl,
   Inventaire: IconInventory,
-  Direction: IconChart,
+  Direction: IconDashboard,
+  Communication: IconMail,
   Configuration: IconSettings,
 };
 

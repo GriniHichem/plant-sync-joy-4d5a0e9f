@@ -21,9 +21,11 @@ describe("evaluateConditions (notification rule engine)", () => {
     expect(evaluateConditions(d, { all: [{ field: "n", op: "lte", value: 10 }] })).toBe(true);
   });
 
-  it("rejects type mismatch on numeric ops", () => {
-    expect(evaluateConditions({ n: "10" }, { all: [{ field: "n", op: "gt", value: 5 }] })).toBe(false);
+  it("coerces numeric strings but rejects non-numeric text", () => {
+    expect(evaluateConditions({ n: "10" }, { all: [{ field: "n", op: "gt", value: 5 }] })).toBe(true);
+    expect(evaluateConditions({ n: "abc" }, { all: [{ field: "n", op: "gt", value: 5 }] })).toBe(false);
   });
+
 
   it("evaluates in / nin", () => {
     expect(evaluateConditions({ p: "high" }, { all: [{ field: "p", op: "in", value: ["high", "critical"] }] })).toBe(true);

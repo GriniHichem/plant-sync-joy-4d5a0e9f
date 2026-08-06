@@ -87,8 +87,18 @@ export default function SmtpConfigAdmin() {
     } finally { setSaving(false); }
   }
 
+  const smtpReady = !!(s.smtp_host && s.smtp_user && (hasPassword || password));
+
   async function handleTest() {
     if (!testTo) { toast.error("Renseigner un destinataire"); return; }
+    if (!smtpReady) {
+      toast.error("Configuration SMTP incomplète : renseignez le serveur, l'utilisateur et le mot de passe, puis cliquez sur « Enregistrer » avant de tester.");
+      return;
+    }
+    if (password) {
+      toast.error("Modifications non enregistrées : cliquez sur « Enregistrer » avant de tester.");
+      return;
+    }
     setTesting(true);
     try {
       const { data, error } = await supabase.functions.invoke("send-test-email", { body: { to: testTo } });
@@ -157,7 +167,8 @@ export default function SmtpConfigAdmin() {
         </CardHeader>
         <CardContent className="flex flex-col md:flex-row gap-3">
           <Input type="email" value={testTo} onChange={(e) => setTestTo(e.target.value)} placeholder="destinataire@example.com" className="flex-1" />
-          <Button onClick={handleTest} disabled={testing} variant="secondary">
+          <Button onClick={handleTest} disabled={testing || !smtpReady} variant="secondary"
+            title={!smtpReady ? "Renseignez et enregistrez le host, l'utilisateur et le mot de passe SMTP" : undefined}>
             {testing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
             Envoyer un email de test
           </Button>

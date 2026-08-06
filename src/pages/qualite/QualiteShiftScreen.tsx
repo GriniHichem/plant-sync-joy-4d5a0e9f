@@ -15,8 +15,6 @@ import { OfControlsPanel } from "@/components/qualite/OfControlsPanel";
 import { MaintenanceRiskPanel } from "@/components/qualite/MaintenanceRiskPanel";
 import { ShiftHistoryPanel } from "@/components/qualite/ShiftHistoryPanel";
 import { logAudit } from "@/lib/audit";
-import { sortOfsByPriority, computeShiftKpis } from "@/lib/qualityShiftLogic";
-import { useCriticalOverdueAlarm } from "@/hooks/useCriticalOverdueAlarm";
 
 interface OfItem {
   id: string;
@@ -28,9 +26,7 @@ interface OfItem {
   onCoveredLine: boolean;
   due: number;
   overdue: number;
-  criticalOverdue: number;
 }
-
 
 const lbl = (r?: { name?: string | null; designation?: string | null; code?: string | null } | null) =>
   r ? (r.name || r.designation || r.code || "—") : "—";
@@ -54,11 +50,7 @@ export default function QualiteShiftScreen() {
   const [ofs, setOfs] = useState<OfItem[]>([]);
   const [ofsLoading, setOfsLoading] = useState(false);
   const [selectedOfId, setSelectedOfId] = useState<string>("");
-  const [stats, setStats] = useState({ checks: 0, conforms: 0, nonConforms: 0, ncs: 0, ofs: 0, conformityRate: null as number | null });
-
-  const criticalOverdue = useMemo(() => ofs.reduce((s, o) => s + (o.criticalOverdue ?? 0), 0), [ofs]);
-  useCriticalOverdueAlarm(criticalOverdue, !!shift);
-
+  const [stats, setStats] = useState({ checks: 0, conforms: 0, ncs: 0, ofs: 0 });
 
   const canStart =
     hasRole("admin") ||
@@ -79,51 +71,76 @@ export default function QualiteShiftScreen() {
 
   // Shift KPIs
   useEffect(() => {
-    if (!shift) { setStats({ checks: 0, conforms: 0, nonConforms: 0, ncs: 0, ofs: 0, conformityRate: null }); return; }
+    if (!shift) { setStats({ checks: 0, conforms: 0, ncs: 0, ofs: 0 }); return; }
     (async () => {
       const [checksRes, ncRes] = await Promise.all([
         supabase.from("quality_checks" as any).select("id, is_conform, of_id").eq("quality_shift_id", shift.id),
         supabase.from("quality_non_conformities" as any).select("id").eq("quality_shift_id", shift.id),
       ]);
-      const k = computeShiftKpis((checksRes.data as any[]) ?? [], ((ncRes.data as any[]) ?? []).length);
-      setStats({ checks: k.checks, conforms: k.conforms, nonConforms: k.nonConforms, ncs: k.ncs, ofs: k.ofs, conformityRate: k.conformityRate });
-
+      const checks = (checksRes.data as any[]) ?? [];
+      const covered = new Set(checks.map((c) => c.of_id).filter(Boolean));
+      setStats({
+        checks: checks.length,
+        conforms: checks.filter((c) => c.is_conform === true).length,
+        ncs: ((ncRes.data as any[]) ?? []).length,
+        ofs: covered.size,
+      });
     })();
   }, [shift, ofs]);
 
-  // Active OFs + due status — une seule RPC batch pour tous les OF
+  // Active OFs + due status
   const loadOfs = async () => {
     setOfsLoading(true);
-    const { data, error } = await (supabase as any).rpc("get_quality_due_for_shift", {
-      p_quality_shift_id: shift?.id ?? null,
-      p_limit: 60,
-    });
-    if (error) {
-      toast({ title: "Erreur de chargement des OF", description: error.message, variant: "destructive" });
-      setOfsLoading(false);
-      return;
-    }
-    const items: OfItem[] = ((data as any[]) ?? []).map((r) => ({
-      id: r.of_id,
-      numero: r.numero,
-      product_id: r.product_id,
-      line_id: r.line_id,
-      productLabel: r.product_label ?? "—",
-      lineLabel: r.line_label ?? "—",
-      onCoveredLine: !!r.on_covered_line,
-      due: r.due ?? 0,
-      overdue: r.overdue ?? 0,
-      criticalOverdue: r.critical_overdue ?? 0,
+    const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+    const [ofRes, prodRes, lineRes, checkRes] = await Promise.all([
+      (supabase as any).from("ordres_fabrication").select("id, numero, product_id, line_id")
+        .eq("statut", "en_cours").order("created_at", { ascending: false }).limit(60),
+      (supabase as any).from("products").select("id, name, designation, code"),
+      (supabase as any).from("production_lines").select("id, name, designation, code"),
+      (supabase as any).from("quality_checks").select("of_id, indicator_id, control_time")
+        .gte("control_time", todayStart.toISOString()).limit(2000),
+    ]);
+    const prodById = new Map((prodRes.data || []).map((p: any) => [p.id, p]));
+    const lineById = new Map((lineRes.data || []).map((l: any) => [l.id, l]));
+    const checks: any[] = checkRes.data || [];
+    const coveredLineIds = new Set((shift?.lines ?? []).map((l) => l.id));
+    const rawOfs: any[] = ofRes.data || [];
+
+    const items = await Promise.all(rawOfs.map(async (of) => {
+      const { data } = await (supabase as any).rpc("get_quality_indicators_for_of", { p_of_id: of.id });
+      const req = (data || []).filter((i: any) => i.effective_is_required);
+      const ofChecks = checks.filter((c) => c.of_id === of.id);
+      const lastByInd: Record<string, string> = {};
+      ofChecks.forEach((c) => { if (!lastByInd[c.indicator_id]) lastByInd[c.indicator_id] = c.control_time; });
+      let due = 0, overdue = 0;
+      req.forEach((i: any) => {
+        const last = lastByInd[i.indicator_id];
+        const mins = i.effective_frequency_minutes;
+        if (!last) { due += 1; return; }
+        if (mins && mins > 0 && (Date.now() - new Date(last).getTime()) / 60000 >= mins) { overdue += 1; due += 1; }
+      });
+      return {
+        id: of.id,
+        numero: of.numero,
+        product_id: of.product_id,
+        line_id: of.line_id,
+        productLabel: lbl(prodById.get(of.product_id || "") as any),
+        lineLabel: lbl(lineById.get(of.line_id || "") as any),
+        onCoveredLine: of.line_id ? coveredLineIds.has(of.line_id) : false,
+        due,
+        overdue,
+      } as OfItem;
     }));
 
-    const sorted = sortOfsByPriority(items);
-    setOfs(sorted);
-    if (sorted.length > 0 && !sorted.some((o) => o.id === selectedOfId)) {
-      setSelectedOfId(sorted[0].id);
+    items.sort((a, b) =>
+      (b.onCoveredLine ? 1 : 0) - (a.onCoveredLine ? 1 : 0) ||
+      b.overdue - a.overdue || b.due - a.due);
+    setOfs(items);
+    if (items.length > 0 && !items.some((o) => o.id === selectedOfId)) {
+      setSelectedOfId(items[0].id);
     }
     setOfsLoading(false);
   };
-
 
   useEffect(() => {
     loadOfs();
@@ -281,29 +298,13 @@ export default function QualiteShiftScreen() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-3">
-              {criticalOverdue > 0 && (
-                <div className="flex items-center gap-2 rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 animate-pulse">
-                  <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
-                  <span className="text-sm font-medium text-destructive">
-                    {criticalOverdue} contrôle(s) bloquant(s) en retard critique (&gt; 2× la fréquence) — à saisir immédiatement.
-                  </span>
-                </div>
-              )}
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                <KpiBox label="Contrôles" value={stats.checks} />
-                <KpiBox label="Conformes" value={stats.conforms} variant="success" />
-                <KpiBox
-                  label="Taux conformité"
-                  value={stats.conformityRate == null ? "—" : `${stats.conformityRate}%`}
-                  variant={stats.conformityRate == null ? "default" : stats.conformityRate >= 95 ? "success" : stats.conformityRate >= 85 ? "warning" : "danger"}
-                />
-                <KpiBox label="NC ouvertes" value={stats.ncs} variant={stats.ncs > 0 ? "warning" : "default"} />
-                <KpiBox label="OF couverts" value={stats.ofs} />
-              </div>
+            <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <KpiBox label="Contrôles" value={stats.checks} />
+              <KpiBox label="Conformes" value={stats.conforms} variant="success" />
+              <KpiBox label="NC ouvertes" value={stats.ncs} variant={stats.ncs > 0 ? "warning" : "default"} />
+              <KpiBox label="OF couverts" value={stats.ofs} />
             </CardContent>
           </Card>
-
 
           {/* Master-détail */}
           <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
@@ -330,9 +331,7 @@ export default function QualiteShiftScreen() {
                     >
                       <div className="flex items-center justify-between gap-2">
                         <span className="font-medium truncate">{o.numero}</span>
-                        {o.criticalOverdue > 0 ? (
-                          <Badge variant="destructive" className="text-[10px] animate-pulse">⚠ {o.criticalOverdue} critique</Badge>
-                        ) : o.overdue > 0 ? (
+                        {o.overdue > 0 ? (
                           <Badge variant="destructive" className="text-[10px]">{o.overdue} retard</Badge>
                         ) : o.due > 0 ? (
                           <Badge variant="outline" className="border-amber-500 text-amber-600 text-[10px]">{o.due} à saisir</Badge>
@@ -340,7 +339,6 @@ export default function QualiteShiftScreen() {
                           <Badge variant="outline" className="text-[10px] text-muted-foreground">à jour</Badge>
                         )}
                       </div>
-
                       <div className="text-xs text-muted-foreground truncate">{o.productLabel} · {o.lineLabel}</div>
                       {o.onCoveredLine && <span className="text-[10px] text-primary">Ligne couverte</span>}
                     </button>
@@ -458,9 +456,8 @@ export default function QualiteShiftScreen() {
   );
 }
 
-function KpiBox({ label, value, variant = "default" }: { label: string; value: number | string; variant?: "default" | "success" | "warning" | "danger" }) {
-  const colorClass = variant === "success" ? "text-success" : variant === "warning" ? "text-warning" : variant === "danger" ? "text-destructive" : "text-foreground";
-
+function KpiBox({ label, value, variant = "default" }: { label: string; value: number; variant?: "default" | "success" | "warning" }) {
+  const colorClass = variant === "success" ? "text-success" : variant === "warning" ? "text-warning" : "text-foreground";
   return (
     <div className="border rounded-lg p-3 text-center">
       <div className={`text-2xl font-bold tabular-nums ${colorClass}`}>{value}</div>

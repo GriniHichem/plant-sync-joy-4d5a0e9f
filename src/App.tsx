@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate, useLocation, useParams } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -75,6 +75,7 @@ import AuditPage from "@/pages/AuditPage";
 import NotificationsPage from "@/pages/NotificationsPage";
 import NotificationRulesAdmin from "@/pages/parametres/NotificationRulesAdmin";
 import SmtpConfigAdmin from "@/pages/parametres/SmtpConfigAdmin";
+import ErpSyncAdmin from "@/pages/parametres/ErpSyncAdmin";
 import ValidationsPage from "@/pages/ValidationsPage";
 import ValidationRulesAdmin from "@/pages/parametres/ValidationRulesAdmin";
 import QualiteParametresHub from "@/pages/parametres/qualite/QualiteParametresHub";
@@ -86,16 +87,12 @@ import QualiteDefectTypesAdmin from "@/pages/parametres/qualite/QualiteDefectTyp
 import QualiteDecisionReasonsAdmin from "@/pages/parametres/qualite/QualiteDecisionReasonsAdmin";
 import QualiteShiftPlanAdmin from "@/pages/parametres/qualite/QualiteShiftPlanAdmin";
 import SearchPage from "@/pages/SearchPage";
-import QualiteEnquetesLot from "@/pages/qualite/QualiteEnquetesLot";
-import QualiteEnqueteLotDetail from "@/pages/qualite/QualiteEnqueteLotDetail";
-import EmailModule from "@/pages/email/EmailModule";
-import ErpSyncAdmin from "@/pages/parametres/ErpSyncAdmin";
 import { GlobalSearchProvider } from "@/components/search/GlobalSearchProvider";
 import { ManualProvider } from "@/contexts/ManualContext";
 import QualiteDashboard from "@/pages/qualite/QualiteDashboard";
 import QualiteOf from "@/pages/qualite/QualiteOf";
 import QualiteIndicateurs from "@/pages/qualite/QualiteIndicateurs";
-import QualitePlanControleOf from "@/pages/qualite/QualitePlanControleOf";
+import QualiteAffectations from "@/pages/qualite/QualiteAffectations";
 import QualiteControles from "@/pages/qualite/QualiteControles";
 import QualiteSaisieLigne from "@/pages/qualite/QualiteSaisieLigne";
 import QualiteConsoleControle from "@/pages/qualite/QualiteConsoleControle";
@@ -103,12 +100,11 @@ import QualiteNonConformites from "@/pages/qualite/QualiteNonConformites";
 import QualiteActions from "@/pages/qualite/QualiteActions";
 import QualiteRecettesNomenclatures from "@/pages/qualite/QualiteRecettesNomenclatures";
 import QualiteTracabilite from "@/pages/qualite/QualiteTracabilite";
+import QualiteEnquetesLot from "@/pages/qualite/QualiteEnquetesLot";
+import QualiteEnqueteLotDetail from "@/pages/qualite/QualiteEnqueteLotDetail";
 import QualiteRapports from "@/pages/qualite/QualiteRapports";
 import QualiteShiftScreen from "@/pages/qualite/QualiteShiftScreen";
 import ReceptionPage from "@/pages/qualite/reception/ReceptionPage";
-import DirectionDashboards from "@/pages/direction/DirectionDashboards";
-import DirectionDashboardDetail from "@/pages/direction/DirectionDashboardDetail";
-import SharedDashboards from "@/pages/direction/SharedDashboards";
 import InventoryDashboard from "@/pages/inventaire/InventoryDashboard";
 import InventoryCampaignsList from "@/pages/inventaire/InventoryCampaignsList";
 import InventoryCampaignNew from "@/pages/inventaire/InventoryCampaignNew";
@@ -128,11 +124,10 @@ import MagasinShiftHome from "@/pages/magasin/MagasinShiftHome";
 import MagasinKiosk from "@/pages/magasin/MagasinKiosk";
 import MagasinJournal from "@/pages/magasin/MagasinJournal";
 import HomeRoute from "@/components/HomeRoute";
-
-function LegacyDashboardRedirect() {
-  const { id } = useParams();
-  return <Navigate to={`/dashboard-design/dashboards/${id}`} replace />;
-}
+import DirectionDashboards from "@/pages/direction/DirectionDashboards";
+import DirectionDashboardDetail from "@/pages/direction/DirectionDashboardDetail";
+import MyDashboards from "@/pages/direction/MyDashboards";
+import EmailModule from "@/pages/email/EmailModule";
 
 const queryClient = new QueryClient();
 
@@ -345,12 +340,9 @@ const App = () => (
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/parametres/notifications" element={<NotificationRulesAdmin />} />
               <Route path="/parametres/smtp" element={<SmtpConfigAdmin />} />
+              <Route path="/parametres/erp-sync" element={<ErpSyncAdmin />} />
               <Route path="/validations" element={<ValidationsPage />} />
               <Route path="/parametres/validations" element={<ValidationRulesAdmin />} />
-              <Route path="/parametres/erp-sync" element={<ErpSyncAdmin />} />
-              <Route path="/email" element={<EmailModule />} />
-              <Route path="/qualite/enquetes-lot" element={<QualiteEnquetesLot />} />
-              <Route path="/qualite/enquetes-lot/:id" element={<QualiteEnqueteLotDetail />} />
               <Route path="/parametres/qualite" element={<QualiteParametresHub />} />
               <Route path="/parametres/qualite/nc-categories" element={<QualiteNcCategoriesAdmin />} />
               <Route path="/parametres/qualite/action-categories" element={<QualiteActionCategoriesAdmin />} />
@@ -373,7 +365,7 @@ const App = () => (
                 />
               } />
               <Route path="/qualite/indicateurs" element={<QualiteIndicateurs />} />
-              <Route path="/qualite/plan-controle" element={<QualitePlanControleOf />} />
+              <Route path="/qualite/affectations" element={<QualiteAffectations />} />
               <Route path="/qualite/saisie" element={<QualiteSaisieLigne />} />
               <Route path="/qualite/console" element={<QualiteConsoleControle />} />
               <Route path="/qualite/controles" element={<QualiteControles />} />
@@ -381,21 +373,25 @@ const App = () => (
               <Route path="/qualite/actions" element={<QualiteActions />} />
               <Route path="/qualite/recettes-nomenclatures" element={<QualiteRecettesNomenclatures />} />
               <Route path="/qualite/tracabilite" element={<QualiteTracabilite />} />
+              <Route path="/qualite/enquetes-lot" element={<QualiteEnquetesLot />} />
+              <Route path="/qualite/enquetes-lot/:id" element={<QualiteEnqueteLotDetail />} />
+
               <Route path="/qualite/rapports" element={<QualiteRapports />} />
               <Route path="/qualite/reception" element={<ReceptionPage />} />
+              {/* Direction — reporting personnalisable (lecture seule) */}
+              <Route path="/direction/dashboards" element={<DirectionDashboards />} />
+              <Route path="/direction/dashboards/:id" element={<DirectionDashboardDetail />} />
+              <Route path="/direction/mes-dashboards" element={<MyDashboards />} />
+              {/* Email — connexion du compte, devis PDR, envoi via modèles */}
+              <Route path="/email" element={<EmailModule />} />
+              <Route path="/email/:tab" element={<EmailModule />} />
+
               {/* Inventaire */}
               <Route path="/inventaire" element={<InventoryDashboard />} />
               <Route path="/inventaire/campagnes" element={<InventoryCampaignsList />} />
               <Route path="/inventaire/campagnes/nouvelle" element={<InventoryCampaignNew />} />
               <Route path="/inventaire/campagnes/:id" element={<InventoryCampaignDetail />} />
               <Route path="/inventaire/compter/:campaignId" element={<InventoryCountScreen />} />
-              {/* Dashboard Design */}
-              <Route path="/dashboard-design/dashboards" element={<DirectionDashboards />} />
-              <Route path="/dashboard-design/partages" element={<SharedDashboards />} />
-              <Route path="/dashboard-design/dashboards/:id" element={<DirectionDashboardDetail />} />
-              {/* Anciennes URLs */}
-              <Route path="/direction/dashboards" element={<Navigate to="/dashboard-design/dashboards" replace />} />
-              <Route path="/direction/dashboards/:id" element={<LegacyDashboardRedirect />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

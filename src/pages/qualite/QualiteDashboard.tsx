@@ -13,7 +13,7 @@ const kpis = [
 ];
 
 const shortcuts = [
-  { title: "Voir les contrôles", description: "Consulter les contrôles en cours et planifiés", url: "/qualite/controles" },
+  { title: "Historique des contrôles", description: "Consulter les contrôles réalisés", url: "/qualite/controles" },
   { title: "Voir les non-conformités", description: "Suivre les NC ouvertes et bloquantes", url: "/qualite/non-conformites" },
 ];
 

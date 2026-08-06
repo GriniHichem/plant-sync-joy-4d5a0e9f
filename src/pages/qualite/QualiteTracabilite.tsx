@@ -5,7 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Download, Search, Lock, Unlock, AlertTriangle, RotateCcw } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ScrollTable } from "@/components/responsive/ScrollTable";
+import { ResponsiveDialog } from "@/components/responsive/ResponsiveDialog";
+import { Download, Search, Lock, Unlock, AlertTriangle, RotateCcw, ListFilter, Clock, CheckCircle2, Trash2, GitBranch, RefreshCw, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -241,73 +244,149 @@ export default function QualiteTracabilite() {
 
   const resetFilters = () => { setFilterQ(""); setFilterStatus(ALL); };
 
+  const counts = useMemo(() => {
+    const c = { total: ofs.length, en_attente: 0, libere: 0, bloque: 0, rebut: 0 } as Record<string, number>;
+    ofs.forEach((o) => { const k = o.quality_status ?? "en_attente"; if (k in c) c[k] += 1; });
+    return c;
+  }, [ofs]);
+
+  const STATUS_CHIPS: { value: string; label: string; icon: typeof Lock; tone: string }[] = [
+    { value: ALL, label: "Tous", icon: ListFilter, tone: "text-foreground" },
+    { value: "en_attente", label: "En attente", icon: Clock, tone: "text-warning" },
+    { value: "libere", label: "Libérés", icon: CheckCircle2, tone: "text-success" },
+    { value: "bloque", label: "Bloqués", icon: Lock, tone: "text-destructive" },
+    { value: "rebut", label: "Rebut", icon: Trash2, tone: "text-muted-foreground" },
+  ];
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">Traçabilité OF</h1>
-          <p className="text-muted-foreground">Vue complète : recette, nomenclature, consommations, contrôles, NC, actions.</p>
+    <div className="space-y-5">
+      {/* En-tête */}
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <div className="space-y-1">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-2">
+            <GitBranch className="h-5 w-5 text-primary" /> Traçabilité OF
+          </h1>
+          <p className="text-sm text-muted-foreground max-w-2xl">
+            Vue complète par ordre de fabrication : recette, nomenclature, consommations et lots, contrôles, non-conformités et actions.
+          </p>
         </div>
+        <Button variant="outline" size="sm" onClick={load} disabled={loading}>
+          <RefreshCw className={`h-4 w-4 mr-1 ${loading ? "animate-spin" : ""}`} /> Actualiser
+        </Button>
       </div>
 
-      <Card>
-        <CardContent className="p-4 flex flex-wrap gap-2 items-center">
-          <div className="relative flex-1 min-w-[220px]">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Rechercher OF, produit, ligne…" className="pl-8" value={filterQ} onChange={(e) => setFilterQ(e.target.value)} />
-          </div>
-          <Select value={filterStatus} onValueChange={setFilterStatus}>
-            <SelectTrigger className="w-[180px]"><SelectValue placeholder="Statut qualité" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>Tous statuts</SelectItem>
-              <SelectItem value="en_attente">En attente</SelectItem>
-              <SelectItem value="libere">Libéré</SelectItem>
-              <SelectItem value="bloque">Bloqué</SelectItem>
-              <SelectItem value="rebut">Rebut</SelectItem>
-            </SelectContent>
-          </Select>
-          {filtersActive && (
-            <Button variant="ghost" size="sm" onClick={resetFilters}><RotateCcw className="h-4 w-4 mr-1" />Réinitialiser</Button>
-          )}
-        </CardContent>
-      </Card>
+      {/* Filtres rapides par statut */}
+      <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+        {STATUS_CHIPS.map((s) => {
+          const active = filterStatus === s.value;
+          const n = s.value === ALL ? counts.total : counts[s.value];
+          return (
+            <button
+              key={s.value}
+              type="button"
+              onClick={() => setFilterStatus(s.value)}
+              className={`shrink-0 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                active ? "bg-primary text-primary-foreground border-primary" : "bg-card hover:bg-muted text-muted-foreground"
+              }`}
+            >
+              <s.icon className={`h-3.5 w-3.5 ${active ? "" : s.tone}`} />
+              {s.label}
+              <span className="tabular-nums opacity-80">{n}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Recherche */}
+      <div className="flex flex-wrap gap-2 items-center rounded-lg border bg-muted/30 p-2">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Rechercher un OF, un produit, une ligne…"
+            className="pl-8 bg-background"
+            value={filterQ}
+            onChange={(e) => setFilterQ(e.target.value)}
+          />
+        </div>
+        <Select value={filterStatus} onValueChange={setFilterStatus}>
+          <SelectTrigger className="w-[170px] bg-background"><SelectValue placeholder="Statut qualité" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL}>Tous statuts</SelectItem>
+            <SelectItem value="en_attente">En attente</SelectItem>
+            <SelectItem value="libere">Libéré</SelectItem>
+            <SelectItem value="bloque">Bloqué</SelectItem>
+            <SelectItem value="rebut">Rebut</SelectItem>
+          </SelectContent>
+        </Select>
+        {filtersActive && (
+          <Button variant="ghost" size="sm" onClick={resetFilters}><RotateCcw className="h-4 w-4 mr-1" />Réinitialiser</Button>
+        )}
+      </div>
 
       {loading ? (
-        <p className="text-muted-foreground">Chargement…</p>
+        <div className="space-y-2">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="h-[76px] rounded-lg border bg-muted/40 animate-pulse" />
+          ))}
+        </div>
       ) : filtered.length === 0 ? (
-        <p className="text-muted-foreground">Aucun OF.</p>
+        <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed py-14 text-center">
+          <GitBranch className="h-8 w-8 text-muted-foreground/40" />
+          <p className="text-sm text-muted-foreground">Aucun OF ne correspond aux filtres.</p>
+          {filtersActive && <Button variant="outline" size="sm" onClick={resetFilters}>Réinitialiser les filtres</Button>}
+        </div>
       ) : (
         <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">{filtered.length} OF affiché{filtered.length > 1 ? "s" : ""}</p>
           {filtered.map((o) => {
             const qs = o.quality_status ?? "en_attente";
             const recipe = o.recipe_id ? recipes[o.recipe_id] : null;
             const bom = o.bom_id ? boms[o.bom_id] : null;
             const isOpen = openOf === o.id;
             const detail = details[o.id];
+            const accent =
+              qs === "libere" ? "before:bg-success"
+              : qs === "bloque" ? "before:bg-destructive"
+              : qs === "rebut" ? "before:bg-muted-foreground"
+              : "before:bg-warning";
             return (
-              <Card key={o.id}>
-                <CardHeader className="cursor-pointer" onClick={() => toggleOpen(o.id)}>
-                  <div className="flex items-center justify-between gap-3 flex-wrap">
-                    <div>
-                      <CardTitle className="text-base">{o.numero}</CardTitle>
-                      <p className="text-sm text-muted-foreground">
-                        {products[o.product_id ?? ""] ?? "—"} · {lines[o.line_id ?? ""] ?? "—"}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline">{recipe ? `${recipe.name} v${recipe.version ?? "?"}` : "Pas de recette"}</Badge>
-                      <Badge variant="outline">{bom ? `BOM v${bom.version ?? "?"}` : "Pas de BOM"}</Badge>
-                      <Badge variant={QUALITY_STATUS_VARIANT[qs] ?? "secondary"}>{QUALITY_STATUS_LABELS[qs] ?? qs}</Badge>
-                    </div>
+              <Card
+                key={o.id}
+                className={`relative overflow-hidden transition-shadow before:absolute before:inset-y-0 before:left-0 before:w-1 ${accent} ${isOpen ? "shadow-md ring-1 ring-primary/20" : "hover:shadow-sm"}`}
+              >
+                <button
+                  type="button"
+                  onClick={() => toggleOpen(o.id)}
+                  aria-expanded={isOpen}
+                  className="w-full text-left p-4 pl-5 flex items-center gap-3"
+                >
+                  <ChevronRight className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${isOpen ? "rotate-90" : ""}`} />
+                  <div className="min-w-0 flex-1">
+                    <div className="font-semibold font-mono text-sm sm:text-base truncate">{o.numero}</div>
+                    <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                      {products[o.product_id ?? ""] ?? "—"} · {lines[o.line_id ?? ""] ?? "—"}
+                    </p>
                   </div>
-                </CardHeader>
+                  <div className="hidden md:flex items-center gap-1.5">
+                    <Badge variant="outline" className="font-normal">{recipe ? `${recipe.name} v${recipe.version ?? "?"}` : "Sans recette"}</Badge>
+                    <Badge variant="outline" className="font-normal">{bom ? `BOM v${bom.version ?? "?"}` : "Sans BOM"}</Badge>
+                  </div>
+                  <Badge variant={QUALITY_STATUS_VARIANT[qs] ?? "secondary"} className="shrink-0">{QUALITY_STATUS_LABELS[qs] ?? qs}</Badge>
+                </button>
+
                 {isOpen && (
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-4 border-t pt-4 pl-5">
+                    <div className="flex md:hidden flex-wrap gap-1.5">
+                      <Badge variant="outline" className="font-normal">{recipe ? `${recipe.name} v${recipe.version ?? "?"}` : "Sans recette"}</Badge>
+                      <Badge variant="outline" className="font-normal">{bom ? `BOM v${bom.version ?? "?"}` : "Sans BOM"}</Badge>
+                    </div>
                     {!detail ? (
-                      <p className="text-sm text-muted-foreground">Chargement des détails…</p>
+                      <div className="space-y-2">
+                        {[0, 1, 2].map((i) => <div key={i} className="h-6 rounded bg-muted animate-pulse" />)}
+                      </div>
                     ) : (
                       <Tabs defaultValue="overview">
-                        <TabsList>
+                        <TabsList className="w-full justify-start overflow-x-auto">
                           <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
                           <TabsTrigger value="shifts">Shifts ({detail.shifts.length})</TabsTrigger>
                           <TabsTrigger value="cons">Consommations ({detail.consumptions.length})</TabsTrigger>
@@ -315,62 +394,124 @@ export default function QualiteTracabilite() {
                           <TabsTrigger value="ncs">NC ({detail.ncs.length})</TabsTrigger>
                           <TabsTrigger value="actions">Actions ({detail.actions.length})</TabsTrigger>
                         </TabsList>
-                        <TabsContent value="overview" className="text-sm space-y-1 pt-3">
-                          <div>Quantité prévue : <strong>{detail.of.quantite_prevue ?? "—"}</strong></div>
-                          <div>Quantité produite : <strong>{detail.of.quantite_produite ?? "—"}</strong></div>
-                          <div>Rebut : <strong>{detail.of.quantite_rebut ?? "—"}</strong></div>
-                          <div>Recette : <strong>{detail.of.recipe_label ?? "—"}</strong></div>
-                          <div>Nomenclature : <strong>{detail.of.bom_label ?? "non lié"}</strong></div>
+
+                        <TabsContent value="overview" className="pt-4">
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                            {[
+                              { label: "Qté prévue", value: detail.of.quantite_prevue ?? "—" },
+                              { label: "Qté produite", value: detail.of.quantite_produite ?? "—" },
+                              { label: "Rebut", value: detail.of.quantite_rebut ?? "—" },
+                            ].map((k) => (
+                              <div key={k.label} className="rounded-lg border bg-muted/30 p-3">
+                                <div className="text-[11px] uppercase tracking-wide text-muted-foreground truncate">{k.label}</div>
+                                <div className="text-lg font-bold tabular-nums">{k.value}</div>
+                              </div>
+                            ))}
+                          </div>
+                          <dl className="mt-3 grid sm:grid-cols-2 gap-x-6 gap-y-1.5 text-sm">
+                            <div className="flex justify-between gap-2 border-b py-1">
+                              <dt className="text-muted-foreground">Recette</dt><dd className="font-medium text-right">{detail.of.recipe_label ?? "—"}</dd>
+                            </div>
+                            <div className="flex justify-between gap-2 border-b py-1">
+                              <dt className="text-muted-foreground">Nomenclature</dt><dd className="font-medium text-right">{detail.of.bom_label ?? "non lié"}</dd>
+                            </div>
+                          </dl>
                         </TabsContent>
-                        <TabsContent value="shifts" className="pt-3">
-                          {detail.shifts.length === 0 ? <p className="text-sm text-muted-foreground">Aucun shift.</p> : (
-                            <ul className="text-sm space-y-1">{detail.shifts.map((s, i) => (
-                              <li key={i}>{s.date_shift} · {s.shift_type} · {s.team_label ?? "—"} · {s.chef_label ?? "—"}</li>
-                            ))}</ul>
-                          )}
-                        </TabsContent>
-                        <TabsContent value="cons" className="pt-3">
-                          {detail.consumptions.length === 0 ? <p className="text-sm text-muted-foreground">Aucune consommation.</p> : (
-                            <table className="text-sm w-full">
-                              <thead><tr className="text-left text-muted-foreground"><th>Article</th><th>Qté</th><th>Unité</th><th>Lot</th><th>Batch</th><th>Lot four.</th><th>Péremption</th></tr></thead>
-                              <tbody>{detail.consumptions.map((c, i) => (
-                                <tr key={i}><td>{c.article_label}</td><td>{c.quantite ?? "—"}</td><td>{c.unite ?? "—"}</td><td>{c.lot_number ?? "—"}</td><td>{c.batch_number ?? "—"}</td><td>{c.supplier_lot ?? "—"}</td><td>{c.expiry_date ?? "—"}</td></tr>
-                              ))}</tbody>
-                            </table>
-                          )}
-                        </TabsContent>
-                        <TabsContent value="checks" className="pt-3">
-                          {detail.checks.length === 0 ? <p className="text-sm text-muted-foreground">Aucun contrôle.</p> : (
-                            <ul className="text-sm space-y-1">{detail.checks.map((c, i) => (
-                              <li key={i} className="flex items-center gap-2">
-                                {c.is_conform === false && <AlertTriangle className="h-4 w-4 text-destructive" />}
-                                <span>{new Date(c.control_time).toLocaleString()} · {c.indicator_label} · {String(c.measured)}</span>
+
+                        <TabsContent value="shifts" className="pt-4">
+                          {detail.shifts.length === 0 ? <p className="text-sm text-muted-foreground py-4 text-center">Aucun shift.</p> : (
+                            <ul className="space-y-2">{detail.shifts.map((s, i) => (
+                              <li key={i} className="flex flex-wrap items-center gap-2 rounded-md border bg-card p-2.5 text-sm">
+                                <Badge variant="secondary" className="font-mono">{s.date_shift}</Badge>
+                                <span className="font-medium">{s.shift_type}</span>
+                                <span className="text-muted-foreground">Équipe : {s.team_label ?? "—"}</span>
+                                <span className="text-muted-foreground">Chef : {s.chef_label ?? "—"}</span>
                               </li>
                             ))}</ul>
                           )}
                         </TabsContent>
-                        <TabsContent value="ncs" className="pt-3">
-                          {detail.ncs.length === 0 ? <p className="text-sm text-muted-foreground">Aucune NC.</p> : (
-                            <ul className="text-sm space-y-1">{detail.ncs.map((n) => (
-                              <li key={n.nc_number}><strong>{n.nc_number}</strong> · {n.title} · {n.severity} · {n.status}{n.decision ? ` · ${n.decision}` : ""}</li>
+
+                        <TabsContent value="cons" className="pt-4">
+                          {detail.consumptions.length === 0 ? <p className="text-sm text-muted-foreground py-4 text-center">Aucune consommation.</p> : (
+                            <ScrollTable>
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead>Article</TableHead><TableHead className="text-right">Qté</TableHead><TableHead>Unité</TableHead>
+                                    <TableHead>Lot</TableHead><TableHead>Batch</TableHead><TableHead>Lot four.</TableHead><TableHead>Péremption</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {detail.consumptions.map((c, i) => (
+                                    <TableRow key={i} className="odd:bg-muted/20">
+                                      <TableCell className="font-medium">{c.article_label}</TableCell>
+                                      <TableCell className="text-right tabular-nums">{c.quantite ?? "—"}</TableCell>
+                                      <TableCell>{c.unite ?? "—"}</TableCell>
+                                      <TableCell className="font-mono text-xs">{c.lot_number ?? "—"}</TableCell>
+                                      <TableCell className="font-mono text-xs">{c.batch_number ?? "—"}</TableCell>
+                                      <TableCell className="font-mono text-xs">{c.supplier_lot ?? "—"}</TableCell>
+                                      <TableCell>{c.expiry_date ?? "—"}</TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </ScrollTable>
+                          )}
+                        </TabsContent>
+
+                        <TabsContent value="checks" className="pt-4">
+                          {detail.checks.length === 0 ? <p className="text-sm text-muted-foreground py-4 text-center">Aucun contrôle.</p> : (
+                            <ul className="space-y-1.5 max-h-[45vh] overflow-y-auto pr-1">{detail.checks.map((c, i) => (
+                              <li key={i} className={`flex items-center gap-3 rounded-md border p-2.5 text-sm ${c.is_conform === false ? "border-destructive/40 bg-destructive/5" : "bg-card"}`}>
+                                <span className="text-xs text-muted-foreground tabular-nums shrink-0 w-[110px]">
+                                  {new Date(c.control_time).toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                                </span>
+                                <span className="flex-1 min-w-0 truncate">{c.indicator_label}</span>
+                                <span className="font-semibold tabular-nums">{String(c.measured) || "—"}</span>
+                                {c.is_conform === false ? (
+                                  <Badge variant="outline" className="border-destructive/40 text-destructive gap-1 shrink-0"><AlertTriangle className="h-3.5 w-3.5" /> Non conf.</Badge>
+                                ) : c.is_conform === true ? (
+                                  <Badge variant="outline" className="border-success/40 text-success gap-1 shrink-0"><CheckCircle2 className="h-3.5 w-3.5" /> Conforme</Badge>
+                                ) : <span className="text-xs text-muted-foreground shrink-0">—</span>}
+                              </li>
                             ))}</ul>
                           )}
                         </TabsContent>
-                        <TabsContent value="actions" className="pt-3">
-                          {detail.actions.length === 0 ? <p className="text-sm text-muted-foreground">Aucune action.</p> : (
-                            <ul className="text-sm space-y-1">{detail.actions.map((a, i) => (
-                              <li key={i}>{a.title} · {a.action_type} · {a.status}{a.due_date ? ` · échéance ${a.due_date}` : ""}</li>
+
+                        <TabsContent value="ncs" className="pt-4">
+                          {detail.ncs.length === 0 ? <p className="text-sm text-muted-foreground py-4 text-center">Aucune NC.</p> : (
+                            <ul className="space-y-2">{detail.ncs.map((n) => (
+                              <li key={n.nc_number} className="rounded-md border bg-card p-2.5 text-sm flex flex-wrap items-center gap-2">
+                                <span className="font-mono font-semibold">{n.nc_number}</span>
+                                <span className="flex-1 min-w-[120px]">{n.title}</span>
+                                <Badge variant={n.severity === "critique" || n.severity === "majeure" ? "destructive" : "secondary"}>{n.severity}</Badge>
+                                <Badge variant="outline">{n.status}</Badge>
+                                {n.decision && <Badge variant="outline">{n.decision}</Badge>}
+                              </li>
+                            ))}</ul>
+                          )}
+                        </TabsContent>
+
+                        <TabsContent value="actions" className="pt-4">
+                          {detail.actions.length === 0 ? <p className="text-sm text-muted-foreground py-4 text-center">Aucune action.</p> : (
+                            <ul className="space-y-2">{detail.actions.map((a, i) => (
+                              <li key={i} className="rounded-md border bg-card p-2.5 text-sm flex flex-wrap items-center gap-2">
+                                <span className="flex-1 min-w-[140px] font-medium">{a.title}</span>
+                                <Badge variant="secondary">{a.action_type}</Badge>
+                                <Badge variant="outline">{a.status}</Badge>
+                                {a.due_date && <span className="text-xs text-muted-foreground">échéance {a.due_date}</span>}
+                              </li>
                             ))}</ul>
                           )}
                         </TabsContent>
                       </Tabs>
                     )}
 
-                    <div className="flex flex-wrap gap-2 pt-2">
+                    <div className="flex flex-wrap gap-2 pt-1">
                       <Button size="sm" variant="outline" onClick={() => handleExport(o.id)} disabled={!detail}>
                         <Download className="h-4 w-4 mr-1" /> Export CSV
                       </Button>
-                      <Button size="sm" variant="default" onClick={() => openDecision(o)}>
+                      <Button size="sm" onClick={() => openDecision(o)}>
                         {qs === "bloque" ? <Unlock className="h-4 w-4 mr-1" /> : <Lock className="h-4 w-4 mr-1" />}
                         Décision qualité
                       </Button>
@@ -383,29 +524,36 @@ export default function QualiteTracabilite() {
         </div>
       )}
 
-      {decisionFor && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => !savingDecision && setDecisionFor(null)}>
-          <Card className="w-full max-w-md" onClick={(e) => e.stopPropagation()}>
-            <CardHeader><CardTitle>Décision qualité — {decisionFor.numero}</CardTitle></CardHeader>
-            <CardContent className="space-y-3">
-              <Select value={decision} onValueChange={setDecision}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="en_attente">En attente</SelectItem>
-                  <SelectItem value="libere">Libérer</SelectItem>
-                  <SelectItem value="bloque">Bloquer</SelectItem>
-                  <SelectItem value="rebut">Rebut</SelectItem>
-                </SelectContent>
-              </Select>
-              <Input placeholder="Motif (optionnel)" value={decisionReason} onChange={(e) => setDecisionReason(e.target.value)} />
-              <div className="flex justify-end gap-2">
-                <Button variant="ghost" disabled={savingDecision} onClick={() => setDecisionFor(null)}>Annuler</Button>
-                <Button disabled={savingDecision} onClick={saveDecision}>Enregistrer</Button>
-              </div>
-            </CardContent>
-          </Card>
+      <ResponsiveDialog
+        open={decisionFor !== null}
+        onOpenChange={(v) => { if (!v && !savingDecision) setDecisionFor(null); }}
+        title={decisionFor ? `Décision qualité — ${decisionFor.numero}` : ""}
+        description="Le statut qualité de l'OF est historisé dans l'audit."
+      >
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">Statut</label>
+            <Select value={decision} onValueChange={setDecision}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="en_attente">En attente</SelectItem>
+                <SelectItem value="libere">Libérer</SelectItem>
+                <SelectItem value="bloque">Bloquer</SelectItem>
+                <SelectItem value="rebut">Rebut</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-muted-foreground">Motif (optionnel)</label>
+            <Input placeholder="Ex. contrôle poids non conforme" value={decisionReason} onChange={(e) => setDecisionReason(e.target.value)} />
+          </div>
+          <div className="flex justify-end gap-2 pt-1">
+            <Button variant="ghost" disabled={savingDecision} onClick={() => setDecisionFor(null)}>Annuler</Button>
+            <Button disabled={savingDecision} onClick={saveDecision}>{savingDecision ? "Enregistrement…" : "Enregistrer"}</Button>
+          </div>
         </div>
-      )}
+      </ResponsiveDialog>
     </div>
   );
 }
+
