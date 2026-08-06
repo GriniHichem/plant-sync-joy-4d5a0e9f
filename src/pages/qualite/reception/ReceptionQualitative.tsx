@@ -304,18 +304,43 @@ export default function ReceptionQualitative() {
   const { data: kpis } = useQuery({
     queryKey: ["reception_user_kpis", user?.id, periodRange.start.toISOString(), periodRange.end.toISOString()],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_reception_user_kpis", {
-        p_user_id: user?.id,
-        p_start_time: periodRange.start.toISOString(),
-        p_end_time: periodRange.end.toISOString(),
-      });
+      if (!user?.id) return null;
+      
+      const { data, error } = await supabase.from("v_reception_global")
+        .select("poids_brut_kg, poids_net_kg, poids_abattement_kg")
+        .eq("created_by", user.id)
+        .eq("statut", "cloture")
+        .not("code_pesee", "ilike", "IMP-%")
+        .gte("created_at", periodRange.start.toISOString())
+        .lt("created_at", periodRange.end.toISOString());
+
       if (error) throw error;
-      return data?.[0] as {
-        total_brut: number;
-        total_net: number;
-        total_abattement_kg: number;
-        avg_abattement_pct: number;
-        ticket_count: number;
+      if (!data || data.length === 0) return {
+        total_brut: 0,
+        total_net: 0,
+        total_abattement_kg: 0,
+        avg_abattement_pct: 0,
+        ticket_count: 0
+      };
+
+      let total_brut = 0;
+      let total_net = 0;
+      let total_abattement_kg = 0;
+
+      data.forEach(row => {
+        total_brut += Number(row.poids_brut_kg || 0);
+        total_net += Number(row.poids_net_kg || 0);
+        total_abattement_kg += Number(row.poids_abattement_kg || 0);
+      });
+
+      const avg_abattement_pct = total_brut > 0 ? (total_abattement_kg / total_brut) * 100 : 0;
+
+      return {
+        total_brut,
+        total_net,
+        total_abattement_kg,
+        avg_abattement_pct,
+        ticket_count: data.length
       };
     },
     enabled: !!user?.id,
