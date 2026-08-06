@@ -112,7 +112,7 @@ export function DateRangeFilter({
         </PopoverContent>
       </Popover>
 
-      {/* ajoute 20 tickets de test pour la période de 14h à 22h aujourd'hui afin de valider le calcul des indicateurs (abattement moyen et total) dans le sous-module qualitatif. */}
+      {/* voila ci joint l ancien projet ciblé par migration mais j ai changer lien detecter moi les probleme des migration et corriger les */}
       <Select value={granularity} onValueChange={(v) => setGranularity(v as Granularity)}>
         <SelectTrigger className="h-7 w-auto min-w-[100px] text-xs gap-1">
           <SelectValue />
