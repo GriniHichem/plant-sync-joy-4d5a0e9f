@@ -112,7 +112,7 @@ export function DateRangeFilter({
         </PopoverContent>
       </Popover>
 
-      {/* toujour vide creer des données de test pour veirfier que tous marche bien */}
+      {/* ajouter des nouveau ticket a la base donnée pour que e peu tester moi meme les 10 dernier ticket et kpi */}
       <Select value={granularity} onValueChange={(v) => setGranularity(v as Granularity)}>
         <SelectTrigger className="h-7 w-auto min-w-[100px] text-xs gap-1">
           <SelectValue />
