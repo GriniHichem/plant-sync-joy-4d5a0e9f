@@ -24,6 +24,7 @@ import {
   type ConformityResult,
 } from "@/pages/qualite/QualiteControles";
 import { parseDecimal } from "@/pages/qualite/QualiteIndicateurs";
+import OfControlPlanManager from "@/components/qualite/OfControlPlanManager";
 
 export const QUALITY_STATUS_OPTIONS = [
   { value: "non_demarre", label: "Non démarré", variant: "secondary" as const },
@@ -368,6 +369,12 @@ export default function OfQualityTab({
         <Button variant="outline" disabled className="h-11" title="Module Non-conformité à venir">
           <AlertOctagon className="h-4 w-4 mr-1" /> Créer non-conformité
         </Button>
+      </div>
+
+      {/* Plan de contrôle : hérité du produit + dérogations locales */}
+      <div>
+        <div className="font-medium mb-2">Plan de contrôle de l'OF</div>
+        <OfControlPlanManager ofId={ofId} ofNumero={ofNumero} canManage={canManage} />
       </div>
 
       {/* Applicable indicators */}

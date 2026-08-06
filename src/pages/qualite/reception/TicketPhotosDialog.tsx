@@ -45,7 +45,7 @@ export function TicketPhotosDialog({ open, onOpenChange, ticketId, ticketNumero 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl">
+      <DialogContent className="w-[calc(100vw-1rem)] sm:w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto p-4 sm:p-6 pr-10 sm:pr-6">
         <DialogHeader>
           <DialogTitle>Photos du ticket {ticketNumero ?? ""}</DialogTitle>
         </DialogHeader>

@@ -12,14 +12,16 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { logAudit } from "@/lib/audit";
 import { evaluateConditions } from "@/lib/notifications";
-import { MODULES, NOTIF_EVENTS_BY_MODULE, ROLES } from "@/lib/ruleCatalog";
+import { MODULES, MODULE_GROUPS, NOTIF_EVENTS_BY_MODULE, ROLES, suggestedRolesForModule } from "@/lib/ruleCatalog";
 import { preflightNotifRule } from "@/lib/ruleValidation";
 import {
   ConditionBuilder,
   fromAnyConditions,
   toNotifConditions,
+  validateConditionTree,
   type CondTree,
 } from "@/components/rules/ConditionBuilder";
+
 import { PreflightBanner, DryRunTester } from "@/components/rules/RulePreflight";
 
 const SEVERITIES = ["info","low","medium","high","critical"] as const;
@@ -93,19 +95,29 @@ export function RuleEditorDialog({ open, onOpenChange, rule, onSaved }: Props) {
     return toNotifConditions(form.conditions);
   }, [expertMode, expertJson, form.conditions]);
 
-  const preflight = useMemo(() => preflightNotifRule({
-    name: form.name,
-    module: form.module,
-    event_type: form.event_type,
-    target_roles: form.target_roles,
-    channels: form.channels,
-    severity: form.severity,
-    is_critical: form.is_critical,
-    conditions: expertMode ? expertJson : conditionsObj,
-    allowCustom: false,
-  }), [form, expertMode, expertJson, conditionsObj]);
+  const treeIssues = useMemo(
+    () => (expertMode ? [] : validateConditionTree(form.conditions, form.module)),
+    [expertMode, form.conditions, form.module]
+  );
+
+  const preflight = useMemo(() => {
+    const base = preflightNotifRule({
+      name: form.name,
+      module: form.module,
+      event_type: form.event_type,
+      target_roles: form.target_roles,
+      channels: form.channels,
+      severity: form.severity,
+      is_critical: form.is_critical,
+      frequency: form.frequency,
+      conditions: expertMode ? expertJson : conditionsObj,
+      allowCustom: false,
+    });
+    return { errors: [...base.errors, ...treeIssues], warnings: base.warnings };
+  }, [form, expertMode, expertJson, conditionsObj, treeIssues]);
 
   const toggleArr = <T,>(arr: T[], v: T): T[] => arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v];
+
 
   const save = async () => {
     if (preflight.errors.length > 0) {
@@ -192,17 +204,30 @@ export function RuleEditorDialog({ open, onOpenChange, rule, onSaved }: Props) {
           <div className="grid grid-cols-3 gap-3">
             <div>
               <Label>Module *</Label>
-              <Select value={form.module} onValueChange={(v) => setForm({ ...form, module: v, event_type: "" })}>
+              <Select value={form.module} onValueChange={(v) => setForm({ ...form, module: v, event_type: "", conditions: { combinator: "all", rules: [] } })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {MODULES.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                  {MODULE_GROUPS.map((g) => (
+                    <div key={g}>
+                      <div className="px-2 py-1 text-[10px] uppercase tracking-wide text-muted-foreground">{g}</div>
+                      {MODULES.filter((m) => m.group === g).map((m) => (
+                        <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                      ))}
+                    </div>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
             <div>
               <Label>Événement *</Label>
               {events.length > 0 ? (
-                <Select value={form.event_type} onValueChange={(v) => setForm({ ...form, event_type: v })}>
+                <Select
+                  value={form.event_type}
+                  onValueChange={(v) => {
+                    const ev = events.find((e) => e.value === v);
+                    setForm({ ...form, event_type: v, severity: ev?.defaultSeverity ?? form.severity });
+                  }}
+                >
                   <SelectTrigger><SelectValue placeholder="Sélectionner…" /></SelectTrigger>
                   <SelectContent>
                     {events.map((e) => <SelectItem key={e.value} value={e.value}>{e.label}</SelectItem>)}
@@ -223,7 +248,16 @@ export function RuleEditorDialog({ open, onOpenChange, rule, onSaved }: Props) {
 
           {/* Destinataires */}
           <div>
-            <Label>Rôles destinataires</Label>
+            <div className="flex items-center justify-between">
+              <Label>Rôles destinataires</Label>
+              <button
+                type="button"
+                className="text-xs text-muted-foreground hover:text-primary underline"
+                onClick={() => setForm({ ...form, target_roles: suggestedRolesForModule(form.module) })}
+              >
+                Rôles conseillés
+              </button>
+            </div>
             <div className="flex flex-wrap gap-1.5 mt-1.5">
               {ROLES.map((r) => (
                 <Badge
@@ -236,6 +270,7 @@ export function RuleEditorDialog({ open, onOpenChange, rule, onSaved }: Props) {
                 </Badge>
               ))}
             </div>
+
           </div>
 
           {/* Canaux + Fréquence */}

@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Scale, Search, ChevronRight, ArrowUpDown, Wrench } from "lucide-react";
+import { TicketMaintenanceDialog } from "@/components/reception/TicketMaintenanceDialog";
 import { computeAbattementKg, computeNetKg, formatKg, kgToTonnes } from "@/lib/reception";
 import { PhotoLightbox } from "./PhotoLightbox";
 import { useShiftRealtime } from "@/hooks/useShiftRealtime";
@@ -17,7 +18,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { ResponsiveDialog } from "@/components/responsive/ResponsiveDialog";
 import { ScrollTable } from "@/components/responsive/ScrollTable";
 import { StickyActionBar } from "@/components/responsive/StickyActionBar";
-import { TicketMaintenanceDialog } from "./TicketMaintenanceDialog";
 
 export default function ReceptionQuantitative() {
   const qc = useQueryClient();
@@ -28,14 +28,16 @@ export default function ReceptionQuantitative() {
   const [selected, setSelected] = useState<any>(null);
   const [poidsBrut, setPoidsBrut] = useState("");
   const [codeSaisi, setCodeSaisi] = useState("");
-  const [maintenanceTicket, setMaintenanceTicket] = useState<any>(null);
+  const [maintenance, setMaintenance] = useState<any>(null);
+
 
   const { data: tickets = [], isFetching } = useQuery({
     queryKey: ["reception_pesee_list", limit, sortAsc],
     queryFn: async () => {
-      // Seuls les tickets clôturés non encore pesés remontent au pont-bascule.
       const { data, error } = await supabase.from("v_reception_global")
-        .select("*").eq("statut", "cloture").is("poids_brut_kg", null)
+        .select("*")
+        .eq("statut", "cloture")
+        .eq("etat_pesee", "a_peser")
         .order("numero", { ascending: sortAsc })
         .limit(limit);
       if (error) throw error;
@@ -47,6 +49,7 @@ export default function ReceptionQuantitative() {
   useShiftRealtime("reception-pesee-tickets", "reception_tickets", invalidate);
   useShiftRealtime("reception-pesee-weighings", "reception_weighings", invalidate);
 
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return tickets;
@@ -54,7 +57,6 @@ export default function ReceptionQuantitative() {
       [t.numero, t.fournisseur, t.produit, t.wilaya].some((x) => (x ?? "").toString().toLowerCase().includes(q)),
     );
   }, [tickets, search]);
-
 
   // Formatage du code système : préfixe + zéros + numéro saisi
   const digits = selected?.code_digits ? Math.max(1, Math.min(10, Number(selected.code_digits))) : null;
@@ -188,10 +190,11 @@ export default function ReceptionQuantitative() {
         <CardHeader>
           <div className="flex items-center gap-2 flex-wrap">
             <CardTitle className="text-base md:text-lg">Tickets à peser</CardTitle>
-            <Badge variant="outline">{filtered.length} en attente</Badge>
+            <Badge variant="outline" className="h-6">{filtered.length} non pesé(s)</Badge>
             <div className="ml-auto flex items-center gap-2 w-full sm:w-auto">
               <Button
                 variant="outline"
+                size="sm"
                 className="h-10 shrink-0"
                 onClick={() => setSortAsc((v) => !v)}
                 title="Trier par numéro de ticket"
@@ -211,35 +214,31 @@ export default function ReceptionQuantitative() {
           {/* Mobile / tablette portrait : liste condensée */}
           <div className="lg:hidden space-y-2">
             {filtered.map((t: any) => (
-              <div key={t.id} className="rounded-lg border flex items-center gap-1 pr-1">
+              <div key={t.id} className="w-full rounded-lg border p-3 flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => { setSelected(t); setPoidsBrut(""); setCodeSaisi(""); }}
-                  className="flex-1 min-w-0 text-left p-3 flex items-center gap-3 active:bg-muted/60 rounded-lg"
+                  className="min-w-0 flex-1 text-left active:opacity-70"
                 >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs text-muted-foreground truncate">{t.numero}</span>
-                      {t.etat_pesee === "pese"
-                        ? <Badge variant="secondary" className="h-5">{formatKg(t.poids_net_kg)} net</Badge>
-                        : <Badge className="h-5">À peser</Badge>}
-                    </div>
-                    <div className="font-medium truncate">{t.produit}</div>
-                    <div className="text-xs text-muted-foreground truncate">{t.fournisseur} · Abat. {Number(t.taux_abattement).toFixed(2)} %</div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs text-muted-foreground truncate">{t.numero}</span>
+                    {t.etat_pesee === "pese"
+                      ? <Badge variant="secondary" className="h-5">{formatKg(t.poids_net_kg)} net</Badge>
+                      : <Badge className="h-5">À peser</Badge>}
                   </div>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
+                  <div className="font-medium truncate">{t.produit}</div>
+                  <div className="text-xs text-muted-foreground truncate">{t.fournisseur} · Abat. {Number(t.taux_abattement).toFixed(2)} %</div>
                 </button>
-                {t.poids_brut_kg == null && (
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-10 w-10 shrink-0 text-muted-foreground"
-                    title="Maintenance ticket"
-                    onClick={() => setMaintenanceTicket(t)}
-                  >
-                    <Wrench className="h-4 w-4" />
-                  </Button>
-                )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 shrink-0"
+                  title="Maintenance ticket"
+                  onClick={() => setMaintenance(t)}
+                >
+                  <Wrench className="h-4 w-4" />
+                </Button>
+                <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
               </div>
             ))}
             {filtered.length === 0 && (
@@ -271,16 +270,9 @@ export default function ReceptionQuantitative() {
                           : <Badge>À peser</Badge>}
                       </TableCell>
                       <TableCell className="text-right whitespace-nowrap">
-                        {t.poids_brut_kg == null && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            title="Maintenance ticket"
-                            onClick={() => setMaintenanceTicket(t)}
-                          >
-                            <Wrench className="h-4 w-4" />
-                          </Button>
-                        )}
+                        <Button size="sm" variant="ghost" title="Maintenance ticket" onClick={() => setMaintenance(t)}>
+                          <Wrench className="h-4 w-4" />
+                        </Button>
                         <Button size="sm" variant="ghost" onClick={() => { setSelected(t); setPoidsBrut(""); setCodeSaisi(""); }}>
                           <ChevronRight className="h-4 w-4" />
                         </Button>
@@ -328,10 +320,10 @@ export default function ReceptionQuantitative() {
       )}
 
       <TicketMaintenanceDialog
-        open={!!maintenanceTicket}
-        onOpenChange={(o) => { if (!o) setMaintenanceTicket(null); }}
-        ticket={maintenanceTicket}
-        onDone={() => qc.invalidateQueries({ queryKey: ["reception_pesee_list"] })}
+        open={!!maintenance}
+        onOpenChange={(o) => { if (!o) setMaintenance(null); }}
+        ticket={maintenance}
+        onDone={() => { setMaintenance(null); invalidate(); }}
       />
     </div>
   );

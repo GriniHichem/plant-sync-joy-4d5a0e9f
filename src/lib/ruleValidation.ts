@@ -1,7 +1,10 @@
 // =============================================
 // Pré-flight checks pour règles Notification & Validation
 // =============================================
-import { MODULES, NOTIF_EVENTS_BY_MODULE, VALIDATION_ACTIONS_BY_MODULE } from "@/lib/ruleCatalog";
+import { MODULES, NOTIF_EVENTS_BY_MODULE, VALIDATION_ACTIONS_BY_MODULE, getNotifEvent } from "@/lib/ruleCatalog";
+
+const SEVERITY_ORDER = ["info", "low", "medium", "high", "critical"];
+
 
 export interface PreflightResult {
   errors: string[];
@@ -19,6 +22,8 @@ export interface NotifRulePreflightInput {
   is_critical: boolean;
   conditions: unknown;
   quiet_hours_enabled?: boolean;
+  frequency?: "immediate" | "grouped_hourly" | "grouped_daily" | string;
+
   allowCustom?: boolean;
 }
 
@@ -71,11 +76,35 @@ export function preflightNotifRule(input: NotifRulePreflightInput): PreflightRes
     warnings.push("Heures silencieuses activées sur une règle critique : les alertes urgentes pourraient être différées.");
   }
 
+  // Cohérence sévérité / événement catalogué
+  const ev = getNotifEvent(input.module, input.event_type);
+  if (ev?.defaultSeverity && input.severity) {
+    const delta = SEVERITY_ORDER.indexOf(ev.defaultSeverity) - SEVERITY_ORDER.indexOf(input.severity);
+    if (delta >= 2) {
+      warnings.push(`Sévérité "${input.severity}" faible pour l'événement "${ev.label}" (conseillée : ${ev.defaultSeverity}).`);
+    }
+  }
+
+  // Volume : événements fréquents sans condition ni regroupement
+  const HIGH_VOLUME = new Set([
+    "quality_check_recorded", "pdr_stock_entry", "pdr_stock_exit",
+    "reception_ticket_created", "document_uploaded", "ticket_created",
+  ]);
+  const hasConditions = !!input.conditions && (typeof input.conditions !== "string" || input.conditions.trim().length > 2);
+  if (HIGH_VOLUME.has(input.event_type) && !hasConditions && input.frequency === "immediate") {
+    warnings.push("Événement à fort volume sans condition ni regroupement : risque de spam de notifications.");
+  }
+
+  if (input.channels?.includes("email") && input.frequency === "immediate" && input.severity === "info") {
+    warnings.push("Email immédiat pour une notification informative : préférez un regroupement horaire/journalier.");
+  }
+
   // Conditions JSON valide
   if (typeof input.conditions === "string" && input.conditions.trim()) {
     try { JSON.parse(input.conditions); }
     catch { errors.push("Les conditions JSON sont invalides."); }
   }
+
 
   return { errors, warnings };
 }

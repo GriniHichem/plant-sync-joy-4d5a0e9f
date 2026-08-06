@@ -1,0 +1,2 @@
+ALTER TABLE public.direction_dashboard_defaults
+DROP CONSTRAINT IF EXISTS direction_dashboard_defaults_user_id_fkey;

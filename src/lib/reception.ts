@@ -10,18 +10,32 @@ export function computeDurationMinutes(start?: string | null, end?: string | nul
   return mins;
 }
 
+/**
+ * Normalise une durée : une valeur négative signifie un passage à minuit
+ * (heure_fin < heure_début) → on rattrape en ajoutant 24 h.
+ */
+export function normalizeDurationMinutes(min?: number | null): number | null {
+  if (min == null || Number.isNaN(Number(min))) return null;
+  let m = Number(min);
+  while (m < 0) m += 24 * 60;
+  return Math.round(m);
+}
+
 export function formatDuration(min?: number | null): string {
-  if (min == null) return "—";
-  if (min < 60) return `${min} min`;
-  const h = Math.floor(min / 60);
-  const m = min % 60;
+  const n = normalizeDurationMinutes(min);
+  if (n == null) return "—";
+  if (n < 60) return `${n} min`;
+  const h = Math.floor(n / 60);
+  const m = n % 60;
   return m === 0 ? `${h} h` : `${h} h ${String(m).padStart(2, "0")} min`;
 }
 
 /** > 20 minutes = hors délai. 20 min inclus reste conforme. */
 export function isOverdue(min?: number | null): boolean {
-  return typeof min === "number" && min > 20;
+  const n = normalizeDurationMinutes(min);
+  return n != null && n > 20;
 }
+
 
 /** Consigne affichée à l'agent avant la prise de vue (pas un texte imprimé sur l'image). */
 export function photoSlotGuidance(slot: number | null | undefined): { title: string; hint: string } {

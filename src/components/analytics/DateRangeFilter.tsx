@@ -112,8 +112,7 @@ export function DateRangeFilter({
         </PopoverContent>
       </Popover>
 
-      {/* UPDATE SELON CETTE VERSION
-note: je veux une integration a 100% si vous avez detecter des erreurs ou de difuculté ne commance pas l update sinon gooo */}
+      {/* Granularity selector */}
       <Select value={granularity} onValueChange={(v) => setGranularity(v as Granularity)}>
         <SelectTrigger className="h-7 w-auto min-w-[100px] text-xs gap-1">
           <SelectValue />

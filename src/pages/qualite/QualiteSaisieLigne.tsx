@@ -16,7 +16,7 @@ import { notifyCheckOutOfTolerance } from "@/lib/qualityNotifications";
 import { useActiveQualityShift } from "@/hooks/useActiveQualityShift";
 import { parseDecimal, CATEGORIES } from "@/pages/qualite/QualiteIndicateurs";
 import { computeConformity } from "@/pages/qualite/QualiteControles";
-import { dueInfo, requiredIndicators, lastCheckByIndicator } from "@/lib/qualityShiftLogic";
+import { dueInfo } from "@/lib/qualityShiftControl";
 
 interface OFRow {
   id: string;
@@ -54,6 +54,7 @@ interface Draft {
 const emptyDraft = (): Draft => ({ value_text: "", value_boolean: "", selected_value: "", comment: "" });
 
 const catLabel = (v: string) => CATEGORIES.find((c) => c.value === v)?.label ?? v;
+
 
 export default function QualiteSaisieLigne() {
   const { user } = useAuth();
@@ -100,9 +101,13 @@ export default function QualiteSaisieLigne() {
         .order("control_time", { ascending: false }),
     ]);
     if (ind.error) toast({ title: "Erreur", description: ind.error.message, variant: "destructive" });
-    const list: ApplicableIndicator[] = requiredIndicators<ApplicableIndicator>(ind.data || []);
+    const list: ApplicableIndicator[] = (ind.data || []).filter((i: ApplicableIndicator) => i.effective_is_required);
     setIndicators(list);
-    setLastByIndicator(lastCheckByIndicator(checks.data || []));
+    const last: Record<string, string> = {};
+    (checks.data || []).forEach((c: any) => {
+      if (!last[c.indicator_id]) last[c.indicator_id] = c.control_time;
+    });
+    setLastByIndicator(last);
     setDrafts((d) => {
       const next = { ...d };
       list.forEach((i) => { if (!next[i.indicator_id]) next[i.indicator_id] = emptyDraft(); });

@@ -1,7 +1,6 @@
 import { NavLink as RRNavLink, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useSharedDashboardsCount } from "@/hooks/useSharedDashboards";
 import { usePermissions } from "@/hooks/usePermissions";
 import { ImpersonationDialog } from "@/components/admin/ImpersonationDialog";
 import { Eye } from "lucide-react";
@@ -59,14 +58,14 @@ const gpaoItems: NavItem[] = [
 
 const qualiteItems: NavItem[] = [
   { title: "Dashboard", url: "/qualite", icon: IconDashboard, module: "qualite_dashboard" },
-  { title: "Historique des contrôles", url: "/qualite/controles", icon: ClipboardCheck, module: "qualite_controles" },
-  { title: "Plan de contrôle OF", url: "/qualite/plan-controle", icon: ClipboardCheck, module: "qualite_plan_controle" },
+  { title: "Historique contrôles", url: "/qualite/controles", icon: ClipboardCheck, module: "qualite_controles" },
   { title: "Non-conformités", url: "/qualite/non-conformites", icon: AlertTriangle, module: "qualite_nc" },
   { title: "Actions", url: "/qualite/actions", icon: ListChecks, module: "qualite_actions" },
   { title: "Indicateurs", url: "/qualite/indicateurs", icon: IconAnalytics, module: "qualite_indicateurs" },
   { title: "OF Qualité", url: "/qualite/of", icon: IconOrder, module: "qualite_of" },
   { title: "Recettes & BOM", url: "/qualite/recettes-nomenclatures", icon: IconRecipe, module: "qualite_recettes" },
   { title: "Traçabilité", url: "/qualite/tracabilite", icon: GitBranch, module: "qualite_tracabilite" },
+  { title: "Enquêtes de lot", url: "/qualite/enquetes-lot", icon: GitBranch, module: "qualite_enquetes" },
   { title: "Rapports", url: "/qualite/rapports", icon: FileBarChart, module: "qualite_rapports" },
 ];
 
@@ -76,12 +75,9 @@ const inventaireItems: NavItem[] = [
 ];
 
 const directionItems: NavItem[] = [
-  { title: "Dashboard Design", url: "/dashboard-design/dashboards", icon: IconAnalytics, module: "direction_dashboards" },
+  { title: "Mes Dashboards", url: "/direction/mes-dashboards", icon: Eye, module: "mes_dashboards" },
+  { title: "Dashboard Design", url: "/direction/dashboards", icon: IconDashboard, module: "direction" },
 ];
-
-const sharedDashboardItem: NavItem = {
-  title: "Mes Dashboards", url: "/dashboard-design/partages", icon: IconAnalytics,
-};
 
 const configItems: NavItem[] = [
   { title: "Paramètres", url: "/parametres", icon: IconSettings, module: "parametres" },
@@ -207,7 +203,7 @@ function MobileNav({
     { label: "Production", items: visibleGpao },
     { label: "Qualité", items: visibleQualite },
     { label: "Inventaire", items: visibleInventaire },
-    { label: "Dashboard Design", items: visibleDirection },
+    { label: "Direction", items: visibleDirection },
     { label: "Configuration", items: visibleConfig },
   ].filter((g) => g.items.length > 0);
 
@@ -253,7 +249,6 @@ export function AppTopBar() {
   const navigate = useNavigate();
   const { profile, roles, realRoles, signOut, hasRole } = useAuth();
   const { canView, loading: permsLoading } = usePermissions();
-  const sharedCount = useSharedDashboardsCount();
   const [impersonationOpen, setImpersonationOpen] = useState(false);
   const isRealAdmin = realRoles.includes("admin" as any);
 
@@ -265,10 +260,7 @@ export function AppTopBar() {
   const visibleGpao = filterByPerm(gpaoItems);
   const visibleQualite = filterByPerm(qualiteItems);
   const visibleInventaire = filterByPerm(inventaireItems);
-  const visibleDirection = [
-    ...filterByPerm(directionItems),
-    ...(sharedCount > 0 ? [sharedDashboardItem] : []),
-  ];
+  const visibleDirection = filterByPerm(directionItems);
   const visibleConfig = filterByPerm(configItems);
 
   const isGmaoActive = visibleGmao.some((i) => isActive(location.pathname, i.url));
@@ -347,7 +339,7 @@ export function AppTopBar() {
             <MegaMenu label="Inventaire" GroupIcon={ClipboardList} items={visibleInventaire} active={isInventaireActive} />
           )}
           {showDirection && (
-            <MegaMenu label="Dashboard Design" GroupIcon={IconAnalytics} items={visibleDirection} active={isDirectionActive} />
+            <MegaMenu label="Direction" GroupIcon={IconDashboard} items={visibleDirection} active={isDirectionActive} />
           )}
           {showConfig && <MegaMenu label="Configuration" GroupIcon={Cog} items={visibleConfig} active={isConfigActive} />}
         </nav>

@@ -1,8 +1,6 @@
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useSharedDashboardsCount } from "@/hooks/useSharedDashboards";
-import { useDefaultDashboard } from "@/hooks/useDefaultDashboard";
 import { usePermissions } from "@/hooks/usePermissions";
 import logoEntreprise from "@/assets/logo-entreprise.jpg";
 import {
@@ -12,7 +10,7 @@ import {
   IconConsumption, IconStop, IconSettings, IconLogout,
   IconMaintenance, IconProduction, IconJournal,
 } from "@/components/icons/IndustrialIcons";
-import { ShieldCheck, ClipboardCheck, AlertTriangle, Wrench, FileText, Lock, CheckSquare, Cog, Timer, ClipboardList, Truck, Star, Mail, RefreshCw } from "lucide-react";
+import { LayoutDashboard, ShieldCheck, ClipboardCheck, AlertTriangle, Wrench, FileText, Lock, CheckSquare, Cog, Timer, ClipboardList, Truck, Eye, Mail } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup,
   SidebarGroupContent, SidebarGroupLabel, SidebarHeader,
@@ -61,16 +59,15 @@ const qualiteItems: NavItem[] = [
   { title: "Dashboard", url: "/qualite", icon: IconChart, module: "qualite_dashboard" },
   { title: "OF qualité", url: "/qualite/of", icon: IconOrder, module: "qualite_of" },
   { title: "Indicateurs", url: "/qualite/indicateurs", icon: IconAnalytics, module: "qualite_indicateurs" },
-  { title: "Plan de contrôle OF", url: "/qualite/plan-controle", icon: ClipboardCheck, module: "qualite_plan_controle" },
   { title: "Shift contrôle", url: "/qualite/shift", icon: Timer, module: "qualite_shift" },
   { title: "Saisie en ligne", url: "/qualite/saisie", icon: ClipboardCheck, module: "qualite_controles" },
   { title: "Console contrôle", url: "/qualite/console", icon: IconChart, module: "qualite_controles" },
-  { title: "Historique des contrôles", url: "/qualite/controles", icon: ClipboardCheck, module: "qualite_controles" },
+  { title: "Historique contrôles", url: "/qualite/controles", icon: ClipboardCheck, module: "qualite_controles" },
   { title: "Non-conformités", url: "/qualite/non-conformites", icon: AlertTriangle, module: "qualite_nc" },
   { title: "Actions", url: "/qualite/actions", icon: Wrench, module: "qualite_actions" },
   { title: "Recettes & nomenclatures", url: "/qualite/recettes-nomenclatures", icon: IconRecipe, module: "qualite_recettes" },
   { title: "Traçabilité", url: "/qualite/tracabilite", icon: IconChart, module: "qualite_tracabilite" },
-  { title: "Enquêtes de lot", url: "/qualite/enquetes-lot", icon: FileText, module: "qualite_enquetes" },
+  { title: "Enquêtes de lot", url: "/qualite/enquetes-lot", icon: IconChart, module: "qualite_enquetes" },
   { title: "Rapports", url: "/qualite/rapports", icon: FileText, module: "qualite_rapports" },
   { title: "Réception F&L", url: "/qualite/reception", icon: Truck, module: "reception" },
 ];
@@ -81,17 +78,27 @@ const inventaireItems: NavItem[] = [
 ];
 
 const directionItems: NavItem[] = [
-  { title: "Dashboard Design", url: "/dashboard-design/dashboards", icon: IconChart, module: "direction_dashboards" },
+  { title: "Dashboard Design", url: "/direction/dashboards", icon: LayoutDashboard, module: "direction" },
 ];
 
-const sharedDashboardItem: NavItem = {
-  title: "Mes Dashboards", url: "/dashboard-design/partages", icon: IconChart,
+const sharedDashboardsItem: NavItem = {
+  title: "Mes Dashboards",
+  url: "/direction/mes-dashboards",
+  icon: Eye,
+  module: "mes_dashboards",
 };
+
+
+const communicationItems: NavItem[] = [
+  { title: "Modèles d'email", url: "/email", icon: FileText, module: "email" },
+  { title: "Devis PDR", url: "/email/devis-pdr", icon: Truck, module: "email" },
+  { title: "Envoyer un email", url: "/email/envoyer", icon: Mail, module: "email" },
+  { title: "Historique des envois", url: "/email/historique", icon: ClipboardList, module: "email" },
+  { title: "Paramètres email", url: "/email/parametres", icon: Cog, module: "email" },
+];
 
 const adminItems: NavItem[] = [
   { title: "Sécurité & Accès", url: "/securite", icon: Lock, module: "securite" },
-  { title: "Email", url: "/email", icon: Mail, module: "email" },
-  { title: "Sync ERP", url: "/parametres/erp-sync", icon: RefreshCw, module: "erp_sync" },
   { title: "Validations", url: "/validations", icon: CheckSquare, module: "validations" },
   { title: "Paramètres", url: "/parametres", icon: IconSettings, module: "parametres" },
 ];
@@ -102,8 +109,6 @@ export function AppSidebar() {
   const location = useLocation();
   const { profile, roles, signOut, hasRole } = useAuth();
   const { canView, loading: permsLoading } = usePermissions();
-  const sharedCount = useSharedDashboardsCount();
-  const { data: defaultDashboard } = useDefaultDashboard();
 
   const filterByPerm = (items: NavItem[]) => {
     if (permsLoading) return [];
@@ -117,16 +122,10 @@ export function AppSidebar() {
   const visibleInventaire = filterByPerm(inventaireItems);
   const visibleDirection = [
     ...filterByPerm(directionItems),
-    ...(sharedCount > 0 ? [sharedDashboardItem] : []),
-    ...(defaultDashboard
-      ? [{
-          title: "Mon dashboard",
-          url: `/dashboard-design/dashboards/${defaultDashboard.id}`,
-          icon: Star,
-        } as NavItem]
-      : []),
+    ...filterByPerm([sharedDashboardsItem]),
   ];
 
+  const visibleCommunication = filterByPerm(communicationItems);
   const visibleAdmin = filterByPerm(adminItems);
 
   const isActive = (path: string) =>
@@ -138,13 +137,12 @@ export function AppSidebar() {
   const isQualiteActive = visibleQualite.some((i) => isActive(i.url));
   const isAdminActive = visibleAdmin.some((i) => isActive(i.url));
   const isInventaireActive = visibleInventaire.some((i) => isActive(i.url));
-  const isDirectionActive = visibleDirection.some((i) => isActive(i.url));
-  const showDirection = visibleDirection.length > 0;
   const showQualite = visibleQualite.length > 0;
   const showInventaire = visibleInventaire.length > 0;
   const showGmao = visibleGmao.length > 0;
   const showStock = visibleStock.length > 0;
   const showGpao = visibleGpao.length > 0;
+  const showDirection = visibleDirection.length > 0;
   const showAdmin = visibleAdmin.length > 0;
 
   const displayName = profile
@@ -263,7 +261,14 @@ export function AppSidebar() {
         {showDirection && (
           <>
             <div className="mx-3 my-1 h-px bg-gradient-to-r from-transparent via-sidebar-border/50 to-transparent" />
-            {renderGroup("Dashboard Design", IconChart, visibleDirection, isDirectionActive)}
+            {renderGroup("Direction", LayoutDashboard, visibleDirection, visibleDirection.some((i) => isActive(i.url)))}
+          </>
+        )}
+
+        {visibleCommunication.length > 0 && (
+          <>
+            <div className="mx-3 my-1 h-px bg-gradient-to-r from-transparent via-sidebar-border/50 to-transparent" />
+            {renderGroup("Communication", Mail, visibleCommunication, location.pathname.startsWith("/email"))}
           </>
         )}
 

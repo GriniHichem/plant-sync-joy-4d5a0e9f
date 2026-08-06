@@ -1,4 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
+import { evalOperator, resolveField, type CondOperator } from "@/lib/conditionOps";
+
 
 // =============================================
 // Types
@@ -78,33 +80,21 @@ async function dispatchEmailIfNeeded(notificationId: string, ruleChannels: Notif
 }
 
 // =============================================
-// Conditions engine (no eval)
+// Conditions engine (no eval) — opérateurs partagés avec les validations
 // =============================================
-type ConditionOp = "eq" | "neq" | "gt" | "gte" | "lt" | "lte" | "in" | "nin" | "contains";
-interface ConditionLeaf { field: string; op: ConditionOp; value: unknown }
-interface ConditionGroup { all?: Array<ConditionLeaf | ConditionGroup>; any?: Array<ConditionLeaf | ConditionGroup> }
-
-function getField(data: Record<string, unknown>, path: string): unknown {
-  return path.split(".").reduce<unknown>((acc, k) => {
-    if (acc && typeof acc === "object") return (acc as Record<string, unknown>)[k];
-    return undefined;
-  }, data);
+type ConditionOp = CondOperator;
+interface ConditionLeaf { field: string; op: ConditionOp; value?: unknown }
+interface ConditionGroup {
+  all?: Array<ConditionLeaf | ConditionGroup>;
+  any?: Array<ConditionLeaf | ConditionGroup>;
+  not?: ConditionLeaf | ConditionGroup;
+  /** Format natif du builder */
+  combinator?: "all" | "any";
+  rules?: Array<ConditionLeaf | ConditionGroup>;
 }
 
 function evalLeaf(data: Record<string, unknown>, leaf: ConditionLeaf): boolean {
-  const v = getField(data, leaf.field);
-  switch (leaf.op) {
-    case "eq": return v === leaf.value;
-    case "neq": return v !== leaf.value;
-    case "gt": return typeof v === "number" && typeof leaf.value === "number" && v > leaf.value;
-    case "gte": return typeof v === "number" && typeof leaf.value === "number" && v >= leaf.value;
-    case "lt": return typeof v === "number" && typeof leaf.value === "number" && v < leaf.value;
-    case "lte": return typeof v === "number" && typeof leaf.value === "number" && v <= leaf.value;
-    case "in": return Array.isArray(leaf.value) && leaf.value.includes(v as never);
-    case "nin": return Array.isArray(leaf.value) && !leaf.value.includes(v as never);
-    case "contains": return typeof v === "string" && typeof leaf.value === "string" && v.toLowerCase().includes(leaf.value.toLowerCase());
-    default: return false;
-  }
+  return evalOperator(leaf.op, resolveField(data, leaf.field), leaf.value);
 }
 
 export function evaluateConditions(
@@ -114,13 +104,20 @@ export function evaluateConditions(
   if (!conditions) return true;
   const d = data ?? {};
   const evalNode = (n: ConditionLeaf | ConditionGroup): boolean => {
-    if ("field" in n) return evalLeaf(d, n);
-    if (n.all) return n.all.every(evalNode);
-    if (n.any) return n.any.some(evalNode);
+    if ("field" in n && typeof (n as ConditionLeaf).field === "string") return evalLeaf(d, n as ConditionLeaf);
+    const g = n as ConditionGroup;
+    if (Array.isArray(g.rules)) {
+      if (g.rules.length === 0) return true;
+      return g.combinator === "any" ? g.rules.some(evalNode) : g.rules.every(evalNode);
+    }
+    if (g.all) return g.all.every(evalNode);
+    if (g.any) return g.any.some(evalNode);
+    if (g.not) return !evalNode(g.not);
     return true;
   };
   return evalNode(conditions);
 }
+
 
 // =============================================
 // Action URL builder

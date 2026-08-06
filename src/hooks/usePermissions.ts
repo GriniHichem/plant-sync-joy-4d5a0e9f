@@ -6,9 +6,9 @@ import { useAuth } from "@/contexts/AuthContext";
 // a sub-module is explicitly configured in role_permissions.
 export const UMBRELLAS: Record<string, string[]> = {
   qualite: [
-    "qualite_dashboard", "qualite_of", "qualite_indicateurs", "qualite_plan_controle",
+    "qualite_dashboard", "qualite_of", "qualite_indicateurs",
     "qualite_controles", "qualite_nc", "qualite_actions",
-    "qualite_recettes", "qualite_tracabilite", "qualite_enquetes", "qualite_rapports", "qualite_shift",
+    "qualite_recettes", "qualite_tracabilite", "qualite_rapports", "qualite_shift",
     "reception",
   ],
   reception: [
@@ -16,7 +16,6 @@ export const UMBRELLAS: Record<string, string[]> = {
     "reception_global", "reception_settings",
   ],
   inventaire: ["inventaire_campagnes"],
-  direction: ["direction_dashboards"],
 };
 
 interface Permission {
@@ -47,10 +46,33 @@ export function usePermissions() {
     let cancelled = false;
 
     async function load() {
+      // Expand roles with inherits_from chain from custom_roles so a
+      // custom role gets the exact same permissions as the base role
+      // it inherits from (unless overridden in role_permissions).
+      const effectiveRoles = new Set<string>(roles);
+      try {
+        const { data: cr } = await supabase
+          .from("custom_roles")
+          .select("code, inherits_from, is_active");
+        const byCode = new Map<string, { inherits_from: string | null; is_active: boolean }>();
+        (cr ?? []).forEach((r: any) => byCode.set(r.code, { inherits_from: r.inherits_from, is_active: r.is_active }));
+        // Walk inheritance chain up to 10 levels to avoid cycles.
+        for (const r of Array.from(effectiveRoles)) {
+          let cur = byCode.get(r);
+          let guard = 0;
+          while (cur && cur.inherits_from && guard++ < 10) {
+            if (effectiveRoles.has(cur.inherits_from)) break;
+            effectiveRoles.add(cur.inherits_from);
+            cur = byCode.get(cur.inherits_from);
+          }
+        }
+      } catch {}
+
       const { data } = await supabase
         .from("role_permissions")
         .select("module, can_view, can_create, can_edit, can_delete, role")
-        .in("role", roles);
+        .in("role", Array.from(effectiveRoles) as any);
+
 
       if (cancelled) return;
       if (data) {

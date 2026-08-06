@@ -123,12 +123,11 @@ describe("buildIndicatorPayload", () => {
 });
 
 describe("reference lists", () => {
-  it("exposes the base categories", () => {
-    expect(CATEGORIES.map((c) => c.value)).toEqual(
-      expect.arrayContaining([
-        "produit_fini","emballage","process","hygiene","poids","controle_visuel","autre",
-      ]),
-    );
+  it("exposes the catalogue categories", () => {
+    expect(CATEGORIES.map((c) => c.value)).toEqual([
+      "physico_chimique","conditionnement","organoleptique",
+      "produit_fini","emballage","process","hygiene","poids","controle_visuel","autre",
+    ]);
   });
   it("exposes the 4 indicator types", () => {
     expect(INDICATOR_TYPES.map((t) => t.value)).toEqual(["numeric","boolean","text","select"]);

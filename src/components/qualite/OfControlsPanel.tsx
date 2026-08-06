@@ -14,12 +14,11 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Save, CheckCircle2, XCircle, Clock, AlertTriangle, Pin, PinOff, LayoutGrid, Table2 } from "lucide-react";
 import { logAudit } from "@/lib/audit";
 import { notifyCheckOutOfTolerance } from "@/lib/qualityNotifications";
-import { createDraftNcForCheck } from "@/lib/qualityNc";
-
 import { parseDecimal, CATEGORIES } from "@/pages/qualite/QualiteIndicateurs";
 import { computeConformity } from "@/pages/qualite/QualiteControles";
 import type { ActiveQualityShift } from "@/hooks/useActiveQualityShift";
 import { useQualityShiftPins } from "@/hooks/useQualityShiftPins";
+import { dueInfo } from "@/lib/qualityShiftControl";
 
 interface ApplicableIndicator {
   indicator_id: string;
@@ -49,16 +48,6 @@ interface Draft {
 const emptyDraft = (): Draft => ({ value_text: "", value_boolean: "", selected_value: "", comment: "" });
 const catLabel = (v: string) => CATEGORIES.find((c) => c.value === v)?.label ?? v;
 
-function dueInfo(lastAt: string | null, minutes: number | null) {
-  if (!minutes || minutes <= 0) {
-    return { level: lastAt ? "ok" : "todo", label: lastAt ? "À la demande" : "À saisir", minsLeft: null as number | null };
-  }
-  if (!lastAt) return { level: "todo", label: "À saisir maintenant", minsLeft: 0 };
-  const elapsed = (Date.now() - new Date(lastAt).getTime()) / 60000;
-  const left = Math.round(minutes - elapsed);
-  if (left <= 0) return { level: "overdue", label: `En retard de ${Math.abs(left)} min`, minsLeft: left };
-  return { level: "ok", label: `Prochain dans ${left} min`, minsLeft: left };
-}
 
 interface Props {
   ofId: string;
@@ -200,23 +189,13 @@ export function OfControlsPanel({ ofId, ofNumero, productId, lineId, activeQuali
     if (data.is_conform === false) {
       await notifyCheckOutOfTolerance({ entity_id: data.id, entity_label: ind.code, of_label: ofNumero ?? null });
     }
-    const nc = await createDraftNcForCheck({
-      check: { id: data.id, ...payload },
-      indicator: ind,
-      ofNumero: ofNumero ?? null,
-      declaredBy: user?.id ?? null,
-      isConform: data.is_conform ?? null,
-    });
     toast({
       title: "Contrôle enregistré",
-      description: nc
-        ? `⚠ Non conforme BLOQUANT — NC brouillon ${nc.nc_number ?? ""} créée automatiquement.`
-        : data.is_conform === false
-          ? (ind.effective_is_blocking ? "⚠ Non conforme BLOQUANT — créez une NC / un ticket." : "⚠ Non conforme — pensez à créer une NC.")
-          : undefined,
+      description: data.is_conform === false
+        ? (ind.effective_is_blocking ? "⚠ Non conforme BLOQUANT — risque de retard, créez un ticket." : "⚠ Non conforme — pensez à créer une NC.")
+        : undefined,
       variant: data.is_conform === false ? "destructive" : undefined,
     });
-
     setDraft(ind.indicator_id, { value_text: "", value_boolean: "", selected_value: "", comment: "" });
     setLastByIndicator((l) => ({ ...l, [ind.indicator_id]: payload.control_time }));
     setSavingId(null);

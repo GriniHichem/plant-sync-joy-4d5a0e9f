@@ -1,6 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
 import { logAudit, sanitizeValues, computeChangedFields } from "@/lib/audit";
 import { triggerNotification } from "@/lib/notifications";
+import { evalOperator, resolveField, type CondOperator as SharedCondOperator } from "@/lib/conditionOps";
+
 
 // =============================================
 // Types
@@ -105,11 +107,11 @@ export interface CreateValidationRequestPayload {
 //  2. Legacy format: { key: value }, arrays, { or: [...] }, numeric shortcuts
 // Both are evaluated identically so the admin UI reflects exactly what runs.
 // =============================================
-export type CondOperator = "eq" | "neq" | "gt" | "gte" | "lt" | "lte" | "contains";
+export type { CondOperator } from "@/lib/conditionOps";
 export interface CondLeaf {
   field: string;
-  op: CondOperator;
-  value: string | number | boolean;
+  op: SharedCondOperator;
+  value?: string | number | boolean | Array<string | number>;
 }
 export interface CondTreeNative {
   combinator: "all" | "any";
@@ -122,31 +124,9 @@ function isNativeTree(c: Record<string, unknown>): boolean {
 }
 
 function evalLeaf(leaf: CondLeaf, context: Record<string, unknown>): boolean {
-  const actual = context[leaf.field];
-  const expected = leaf.value;
-
-  switch (leaf.op) {
-    case "eq":
-      // tolerant equality (string/number coercion)
-      // eslint-disable-next-line eqeqeq
-      return actual == expected;
-    case "neq":
-      // eslint-disable-next-line eqeqeq
-      return actual != expected;
-    case "gt":
-      return Number(actual) > Number(expected);
-    case "gte":
-      return Number(actual) >= Number(expected);
-    case "lt":
-      return Number(actual) < Number(expected);
-    case "lte":
-      return Number(actual) <= Number(expected);
-    case "contains":
-      return String(actual ?? "").toLowerCase().includes(String(expected ?? "").toLowerCase());
-    default:
-      return false;
-  }
+  return evalOperator(leaf.op, resolveField(context, leaf.field), leaf.value);
 }
+
 
 export function matchConditions(
   conditions: Record<string, unknown> | null,

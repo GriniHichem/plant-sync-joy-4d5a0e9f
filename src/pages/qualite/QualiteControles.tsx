@@ -386,7 +386,9 @@ export default function QualiteControles() {
             <ClipboardList className="h-6 w-6 text-primary" />
             Historique des contrôles
           </h1>
-          <p className="text-sm text-muted-foreground">Journal et suivi des contrôles réalisés par OF</p>
+          <p className="text-sm text-muted-foreground">
+            Traçabilité des mesures réalisées. La création se fait via l'affectation des contrôles et la saisie en ligne.
+          </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={handleExport} disabled={filtered.length === 0}>

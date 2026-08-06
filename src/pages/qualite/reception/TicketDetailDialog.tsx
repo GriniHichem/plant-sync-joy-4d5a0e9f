@@ -1,22 +1,53 @@
 import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
-import { AlertTriangle, Calendar, Clock, Download, ImageOff, Loader2, MapPin, User, Package, Truck, ZoomIn } from "lucide-react";
+import { AlertTriangle, Calendar, Clock, Download, ImageOff, Loader2, MapPin, Scale, User, Package, Truck, ZoomIn } from "lucide-react";
 import { toast } from "sonner";
-import { formatDuration, formatHm, formatKgInt, formatTonnesInt, isOverdue } from "@/lib/reception";
+import { computeAbattementKg, computeNetKg, formatDuration, formatHm, formatKgInt, formatTonnesInt, isOverdue } from "@/lib/reception";
 import { TicketOrientations } from "@/components/reception/TicketOrientations";
 
 interface Props {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   row: any | null;
+  /** Autorise la saisie du poids brut pour les tickets non pesés. */
+  canWeigh?: boolean;
+  onWeighed?: () => void;
 }
 
-export function TicketDetailDialog({ open, onOpenChange, row }: Props) {
+export function TicketDetailDialog({ open, onOpenChange, row, canWeigh, onWeighed }: Props) {
   const [loading, setLoading] = useState(false);
   const [photos, setPhotos] = useState<Array<{ slot: number; url: string | null; uploaded_at: string }>>([]);
   const [lightbox, setLightbox] = useState<{ url: string; slot: number } | null>(null);
+  const [brutInput, setBrutInput] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => { setBrutInput(""); }, [row?.id, open]);
+
+  async function saveBrut() {
+    const brut = Number(brutInput);
+    if (!brut || brut <= 0) { toast.error("Poids brut invalide"); return; }
+    setSaving(true);
+    try {
+      const { error } = await supabase.from("reception_weighings" as any).insert({
+        ticket_id: row.id,
+        poids_brut_kg: brut,
+        taux_abattement_snapshot: Number(row.taux_abattement ?? 0),
+      });
+      if (error) throw error;
+      toast.success("Poids brut enregistré — abattement et net recalculés");
+      onWeighed?.();
+    } catch (e: any) {
+      toast.error(e.message ?? "Enregistrement impossible");
+    } finally {
+      setSaving(false);
+    }
+  }
+
 
   useEffect(() => {
     if (!open || !row?.id) { setPhotos([]); return; }
@@ -76,15 +107,15 @@ export function TicketDetailDialog({ open, onOpenChange, row }: Props) {
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0">
-          <DialogHeader className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b px-5 py-4">
-            <DialogTitle className="flex items-start justify-between gap-3 flex-wrap">
-              <div className="min-w-0">
+        <DialogContent className="p-0 gap-0 w-[calc(100vw-1rem)] sm:w-full max-w-3xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto rounded-lg">
+          <DialogHeader className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b px-4 sm:px-5 py-3 sm:py-4 pr-12">
+            <DialogTitle className="flex items-start justify-between gap-2 sm:gap-3 flex-wrap">
+              <div className="min-w-0 flex-1">
                 <div className="font-mono text-xs text-muted-foreground">#{row.numero}</div>
-                <div className="text-lg font-semibold truncate">{row.produit ?? "—"}</div>
-                <div className="text-xs text-muted-foreground font-normal flex items-center gap-1 mt-0.5">
-                  <Truck className="h-3 w-3" /> {row.fournisseur ?? "—"}
-                  {row.wilaya && <><span>·</span><MapPin className="h-3 w-3" /> {row.wilaya}</>}
+                <div className="text-base sm:text-lg font-semibold truncate">{row.produit ?? "—"}</div>
+                <div className="text-xs text-muted-foreground font-normal flex items-center gap-1 mt-0.5 flex-wrap">
+                  <Truck className="h-3 w-3 shrink-0" /> <span className="truncate">{row.fournisseur ?? "—"}</span>
+                  {row.wilaya && <><span>·</span><MapPin className="h-3 w-3 shrink-0" /> {row.wilaya}</>}
                   {row.region && <span className="text-muted-foreground/70">({row.region})</span>}
                 </div>
               </div>
@@ -99,7 +130,7 @@ export function TicketDetailDialog({ open, onOpenChange, row }: Props) {
             </DialogTitle>
           </DialogHeader>
 
-          <div className="p-5 space-y-5">
+          <div className="p-4 sm:p-5 space-y-5">
             {/* Chronologie */}
             <section className="space-y-2">
               <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Chronologie</h3>
@@ -124,7 +155,36 @@ export function TicketDetailDialog({ open, onOpenChange, row }: Props) {
                 <WeightCard label={`Abattement${row.taux_abattement != null ? ` (${Number(row.taux_abattement).toFixed(1)}%)` : ""}`} kg={row.poids_abattement_kg} />
                 <WeightCard label="Net" kg={row.poids_net_kg} emphasize />
               </div>
+
+              {canWeigh && row.etat_pesee !== "pese" && (
+                <div className="rounded-lg border p-3 space-y-2 bg-muted/20">
+                  <Label className="text-xs">Saisir le poids brut (kg)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      inputMode="decimal"
+                      step="0.01"
+                      min="0"
+                      value={brutInput}
+                      onChange={(e) => setBrutInput(e.target.value)}
+                      className="h-11 text-lg font-semibold"
+                      placeholder="0"
+                    />
+                    <Button className="h-11 shrink-0" disabled={saving || !Number(brutInput)} onClick={saveBrut}>
+                      <Scale className="h-4 w-4 mr-1" />{saving ? "…" : "Enregistrer"}
+                    </Button>
+                  </div>
+                  {!!Number(brutInput) && (
+                    <p className="text-xs text-muted-foreground tabular-nums">
+                      Abattement {Number(row.taux_abattement ?? 0).toFixed(2)} % ={" "}
+                      {formatKgInt(computeAbattementKg(Number(brutInput), Number(row.taux_abattement ?? 0)))} — Net{" "}
+                      {formatKgInt(computeNetKg(Number(brutInput), Number(row.taux_abattement ?? 0)))}
+                    </p>
+                  )}
+                </div>
+              )}
             </section>
+
 
             {/* Campagne */}
             {row.campagne && (
@@ -197,8 +257,8 @@ export function TicketDetailDialog({ open, onOpenChange, row }: Props) {
 
       {lightbox && (
         <Dialog open={!!lightbox} onOpenChange={() => setLightbox(null)}>
-          <DialogContent className="max-w-6xl p-2 bg-black/95">
-            <img src={lightbox.url} alt="Photo agrandie" className="w-full h-auto max-h-[80vh] object-contain" />
+          <DialogContent className="w-[calc(100vw-1rem)] sm:w-full max-w-6xl p-2 bg-black/95 border-0">
+            <img src={lightbox.url} alt="Photo agrandie" className="w-full h-auto max-h-[85vh] object-contain" />
           </DialogContent>
         </Dialog>
       )}

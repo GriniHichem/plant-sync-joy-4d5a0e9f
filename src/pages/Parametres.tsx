@@ -1,12 +1,15 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Users, FolderTree, AlertTriangle, Wrench, ShieldCheck, Clock, Factory, Package, ImageIcon, FileText, Lock, Cog, Shield, Settings2, Database, Bell, Mail, CheckSquare, ScanLine, Upload } from "lucide-react";
+import { Users, FolderTree, AlertTriangle, Wrench, ShieldCheck, Clock, Factory, Package, ImageIcon, FileText, Lock, Cog, Shield, Settings2, Database, Bell, Mail, CheckSquare, ScanLine, Upload, Plug } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Section {
   title: string;
   description: string;
   icon: React.ElementType;
   url: string;
+  /** Carte visible uniquement par le rôle Administrateur. */
+  adminOnly?: boolean;
 }
 
 interface SectionGroup {
@@ -14,6 +17,7 @@ interface SectionGroup {
   icon: React.ElementType;
   items: Section[];
 }
+
 
 const groups: SectionGroup[] = [
   {
@@ -50,6 +54,7 @@ const groups: SectionGroup[] = [
       { title: "Photos & Images", description: "Taille max des photos par entité", icon: ImageIcon, url: "/parametres/images" },
       { title: "SMTP & Emails", description: "Serveur SMTP, test, rappels d'échéance", icon: Mail, url: "/parametres/smtp" },
       { title: "Historique des scans", description: "Tous les scans QR / code-barres (succès, ambigus, échecs)", icon: ScanLine, url: "/parametres/scan-history" },
+      { title: "API ERP", description: "Synchronisation ERP : activation, rôles autorisés, supervision et tests", icon: Plug, url: "/parametres/erp-sync", adminOnly: true },
       { title: "Général", description: "Paramètres de l'application", icon: Wrench, url: "/parametres/general" },
     ],
   },
@@ -57,6 +62,12 @@ const groups: SectionGroup[] = [
 
 export default function Parametres() {
   const navigate = useNavigate();
+  const { hasRole } = useAuth();
+  const isAdmin = hasRole("admin");
+
+  const visibleGroups = groups
+    .map((g) => ({ ...g, items: g.items.filter((i) => !i.adminOnly || isAdmin) }))
+    .filter((g) => g.items.length > 0);
 
   return (
     <div className="space-y-6">
@@ -65,7 +76,7 @@ export default function Parametres() {
         <p className="text-muted-foreground">Administration et référentiels</p>
       </div>
 
-      {groups.map((group) => (
+      {visibleGroups.map((group) => (
         <div key={group.label} className="space-y-3">
           <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground uppercase tracking-wider">
             <group.icon className="h-4 w-4" />

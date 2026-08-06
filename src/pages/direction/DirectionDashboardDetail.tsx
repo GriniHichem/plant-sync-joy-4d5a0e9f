@@ -1,659 +1,856 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Responsive as ResponsiveGrid, useContainerWidth } from "react-grid-layout";
-import "react-grid-layout/css/styles.css";
-import "react-resizable/css/styles.css";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { usePermissions } from "@/hooks/usePermissions";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Separator } from "@/components/ui/separator";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { ResponsiveDialog } from "@/components/responsive/ResponsiveDialog";
-import { toast } from "sonner";
 import {
-  ArrowLeft, Check, History, LayoutGrid, Plus, RefreshCw, Save, Settings2, Share2, Sparkles, X,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  ArrowLeft,
+  Copy,
+  GripVertical,
+  LayoutTemplate,
+  Maximize2,
+  Minimize2,
+  MoreVertical,
+  Plus,
+  RefreshCw,
+  Save,
+  Settings2,
+  Sliders,
+  Trash2,
+  Pencil,
+  History,
+  Share2,
 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { WidgetCard } from "@/components/direction/WidgetCard";
+import { WidgetLibrary, WidgetLibraryPanel } from "@/components/direction/WidgetLibrary";
+import { WidgetSettingsDialog } from "@/components/direction/WidgetSettingsDialog";
+import { DashboardFilters } from "@/components/direction/DashboardFilters";
+import { useDashboardFilterOptions } from "@/hooks/useDashboardFilterOptions";
+import {
+  DashboardConfig,
+  DashboardWidget,
+  REFRESH_OPTIONS,
+  SavedFilter,
+  WIDGETS_BY_ID,
+  WidgetDef,
+  resolvePeriod,
+} from "@/lib/directionWidgets";
+import { DASHBOARD_TEMPLATES } from "@/lib/directionTemplates";
+import {
+  useDashboardMutations,
+  useDirectionDashboard,
+} from "@/hooks/useDirectionDashboards";
+import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/hooks/usePermissions";
+import { DashboardShareDialog } from "@/components/direction/DashboardShareDialog";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
-import { DirectionWidget, ACCENT_KEYS } from "@/components/direction/DirectionWidget";
-import { DirectionFilterBar } from "@/components/direction/DirectionFilterBar";
-import { WidgetLibraryPanel } from "@/components/direction/WidgetLibraryPanel";
-import { ShareDashboardDialog } from "@/components/direction/ShareDashboardDialog";
-import { WIDGETS, WIDGET_MAP, type LayoutItem } from "@/lib/direction/widgetCatalog";
-import { PERIOD_OPTIONS, type DashboardFilters } from "@/lib/direction/filters";
-import { DASHBOARD_TEMPLATES, buildLayout } from "@/lib/direction/templates";
 
-const REFRESH_OPTIONS = [
-  { v: 0, l: "Manuel" }, { v: 30, l: "30 s" }, { v: 60, l: "1 min" },
-  { v: 300, l: "5 min" }, { v: 900, l: "15 min" },
+const ROLE_OPTIONS = [
+  "admin",
+  "resp_maintenance",
+  "resp_production",
+  "directeur_qualite",
+  "responsable_controle_qualite",
+  "responsable_magasin",
+  "responsable_inventaire",
+  "bureau_methode",
+  "responsable_si",
 ];
 
-const favKey = (id?: string) => `direction_fav_filters_${id ?? "x"}`;
+const SPAN: Record<DashboardWidget["w"], string> = {
+  1: "lg:col-span-1",
+  2: "sm:col-span-2 lg:col-span-2",
+  3: "sm:col-span-2 lg:col-span-3",
+  4: "sm:col-span-2 lg:col-span-4",
+};
+
+const COLS: Record<number, string> = {
+  1: "lg:grid-cols-1",
+  2: "lg:grid-cols-2",
+  3: "lg:grid-cols-3",
+  4: "lg:grid-cols-4",
+};
+
+const uid = (prefix: string) =>
+  `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+
+const draftKey = (id: string) => `direction_dashboard_draft_${id}`;
 
 export default function DirectionDashboardDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { user, roles } = useAuth();
-  const { canView, canEdit } = usePermissions();
   const isMobile = useIsMobile();
-  const [params] = useSearchParams();
-  const { width: gridWidth, containerRef: gridRef } = useContainerWidth();
-
-  const [editing, setEditing] = useState(params.get("edit") === "1");
-  const [items, setItems] = useState<LayoutItem[]>([]);
-  const [filters, setFilters] = useState<DashboardFilters>({ period: "7d" });
-  const [dirty, setDirty] = useState(false);
-  const [libraryOpen, setLibraryOpen] = useState(false);
-  const [configId, setConfigId] = useState<string | null>(null);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const { data: dashboard, isLoading } = useDirectionDashboard(id);
+  const { update } = useDashboardMutations();
+  const { canEdit: canEditModule } = usePermissions();
   const [shareOpen, setShareOpen] = useState(false);
-  const [versionsOpen, setVersionsOpen] = useState(false);
-  const [templatesOpen, setTemplatesOpen] = useState(false);
-  const [versionName, setVersionName] = useState("");
-  const [meta, setMeta] = useState({ name: "", description: "", visibility: "private", refresh_seconds: 0 });
-  const [favorites, setFavorites] = useState<{ name: string; filters: DashboardFilters }[]>([]);
 
-  const { data: dashboard, isLoading } = useQuery({
-    queryKey: ["direction_dashboard", id],
-    enabled: !!id,
-    refetchOnWindowFocus: false,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("direction_dashboards" as any)
-        .select("*").eq("id", id!).maybeSingle();
-      if (error) throw error;
-      return data as any;
-    },
+  const [config, setConfig] = useState<DashboardConfig | null>(null);
+  const [designMode, setDesignMode] = useState(false);
+  const [libOpen, setLibOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [tplOpen, setTplOpen] = useState(false);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [dirty, setDirty] = useState(false);
+  const [meta, setMeta] = useState({
+    name: "",
+    description: "",
+    visibility: "private" as "private" | "roles" | "public",
+    allowed_roles: [] as string[],
   });
+  const dragUid = useRef<string | null>(null);
 
-  const { data: versions = [] } = useQuery({
-    queryKey: ["direction_dashboard_versions", id],
-    enabled: !!id,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("direction_dashboard_versions" as any)
-        .select("*").eq("dashboard_id", id!).order("updated_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as any[];
-    },
-  });
-
-  // Chargement initial (une seule fois par dashboard) : ne pas écraser une édition en cours.
+  /* ------------------------------------------------- chargement + brouillon */
   useEffect(() => {
     if (!dashboard) return;
-    setItems(Array.isArray(dashboard.layout) ? dashboard.layout : []);
-    setFilters(
-      dashboard.global_filters && Object.keys(dashboard.global_filters).length
-        ? dashboard.global_filters
-        : { period: "7d" },
-    );
+    let layout = dashboard.layout;
+    let restored = false;
+    try {
+      const raw = localStorage.getItem(draftKey(dashboard.id));
+      if (raw) {
+        const draft = JSON.parse(raw);
+        if (draft?.updatedAt && draft.updatedAt > dashboard.updated_at) {
+          layout = draft.layout;
+          restored = true;
+        } else {
+          localStorage.removeItem(draftKey(dashboard.id));
+        }
+      }
+    } catch {
+      /* brouillon illisible : ignoré */
+    }
+    setConfig(layout);
     setMeta({
       name: dashboard.name,
       description: dashboard.description ?? "",
       visibility: dashboard.visibility,
-      refresh_seconds: dashboard.refresh_seconds ?? 0,
+      allowed_roles: dashboard.allowed_roles,
     });
-    setDirty(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dashboard?.id]);
+    setDirty(restored);
+    if (restored) toast.info("Modifications non enregistrées restaurées");
+  }, [dashboard?.id, dashboard?.updated_at]);
 
+  /* --------------------------------------- persistance locale anti-perte */
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(favKey(id));
-      if (raw) setFavorites(JSON.parse(raw));
-    } catch { /* ignore */ }
-  }, [id]);
+    if (!dashboard || !config || !dirty) return;
+    const t = setTimeout(() => {
+      try {
+        localStorage.setItem(
+          draftKey(dashboard.id),
+          JSON.stringify({ layout: config, updatedAt: new Date().toISOString() }),
+        );
+      } catch {
+        /* quota dépassé : sans conséquence */
+      }
+    }, 600);
+    return () => clearTimeout(t);
+  }, [config, dirty, dashboard?.id]);
 
-  // Garde-fou : prévenir la perte de configuration.
   useEffect(() => {
     if (!dirty) return;
-    const h = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
+    const h = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
     window.addEventListener("beforeunload", h);
     return () => window.removeEventListener("beforeunload", h);
   }, [dirty]);
 
   const isAdmin = roles.includes("admin");
-  const isOwner = !!dashboard && (dashboard.owner_id === user?.id || isAdmin);
-  // Lecture seule : dashboard partagé, ou droit "Modifier" absent sur le module.
-  const canModify = isOwner && (isAdmin || canEdit("direction_dashboards"));
+  const isOwner = !!dashboard && dashboard.owner_id === user?.id;
+  // Lecture seule pour les dashboards partagés : seuls le propriétaire (avec le
+  // droit "Modifier" sur le module) et les administrateurs peuvent composer.
+  const canEdit = !!dashboard && ((isOwner && canEditModule("direction")) || isAdmin);
+  const canShare = isOwner || isAdmin;
 
-  useEffect(() => {
-    if (!canModify && editing) setEditing(false);
-  }, [canModify, editing]);
+  const patch = useCallback((fn: (c: DashboardConfig) => DashboardConfig) => {
+    setConfig((c) => (c ? fn(c) : c));
+    setDirty(true);
+  }, []);
 
-  const save = useMutation({
-    mutationFn: async (patch: Record<string, any>) => {
-      const { error } = await supabase.from("direction_dashboards" as any).update(patch).eq("id", id!);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      setDirty(false);
-      qc.invalidateQueries({ queryKey: ["direction_dashboard", id] });
-      qc.invalidateQueries({ queryKey: ["direction_dashboards"] });
-      toast.success("Dashboard enregistré");
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
-
-  const saveVersion = useMutation({
-    mutationFn: async (name: string) => {
-      const payload = { dashboard_id: id, name, layout: items as any, global_filters: filters as any };
-      const { error } = await supabase
-        .from("direction_dashboard_versions" as any)
-        .upsert(payload, { onConflict: "dashboard_id,name" });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      setVersionName("");
-      qc.invalidateQueries({ queryKey: ["direction_dashboard_versions", id] });
-      toast.success("Version enregistrée");
-    },
-    onError: (e: any) => toast.error(e.message),
-  });
-
-  const deleteVersion = useMutation({
-    mutationFn: async (vid: string) => {
-      const { error } = await supabase.from("direction_dashboard_versions" as any).delete().eq("id", vid);
-      if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["direction_dashboard_versions", id] }),
-    onError: (e: any) => toast.error(e.message),
-  });
-
-  // Bibliothèque filtrée par les droits (aucune donnée hors périmètre).
-  const availableWidgets = useMemo(
-    () => WIDGETS.filter((w) => roles.includes("admin") || canView(w.permissionModule)),
-    [canView, roles],
+  const period = useMemo(
+    () =>
+      config
+        ? resolvePeriod(config.period, config.customFrom, config.customTo)
+        : resolvePeriod("month"),
+    [config?.period, config?.customFrom, config?.customTo],
   );
+  const { data: filterOptions } = useDashboardFilterOptions(period);
 
-  const visibleItems = useMemo(
-    () => items.filter((it) => {
-      const def = WIDGET_MAP.get(it.widgetId);
-      return !!def && (roles.includes("admin") || canView(def.permissionModule));
-    }),
-    [items, canView, roles],
-  );
-
-  const contexts = useMemo(() => {
-    const s = new Set<"line" | "product" | "supplier" | "campaign">();
-    visibleItems.forEach((it) => WIDGET_MAP.get(it.widgetId)?.supportsFilters?.forEach((c) => s.add(c)));
-    return [...s];
-  }, [visibleItems]);
-
-  const addWidget = useCallback((widgetId: string) => {
-    const def = WIDGET_MAP.get(widgetId);
-    if (!def) return;
-    setItems((prev) => {
-      const maxY = prev.reduce((m, it) => Math.max(m, it.y + it.h), 0);
-      return [
-        ...prev,
+  const addWidget = (def: WidgetDef) => {
+    patch((c) => ({
+      ...c,
+      widgets: [
+        ...c.widgets,
         {
-          i: `${widgetId}-${Date.now().toString(36)}`,
-          widgetId,
-          x: 0,
-          y: maxY,
-          w: def.defaultSize.w,
-          h: def.defaultSize.h,
+          uid: uid(def.id),
+          widgetId: def.id,
+          w: def.kind === "kpi" ? 1 : 2,
+          h: def.kind === "kpi" ? "sm" : def.kind === "table" ? "lg" : "md",
+          period: null,
           filters: {},
-          style: { accent: "primary", fontScale: "md", density: "normal" },
+          useGlobalFilters: true,
+          compare: def.kind === "kpi",
+          align: "left",
+          emphasis: "normal",
         },
-      ];
-    });
-    setDirty(true);
-    if (isMobile) setLibraryOpen(false);
-    toast.success(`${def.title} ajouté`);
-  }, [isMobile]);
+      ],
+    }));
+    toast.success(`« ${def.title} » ajouté`);
+  };
 
-  const applyTemplate = (templateId: string) => {
-    const tpl = DASHBOARD_TEMPLATES.find((t) => t.id === templateId);
+  const updateWidget = (u: string, p: Partial<DashboardWidget>) =>
+    patch((c) => ({
+      ...c,
+      widgets: c.widgets.map((w) => (w.uid === u ? { ...w, ...p } : w)),
+    }));
+
+  const removeWidget = (u: string) =>
+    patch((c) => ({ ...c, widgets: c.widgets.filter((w) => w.uid !== u) }));
+
+  const duplicateWidget = (u: string) =>
+    patch((c) => {
+      const i = c.widgets.findIndex((w) => w.uid === u);
+      if (i < 0) return c;
+      const copy = { ...c.widgets[i], uid: uid(c.widgets[i].widgetId) };
+      const arr = [...c.widgets];
+      arr.splice(i + 1, 0, copy);
+      return { ...c, widgets: arr };
+    });
+
+  const moveWidget = (from: string, to: string) => {
+    if (from === to) return;
+    patch((c) => {
+      const arr = [...c.widgets];
+      const fi = arr.findIndex((w) => w.uid === from);
+      const ti = arr.findIndex((w) => w.uid === to);
+      if (fi < 0 || ti < 0) return c;
+      const [item] = arr.splice(fi, 1);
+      arr.splice(ti, 0, item);
+      return { ...c, widgets: arr };
+    });
+  };
+
+  const moveBy = (u: string, delta: number) =>
+    patch((c) => {
+      const arr = [...c.widgets];
+      const i = arr.findIndex((w) => w.uid === u);
+      const j = i + delta;
+      if (i < 0 || j < 0 || j >= arr.length) return c;
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+      return { ...c, widgets: arr };
+    });
+
+  const applyTemplate = (tplId: string) => {
+    const tpl = DASHBOARD_TEMPLATES.find((t) => t.id === tplId);
     if (!tpl) return;
-    const allowed = tpl.widgets.filter((w) => availableWidgets.some((a) => a.id === w.widgetId));
-    setItems(buildLayout(allowed, (wid) => WIDGET_MAP.get(wid)?.defaultSize ?? { w: 3, h: 4 }));
-    setFilters(tpl.filters);
-    setDirty(true);
-    setTemplatesOpen(false);
-    setEditing(true);
+    patch((c) => ({
+      ...c,
+      period: tpl.period,
+      columns: tpl.columns,
+      widgets: tpl.widgets.map((w) => ({ ...w, uid: uid(w.widgetId) })),
+    }));
+    setTplOpen(false);
+    setDesignMode(true);
     toast.success(`Modèle « ${tpl.name} » appliqué`);
   };
 
-  const onLayoutChange = (layout: any[]) => {
-    if (!editing) return;
-    setItems((prev) => {
-      let changed = false;
-      const next = prev.map((it) => {
-        const l = layout.find((x) => x.i === it.i);
-        if (!l) return it;
-        if (l.x === it.x && l.y === it.y && l.w === it.w && l.h === it.h) return it;
-        changed = true;
-        return { ...it, x: l.x, y: l.y, w: l.w, h: l.h };
-      });
-      if (changed) setDirty(true);
-      return changed ? next : prev;
+  /* ------------------------------------------------------------- versions */
+  const saveVersion = () => {
+    if (!config) return;
+    const name = window.prompt("Nom de la version (ex : Hebdo, Mensuel)");
+    if (!name?.trim()) return;
+    patch((c) => ({
+      ...c,
+      versions: [
+        ...c.versions.filter((v) => v.name !== name.trim()),
+        {
+          id: uid("v"),
+          name: name.trim(),
+          widgets: c.widgets,
+          updatedAt: new Date().toISOString(),
+        },
+      ],
+    }));
+    toast.success("Version enregistrée (pensez à sauvegarder)");
+  };
+
+  const loadVersion = (vid: string) =>
+    patch((c) => {
+      const v = c.versions.find((x) => x.id === vid);
+      if (!v) return c;
+      toast.success(`Version « ${v.name} » chargée`);
+      return { ...c, widgets: v.widgets.map((w) => ({ ...w })) };
     });
+
+  const deleteVersion = (vid: string) =>
+    patch((c) => ({ ...c, versions: c.versions.filter((v) => v.id !== vid) }));
+
+  /* -------------------------------------------------------------- favoris */
+  const saveFavorite = () => {
+    if (!config) return;
+    const name = window.prompt("Nom du filtre favori");
+    if (!name?.trim()) return;
+    const fav: SavedFilter = {
+      id: uid("f"),
+      name: name.trim(),
+      period: config.period,
+      customFrom: config.customFrom,
+      customTo: config.customTo,
+      filters: config.filters,
+    };
+    patch((c) => ({ ...c, savedFilters: [...c.savedFilters, fav] }));
+    toast.success("Filtre favori enregistré");
   };
 
-  const patchItem = (i: string, patch: Partial<LayoutItem>) => {
-    setItems((prev) => prev.map((x) => (x.i === i ? { ...x, ...patch } : x)));
-    setDirty(true);
+  const save = async () => {
+    if (!dashboard || !config) return;
+    try {
+      await update.mutateAsync({
+        id: dashboard.id,
+        name: meta.name.trim() || dashboard.name,
+        description: meta.description.trim() || null,
+        visibility: meta.visibility,
+        allowed_roles: meta.visibility === "roles" ? meta.allowed_roles : [],
+        layout: config as any,
+      });
+      setDirty(false);
+      localStorage.removeItem(draftKey(dashboard.id));
+      toast.success("Dashboard enregistré");
+    } catch (e: any) {
+      toast.error(e.message ?? "Enregistrement impossible");
+    }
   };
 
-  const persistFavorites = (list: { name: string; filters: DashboardFilters }[]) => {
-    setFavorites(list);
-    try { localStorage.setItem(favKey(id), JSON.stringify(list)); } catch { /* ignore */ }
+  const refreshAll = () => {
+    qc.invalidateQueries({ queryKey: ["direction_widget"] });
+    toast.success("Données actualisées");
   };
 
-  const configItem = items.find((it) => it.i === configId) ?? null;
-  const configDef = configItem ? WIDGET_MAP.get(configItem.widgetId) : null;
+  const grid = config?.widgets ?? [];
 
-  if (isLoading) return <div className="p-6 space-y-3"><Skeleton className="h-10 w-64" /><Skeleton className="h-64" /></div>;
-  if (!dashboard) return <div className="p-6 text-muted-foreground">Dashboard introuvable ou inaccessible.</div>;
+  if (isLoading) {
+    return <div className="p-6 text-sm text-muted-foreground">Chargement…</div>;
+  }
+  if (!dashboard) {
+    return (
+      <div className="space-y-3 p-6">
+        <div className="rounded-lg border border-dashed p-5">
+          <p className="font-medium">Dashboard inaccessible</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Ce dashboard n'existe plus ou votre accès a été retiré. Choisissez un autre dashboard disponible.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => navigate("/direction/mes-dashboards")}>
+              Mes Dashboards
+            </Button>
+            <Button variant="outline" onClick={() => navigate("/")}>Accueil</Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  if (!config) {
+    return <div className="p-6 text-sm text-muted-foreground">Chargement…</div>;
+  }
 
-  const library = (
-    <WidgetLibraryPanel widgets={availableWidgets} onAdd={addWidget} className="h-full" />
-  );
+  const library = <WidgetLibraryPanel onAdd={addWidget} />;
 
   return (
-    <div className="flex flex-col h-full min-h-0">
-      {/* En-tête collant */}
-      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur border-b px-3 md:px-6 py-2.5 space-y-2.5">
-        <div className="flex flex-wrap items-center gap-2">
-          <Button variant="ghost" size="icon"
-            onClick={() => navigate(isOwner ? "/dashboard-design/dashboards" : "/dashboard-design/partages")}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div className="min-w-0 flex-1">
-            <h1 className="text-lg md:text-2xl font-bold truncate">{meta.name}</h1>
-            {meta.description && <p className="text-xs md:text-sm text-muted-foreground truncate">{meta.description}</p>}
-          </div>
-          {dirty && <Badge variant="destructive" className="text-[10px]">Non enregistré</Badge>}
-          {!isOwner && <Badge variant="secondary" className="text-[10px]">Partagé · lecture seule</Badge>}
-          <Badge variant="outline" className="gap-1 text-[11px]">
-            <RefreshCw className="h-3 w-3" />
-            {REFRESH_OPTIONS.find((o) => o.v === meta.refresh_seconds)?.l ?? "Manuel"}
-          </Badge>
-          {isOwner && (
-            <>
-              <Button variant="outline" size="sm" onClick={() => setShareOpen(true)}>
-                <Share2 className="h-4 w-4 md:mr-1" /><span className="hidden md:inline">Partager</span>
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setVersionsOpen(true)}>
-                <History className="h-4 w-4 md:mr-1" /><span className="hidden md:inline">Versions</span>
-              </Button>
-            </>
-          )}
-          {canModify && (
-            <>
-              <Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)}>
-                <Settings2 className="h-4 w-4 md:mr-1" /><span className="hidden md:inline">Réglages</span>
-              </Button>
-              {editing ? (
-                <>
-                  <Button variant="outline" size="sm" onClick={() => setTemplatesOpen(true)}>
-                    <Sparkles className="h-4 w-4 md:mr-1" /><span className="hidden md:inline">Modèles</span>
-                  </Button>
-                  {isMobile && (
-                    <Button variant="outline" size="sm" onClick={() => setLibraryOpen(true)}>
-                      <Plus className="h-4 w-4 mr-1" /> Widget
-                    </Button>
-                  )}
-                  <Button size="sm" disabled={save.isPending}
-                    onClick={() => save.mutate(
-                      { layout: items as any, global_filters: filters as any },
-                      { onSuccess: () => setEditing(false) },
-                    )}>
-                    <Save className="h-4 w-4 mr-1" /> Enregistrer
-                  </Button>
-                </>
-              ) : (
-                <Button size="sm" variant="secondary" onClick={() => setEditing(true)}>
-                  <LayoutGrid className="h-4 w-4 mr-1" /> Composer
-                </Button>
-              )}
-            </>
-          )}
+    <div className="space-y-3 p-3 md:p-6">
+      {canShare && id && (
+        <DashboardShareDialog dashboardId={id} open={shareOpen} onOpenChange={setShareOpen} />
+      )}
+      {/* -------------------------------------------------------- en-tête */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Button variant="ghost" size="icon" onClick={() => navigate("/direction/dashboards")}>
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate text-lg font-bold md:text-xl">{meta.name}</h1>
+          <p className="truncate text-xs text-muted-foreground">
+            {meta.description || "Reporting en lecture seule"}
+            {dirty && " · modifications non enregistrées"}
+          </p>
         </div>
 
-        <DirectionFilterBar
-          value={filters}
-          onChange={(f) => { setFilters(f); if (canModify) setDirty(true); }}
-          contexts={contexts.length ? contexts : ["line", "product", "supplier", "campaign"]}
-          favorites={favorites}
-          onApplyFavorite={(f) => { setFilters(f); if (canModify) setDirty(true); }}
-          onSaveFavorite={() => {
-            const name = window.prompt("Nom du filtre favori ?");
-            if (!name?.trim()) return;
-            persistFavorites([...favorites.filter((f) => f.name !== name.trim()), { name: name.trim(), filters }]);
-            toast.success("Filtre favori enregistré");
-          }}
-          onDeleteFavorite={(name) => persistFavorites(favorites.filter((f) => f.name !== name))}
-        />
-      </div>
+        <Select
+          value={String(config.refreshSeconds)}
+          onValueChange={(v) => patch((c) => ({ ...c, refreshSeconds: Number(v) }))}
+        >
+          <SelectTrigger className="h-9 w-[110px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="bg-popover">
+            {REFRESH_OPTIONS.map((o) => (
+              <SelectItem key={o.value} value={String(o.value)}>
+                {o.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-      <div className="flex flex-1 min-h-0">
-        {/* Panneau latéral des composants (desktop, mode composition) */}
-        {editing && !isMobile && (
-          <aside className="w-72 shrink-0 border-r bg-muted/20 flex flex-col min-h-0">
-            <div className="px-3 py-2 border-b">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Composants</p>
-            </div>
-            {library}
-          </aside>
+        <Button variant="outline" size="icon" onClick={refreshAll} title="Actualiser">
+          <RefreshCw className="h-4 w-4" />
+        </Button>
+
+        {canShare && (
+          <Button variant="outline" size="icon" onClick={() => setShareOpen(true)} title="Partager">
+            <Share2 className="h-4 w-4" />
+          </Button>
         )}
 
-        <div className="flex-1 min-w-0 overflow-auto p-3 md:p-5">
-          {visibleItems.length === 0 ? (
-            <Card>
-              <CardContent className="py-12 text-center space-y-3">
-                <LayoutGrid className="h-10 w-10 mx-auto text-muted-foreground" />
+        {canEdit && (
+          <>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" title="Versions">
+                  <History className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 bg-popover">
+                <DropdownMenuLabel className="text-xs">Versions du dashboard</DropdownMenuLabel>
+                <DropdownMenuItem onClick={saveVersion}>
+                  <Save className="mr-2 h-4 w-4" /> Enregistrer la version courante
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                {!config.versions.length && (
+                  <DropdownMenuLabel className="text-[11px] font-normal text-muted-foreground">
+                    Aucune version
+                  </DropdownMenuLabel>
+                )}
+                {config.versions.map((v) => (
+                  <DropdownMenuItem key={v.id} onClick={() => loadVersion(v.id)}>
+                    <span className="flex-1 truncate">{v.name}</span>
+                    <button
+                      className="ml-2 text-destructive"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteVersion(v.id);
+                      }}
+                      aria-label={`Supprimer la version ${v.name}`}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Button variant="outline" size="icon" onClick={() => setTplOpen(true)} title="Modèles">
+              <LayoutTemplate className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={designMode ? "default" : "outline"}
+              onClick={() => setDesignMode((v) => !v)}
+            >
+              <Pencil className="mr-2 h-4 w-4" />
+              {designMode ? "Terminer" : "Composer"}
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setSettingsOpen(true)}
+              title="Paramètres"
+            >
+              <Settings2 className="h-4 w-4" />
+            </Button>
+            <Button onClick={save} disabled={!dirty || update.isPending}>
+              <Save className="mr-2 h-4 w-4" /> Enregistrer
+            </Button>
+          </>
+        )}
+      </div>
+
+      {/* -------------------------------------------------------- filtres */}
+      <DashboardFilters
+        period={config.period}
+        customFrom={config.customFrom}
+        customTo={config.customTo}
+        filters={config.filters}
+        compare={config.compare}
+        options={filterOptions}
+        savedFilters={config.savedFilters}
+        onChange={(p) => patch((c) => ({ ...c, ...p }))}
+        onSaveFavorite={canEdit ? saveFavorite : undefined}
+        onApplyFavorite={(f) =>
+          patch((c) => ({
+            ...c,
+            period: f.period,
+            customFrom: f.customFrom ?? null,
+            customTo: f.customTo ?? null,
+            filters: f.filters,
+          }))
+        }
+        onRemoveFavorite={
+          canEdit
+            ? (fid) => patch((c) => ({ ...c, savedFilters: c.savedFilters.filter((f) => f.id !== fid) }))
+            : undefined
+        }
+      />
+
+      {/* --------------------------------------------- barre mode composer */}
+      {designMode && (
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-dashed p-2.5">
+          {isMobile ? (
+            <Sheet open={libOpen} onOpenChange={setLibOpen}>
+              <SheetTrigger asChild>
+                <Button size="sm">
+                  <Plus className="mr-2 h-4 w-4" /> Composants
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="bottom" className="h-[85vh] overflow-hidden">
+                <SheetHeader>
+                  <SheetTitle>Bibliothèque</SheetTitle>
+                </SheetHeader>
+                <div className="mt-3 h-[calc(85vh-5rem)] overflow-auto">
+                  <WidgetLibraryPanel onAdd={addWidget} />
+                </div>
+              </SheetContent>
+            </Sheet>
+          ) : (
+            <Button size="sm" variant="outline" onClick={() => setLibOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" /> Ajouter (recherche plein écran)
+            </Button>
+          )}
+
+          <div className="flex items-center gap-1.5">
+            <Label className="text-xs text-muted-foreground">Colonnes</Label>
+            <Select
+              value={String(config.columns)}
+              onValueChange={(v) => patch((c) => ({ ...c, columns: Number(v) as any }))}
+            >
+              <SelectTrigger className="h-8 w-[80px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-popover">
+                {[1, 2, 3, 4].map((n) => (
+                  <SelectItem key={n} value={String(n)}>
+                    {n}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <span className="text-xs text-muted-foreground">
+            Glissez-déposez les cartes pour les réorganiser · utilisez le menu de chaque widget pour la
+            taille, les couleurs et les filtres locaux.
+          </span>
+        </div>
+      )}
+
+      {/* -------------------------------------------------- grille + panneau */}
+      <div className={cn("gap-3", designMode && !isMobile ? "lg:flex lg:items-start" : "")}>
+        {designMode && !isMobile && (
+          <aside className="mb-3 w-[320px] shrink-0 lg:mb-0">{library}</aside>
+        )}
+
+        <div className="min-w-0 flex-1">
+          {!grid.length ? (
+            <Card className="border-dashed">
+              <CardContent className="flex flex-col items-center gap-3 p-10 text-center">
+                <LayoutTemplate className="h-8 w-8 text-muted-foreground" />
                 <p className="text-sm text-muted-foreground">
-                  Aucun widget. Partez d'un modèle prédéfini ou ajoutez vos indicateurs.
+                  Ce dashboard est vide. Partez d'un modèle prédéfini ou composez le vôtre.
                 </p>
-                {canModify && (
-                  <div className="flex flex-wrap gap-2 justify-center">
-                    <Button onClick={() => setTemplatesOpen(true)}><Sparkles className="h-4 w-4 mr-1" /> Choisir un modèle</Button>
-                    <Button variant="outline" onClick={() => { setEditing(true); if (isMobile) setLibraryOpen(true); }}>
-                      <Plus className="h-4 w-4 mr-1" /> Ajouter un widget
+                {canEdit && (
+                  <div className="flex flex-wrap justify-center gap-2">
+                    <Button onClick={() => setTplOpen(true)}>
+                      <LayoutTemplate className="mr-2 h-4 w-4" /> Choisir un modèle
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setDesignMode(true);
+                        if (isMobile) setLibOpen(true);
+                      }}
+                    >
+                      <Plus className="mr-2 h-4 w-4" /> Composer
                     </Button>
                   </div>
                 )}
               </CardContent>
             </Card>
           ) : (
-            <div ref={gridRef as any}>
-              <ResponsiveGrid
-                width={gridWidth}
-                className="layout"
-                layouts={{ lg: visibleItems.map(({ i, x, y, w, h }) => ({ i, x, y, w, h, minW: 2, minH: 3 })) }}
-                breakpoints={{ lg: 1200, md: 900, sm: 640, xs: 0 }}
-                cols={{ lg: 12, md: 8, sm: 4, xs: 2 }}
-                rowHeight={30}
-                margin={[12, 12]}
-                dragConfig={{ enabled: editing, handle: ".drag-handle" }}
-                resizeConfig={{ enabled: editing }}
-                onLayoutChange={onLayoutChange}
-              >
-                {visibleItems.map((it) => (
-                  <div key={it.i}>
-                    <DirectionWidget
-                      item={it}
-                      globalFilters={filters}
-                      refreshSeconds={meta.refresh_seconds}
-                      editing={editing}
-                      onConfigure={() => setConfigId(it.i)}
-                      onRemove={() => { setItems((prev) => prev.filter((x) => x.i !== it.i)); setDirty(true); }}
+            <div className={cn("grid grid-cols-1 gap-3 sm:grid-cols-2", COLS[config.columns])}>
+              {grid.map((item) => {
+                const def = WIDGETS_BY_ID.get(item.widgetId);
+                return (
+                  <div
+                    key={item.uid}
+                    className={cn(
+                      SPAN[item.w],
+                      designMode && "rounded-lg ring-1 ring-primary/30",
+                    )}
+                    draggable={designMode}
+                    onDragStart={() => (dragUid.current = item.uid)}
+                    onDragEnd={() => (dragUid.current = null)}
+                    onDragOver={(e) => {
+                      if (designMode) e.preventDefault();
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      if (dragUid.current) moveWidget(dragUid.current, item.uid);
+                      dragUid.current = null;
+                    }}
+                  >
+                    <WidgetCard
+                      item={item}
+                      globalPeriod={period}
+                      globalFilters={config.filters}
+                      globalCompare={config.compare}
+                      refreshSeconds={config.refreshSeconds}
+                      toolbar={
+                        designMode ? (
+                          <div className="flex shrink-0 items-center gap-0.5">
+                            <GripVertical className="h-4 w-4 cursor-grab text-muted-foreground" />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              title="Réduire la largeur"
+                              onClick={() =>
+                                updateWidget(item.uid, {
+                                  w: Math.max(1, item.w - 1) as DashboardWidget["w"],
+                                })
+                              }
+                            >
+                              <Minimize2 className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              title="Élargir"
+                              onClick={() =>
+                                updateWidget(item.uid, {
+                                  w: Math.min(4, item.w + 1) as DashboardWidget["w"],
+                                })
+                              }
+                            >
+                              <Maximize2 className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              title="Personnaliser"
+                              onClick={() => setEditing(item.uid)}
+                            >
+                              <Sliders className="h-3.5 w-3.5" />
+                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-52 bg-popover">
+                                <DropdownMenuLabel className="truncate text-xs">
+                                  {def?.title ?? item.widgetId}
+                                </DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => moveBy(item.uid, -1)}>
+                                  Déplacer avant
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => moveBy(item.uid, 1)}>
+                                  Déplacer après
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => duplicateWidget(item.uid)}>
+                                  <Copy className="mr-2 h-4 w-4" /> Dupliquer
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuLabel className="text-[11px] text-muted-foreground">
+                                  Hauteur
+                                </DropdownMenuLabel>
+                                {(["sm", "md", "lg"] as const).map((h) => (
+                                  <DropdownMenuItem
+                                    key={h}
+                                    onClick={() => updateWidget(item.uid, { h })}
+                                  >
+                                    {h === "sm" ? "Compacte" : h === "md" ? "Moyenne" : "Grande"}{" "}
+                                    {item.h === h && "✓"}
+                                  </DropdownMenuItem>
+                                ))}
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-destructive"
+                                  onClick={() => removeWidget(item.uid)}
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" /> Retirer
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        ) : undefined
+                      }
                     />
                   </div>
-                ))}
-              </ResponsiveGrid>
+                );
+              })}
             </div>
           )}
         </div>
       </div>
 
-      {/* Bibliothèque mobile */}
-      <Sheet open={libraryOpen} onOpenChange={setLibraryOpen}>
-        <SheetContent side="bottom" className="h-[80vh] p-0 flex flex-col">
-          <SheetHeader className="p-3 pb-0"><SheetTitle>Bibliothèque de composants</SheetTitle></SheetHeader>
-          {library}
-        </SheetContent>
-      </Sheet>
+      <WidgetLibrary open={libOpen && !isMobile} onOpenChange={setLibOpen} onAdd={addWidget} />
 
-      {/* Modèles prédéfinis */}
-      <ResponsiveDialog
-        open={templatesOpen} onOpenChange={setTemplatesOpen}
-        title="Modèles de tableaux de bord"
-        description="Le modèle remplace la composition actuelle (enregistrez une version avant si besoin)."
-        className="max-w-2xl"
-      >
-        <div className="grid gap-2 sm:grid-cols-2 max-h-[65vh] overflow-auto">
-          {DASHBOARD_TEMPLATES.map((t) => (
-            <button key={t.id} type="button" onClick={() => applyTemplate(t.id)}
-              className="text-left rounded-md border p-3 hover:bg-accent/60 hover:border-primary/40 transition-colors">
-              <p className="text-sm font-semibold">{t.name}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{t.description}</p>
-              <Badge variant="outline" className="mt-2 text-[10px]">{t.widgets.length} widget(s)</Badge>
-            </button>
-          ))}
-        </div>
-      </ResponsiveDialog>
+      <WidgetSettingsDialog
+        item={grid.find((w) => w.uid === editing) ?? null}
+        options={filterOptions}
+        onOpenChange={(v) => !v && setEditing(null)}
+        onChange={updateWidget}
+      />
 
-      {/* Versions */}
-      <ResponsiveDialog open={versionsOpen} onOpenChange={setVersionsOpen} title="Versions du dashboard"
-        description="Enregistrez plusieurs compositions (Hebdo, Mensuelle…) et rechargez-les à la demande.">
-        <div className="space-y-3">
-          {canModify && (
-            <div className="flex gap-2">
-              <Input className="h-11" placeholder="Nom de la version (ex : Hebdo)" value={versionName}
-                onChange={(e) => setVersionName(e.target.value)} />
-              <Button className="h-11" disabled={!versionName.trim() || saveVersion.isPending}
-                onClick={() => saveVersion.mutate(versionName.trim())}>
-                <Save className="h-4 w-4 mr-1" /> Créer
-              </Button>
-            </div>
-          )}
-          <Separator />
-          {versions.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Aucune version enregistrée.</p>
-          ) : (
-            <div className="space-y-2 max-h-[50vh] overflow-auto">
-              {versions.map((v) => (
-                <div key={v.id} className="flex items-center gap-2 rounded-md border p-2">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium truncate">{v.name}</p>
-                    <p className="text-[11px] text-muted-foreground">
-                      {Array.isArray(v.layout) ? v.layout.length : 0} widget(s) · {new Date(v.updated_at).toLocaleString("fr-FR")}
-                    </p>
-                  </div>
-                  <Button size="sm" variant="outline" onClick={() => {
-                    setItems(Array.isArray(v.layout) ? v.layout : []);
-                    setFilters(v.global_filters ?? { period: "7d" });
-                    if (canModify) setDirty(true);
-                    setVersionsOpen(false);
-                    toast.success(`Version « ${v.name} » chargée`);
-                  }}>Charger</Button>
-                  {canModify && (
-                    <Button size="sm" variant="ghost" className="text-destructive" onClick={() => deleteVersion.mutate(v.id)}>
-                      <X className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </ResponsiveDialog>
+      {/* -------------------------------------------------------- modèles */}
+      <Dialog open={tplOpen} onOpenChange={setTplOpen}>
+        <DialogContent className="max-h-[90vh] w-[calc(100vw-1.5rem)] max-w-2xl overflow-auto">
+          <DialogHeader>
+            <DialogTitle>Modèles prédéfinis</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {DASHBOARD_TEMPLATES.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => applyTemplate(t.id)}
+                className="rounded-lg border p-3 text-left transition-colors hover:border-primary hover:bg-accent"
+              >
+                <p className="text-sm font-medium">{t.name}</p>
+                <p className="text-xs text-muted-foreground">{t.description}</p>
+                <Badge variant="secondary" className="mt-2 text-[10px]">
+                  {t.widgets.length} composants
+                </Badge>
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Appliquer un modèle remplace la composition actuelle (les données métier ne sont jamais
+            modifiées).
+          </p>
+        </DialogContent>
+      </Dialog>
 
-      {/* Configuration d'un widget */}
-      <ResponsiveDialog
-        open={!!configItem} onOpenChange={(o) => !o && setConfigId(null)}
-        title="Configurer le widget" description={configDef?.title ?? ""}
-      >
-        {configItem && configDef && (
-          <div className="space-y-3 max-h-[70vh] overflow-auto pr-1">
-            <div>
-              <Label>Titre affiché</Label>
-              <Input className="h-11" value={configItem.title ?? ""} placeholder={configDef.title}
-                onChange={(e) => patchItem(configItem.i, { title: e.target.value })} />
-            </div>
-
-            <Separator />
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="cursor-pointer">Suivre les filtres globaux</Label>
-                <p className="text-[11px] text-muted-foreground">Désactivez pour un filtre local à ce widget.</p>
-              </div>
-              <Switch
-                checked={configItem.filters?.useGlobal !== false}
-                onCheckedChange={(c) =>
-                  patchItem(configItem.i, { filters: { ...configItem.filters, useGlobal: c ? undefined : false } })
-                }
+      {/* ----------------------------------------------------- paramètres */}
+      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <DialogContent className="w-[calc(100vw-1.5rem)] max-w-md">
+          <DialogHeader>
+            <DialogTitle>Paramètres du dashboard</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>Nom</Label>
+              <Input
+                value={meta.name}
+                onChange={(e) => {
+                  setMeta({ ...meta, name: e.target.value });
+                  setDirty(true);
+                }}
               />
             </div>
-
-            {configDef.supportsPeriod && (
-              <div>
-                <Label>Période {configItem.filters?.useGlobal === false ? "(locale)" : "(surcharge)"}</Label>
-                <Select
-                  value={configItem.filters?.period ?? "__global__"}
-                  onValueChange={(v) =>
-                    patchItem(configItem.i, {
-                      filters: { ...configItem.filters, period: v === "__global__" ? undefined : (v as any) },
-                    })
-                  }
-                >
-                  <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__global__">Comme le dashboard</SelectItem>
-                    {PERIOD_OPTIONS.filter((p) => p.key !== "custom").map((p) => (
-                      <SelectItem key={p.key} value={p.key}>{p.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {configDef.supportsCompare && (
-              <div className="flex items-center justify-between">
-                <Label className="cursor-pointer">Comparer à la période précédente</Label>
-                <Switch
-                  checked={configItem.filters?.compare ?? false}
-                  onCheckedChange={(c) => patchItem(configItem.i, { filters: { ...configItem.filters, compare: c || undefined } })}
-                />
-              </div>
-            )}
-
-            {configDef.kind === "table" && (
-              <div>
-                <Label>Nombre de lignes</Label>
-                <Select value={String(configItem.filters?.limit ?? 10)}
-                  onValueChange={(v) => patchItem(configItem.i, { filters: { ...configItem.filters, limit: Number(v) } })}>
-                  <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {[5, 10, 20, 50].map((n) => <SelectItem key={n} value={String(n)}>{n} lignes</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            <Separator />
-            <div>
-              <Label>Couleur d'accent</Label>
-              <div className="flex flex-wrap gap-2 mt-1.5">
-                {ACCENT_KEYS.map((k) => (
-                  <button
-                    key={k}
-                    type="button"
-                    onClick={() => patchItem(configItem.i, { style: { ...configItem.style, accent: k } })}
-                    className={cn(
-                      "h-9 w-9 rounded-md border-2 transition-transform",
-                      (configItem.style?.accent ?? "primary") === k ? "border-foreground scale-105" : "border-transparent",
-                    )}
-                    style={{
-                      background:
-                        k === "primary" ? "hsl(var(--primary))"
-                        : k === "blue" ? "hsl(217 91% 55%)"
-                        : k === "emerald" ? "hsl(160 84% 34%)"
-                        : k === "amber" ? "hsl(38 92% 48%)"
-                        : k === "violet" ? "hsl(263 70% 58%)"
-                        : k === "rose" ? "hsl(348 83% 55%)"
-                        : "hsl(190 90% 40%)",
-                    }}
-                    aria-label={k}
-                  />
-                ))}
-              </div>
+            <div className="space-y-1.5">
+              <Label>Description</Label>
+              <Textarea
+                value={meta.description}
+                onChange={(e) => {
+                  setMeta({ ...meta, description: e.target.value });
+                  setDirty(true);
+                }}
+              />
             </div>
-
-            {configDef.kind === "kpi" && (
-              <div>
-                <Label>Taille du chiffre</Label>
-                <Select value={configItem.style?.fontScale ?? "md"}
-                  onValueChange={(v) => patchItem(configItem.i, { style: { ...configItem.style, fontScale: v as any } })}>
-                  <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="sm">Compacte</SelectItem>
-                    <SelectItem value="md">Normale</SelectItem>
-                    <SelectItem value="lg">Grande</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            <div>
-              <Label>Densité</Label>
-              <Select value={configItem.style?.density ?? "normal"}
-                onValueChange={(v) => patchItem(configItem.i, { style: { ...configItem.style, density: v as any } })}>
-                <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="normal">Normale</SelectItem>
-                  <SelectItem value="compact">Compacte</SelectItem>
+            <div className="space-y-1.5">
+              <Label>Visibilité</Label>
+              <Select
+                value={meta.visibility}
+                onValueChange={(v: any) => {
+                  setMeta({ ...meta, visibility: v });
+                  setDirty(true);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-popover">
+                  <SelectItem value="private">Privé (moi uniquement)</SelectItem>
+                  <SelectItem value="roles">Partagé avec des rôles</SelectItem>
+                  <SelectItem value="public">Public (tous les utilisateurs)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-
-            <Button className="w-full h-11" onClick={() => setConfigId(null)}>
-              <Check className="h-4 w-4 mr-1" /> Terminer
+            {meta.visibility === "roles" && (
+              <div className="space-y-1.5">
+                <Label>Rôles autorisés</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {ROLE_OPTIONS.map((r) => {
+                    const on = meta.allowed_roles.includes(r);
+                    return (
+                      <Badge
+                        key={r}
+                        variant={on ? "default" : "outline"}
+                        className="cursor-pointer"
+                        onClick={() => {
+                          setMeta({
+                            ...meta,
+                            allowed_roles: on
+                              ? meta.allowed_roles.filter((x) => x !== r)
+                              : [...meta.allowed_roles, r],
+                          });
+                          setDirty(true);
+                        }}
+                      >
+                        {r}
+                      </Badge>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSettingsOpen(false)}>
+              Fermer
             </Button>
-          </div>
-        )}
-      </ResponsiveDialog>
-
-      {/* Réglages du dashboard */}
-      <ResponsiveDialog open={settingsOpen} onOpenChange={setSettingsOpen} title="Réglages du dashboard">
-        <div className="space-y-3">
-          <div>
-            <Label>Nom</Label>
-            <Input className="h-11" value={meta.name} onChange={(e) => setMeta({ ...meta, name: e.target.value })} />
-          </div>
-          <div>
-            <Label>Description</Label>
-            <Input className="h-11" value={meta.description} onChange={(e) => setMeta({ ...meta, description: e.target.value })} />
-          </div>
-          <div>
-            <Label>Visibilité</Label>
-            <Select value={meta.visibility} onValueChange={(v) => setMeta({ ...meta, visibility: v })}>
-              <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="private">Privé (moi uniquement)</SelectItem>
-                <SelectItem value="public">Public (tous les utilisateurs)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label>Actualisation automatique</Label>
-            <Select value={String(meta.refresh_seconds)} onValueChange={(v) => setMeta({ ...meta, refresh_seconds: Number(v) })}>
-              <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {REFRESH_OPTIONS.map((o) => <SelectItem key={o.v} value={String(o.v)}>{o.l}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <Button className="w-full h-11" disabled={save.isPending}
-            onClick={() => save.mutate({
-              name: meta.name.trim() || "Sans titre",
-              description: meta.description.trim() || null,
-              visibility: meta.visibility,
-              refresh_seconds: meta.refresh_seconds,
-            }, { onSuccess: () => setSettingsOpen(false) })}>
-            <Save className="h-4 w-4 mr-1" /> Enregistrer les réglages
-          </Button>
-        </div>
-      </ResponsiveDialog>
-
-      {/* Partage */}
-      {isOwner && id && (
-        <ShareDashboardDialog dashboardId={id} open={shareOpen} onOpenChange={setShareOpen} />
-      )}
+            <Button
+              onClick={async () => {
+                await save();
+                setSettingsOpen(false);
+              }}
+            >
+              Enregistrer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
