@@ -14,11 +14,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { AlertTriangle, Clock, Lock, Truck, XCircle, Search, Lightbulb, Pencil, Check, X, Loader2 } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AlertTriangle, Clock, Lock, Truck, XCircle, Search, Lightbulb, Pencil, Check, X, Loader2, TrendingDown, Scale } from "lucide-react";
 import { toast } from "sonner";
 import { PhotoSlot } from "./PhotoSlot";
 import { TicketDetailDialog } from "./TicketDetailDialog";
-import { format } from "date-fns";
+import { format, startOfDay, addDays, setHours, setMinutes, setSeconds, isWithinInterval } from "date-fns";
 import { useShiftRealtime } from "@/hooks/useShiftRealtime";
 import { StickyActionBar } from "@/components/responsive/StickyActionBar";
 import { receptionDraftStore, DRAFT_KEY, DRAFT_MAX_AGE_MS } from "./receptionDraftStore";
@@ -300,19 +301,94 @@ export default function ReceptionQualitative() {
 
 
 
-  // Historique allégé : uniquement les 10 derniers tickets clôturés.
+  // Historique filtré : uniquement les 10 derniers tickets clôturés PAR L'UTILISATEUR et NON IMPORTÉS.
   const { data: recent = [] } = useQuery({
     queryKey: ["reception_tickets_recent"],
     staleTime: 60 * 1000,
     refetchOnWindowFocus: false,
     queryFn: async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) return [];
+
       const { data, error } = await supabase.from("v_reception_global")
         .select("*")
         .eq("statut", "cloture")
+        .eq("created_by", auth.user.id)
+        .not("code_pesee", "ilike", "IMP-%") // Exclure les tickets importés
         .order("numero", { ascending: false })
         .limit(10);
       if (error) throw error;
       return (data ?? []) as any[];
+    },
+  });
+
+  // KPI par période (Journée de réception 06:00 -> 06:00 J+1)
+  const [activePeriod, setActivePeriod] = useState<"matin" | "apres-midi" | "nuit">(() => {
+    const now = new Date();
+    const h = now.getHours();
+    if (h >= 6 && h < 14) return "matin";
+    if (h >= 14 && h < 22) return "apres-midi";
+    return "nuit";
+  });
+
+  const periodInterval = useMemo(() => {
+    const now = new Date();
+    const today = startOfDay(now);
+    const yesterday = addDays(today, -1);
+    
+    // Si il est entre 00:00 et 06:00, la "journée de réception" a commencé hier à 06:00
+    const receptionDayStart = now.getHours() < 6 ? yesterday : today;
+
+    if (activePeriod === "matin") {
+      return {
+        start: setHours(receptionDayStart, 6),
+        end: setHours(receptionDayStart, 14),
+      };
+    }
+    if (activePeriod === "apres-midi") {
+      return {
+        start: setHours(receptionDayStart, 14),
+        end: setHours(receptionDayStart, 22),
+      };
+    }
+    // Nuit: 22:00 -> 06:00 J+1
+    return {
+      start: setHours(receptionDayStart, 22),
+      end: setHours(addDays(receptionDayStart, 1), 6),
+    };
+  }, [activePeriod]);
+
+  const { data: periodKpis = { abattementMoyen: 0, abattementTotal: 0 } } = useQuery({
+    queryKey: ["reception_kpis_period", activePeriod, periodInterval],
+    staleTime: 60 * 1000,
+    queryFn: async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) return { abattementMoyen: 0, abattementTotal: 0 };
+
+      const { data, error } = await supabase.from("v_reception_global")
+        .select("poids_brut, poids_net, poids_abattement_kg")
+        .eq("statut", "cloture")
+        .eq("created_by", auth.user.id)
+        .gte("created_at", periodInterval.start.toISOString())
+        .lt("created_at", periodInterval.end.toISOString());
+
+      if (error) throw error;
+      if (!data || data.length === 0) return { abattementMoyen: 0, abattementTotal: 0 };
+
+      let totalBrut = 0;
+      let totalNet = 0;
+      let totalAbattementKg = 0;
+
+      data.forEach((row: any) => {
+        totalBrut += Number(row.poids_brut || 0);
+        totalNet += Number(row.poids_net || 0);
+        totalAbattementKg += Number(row.poids_abattement_kg || 0);
+      });
+
+      const abattementMoyen = totalBrut > 0 ? (totalAbattementKg / totalBrut) * 100 : 0;
+      const abattementTotal = totalBrut - totalNet;
+
+      return { abattementMoyen, abattementTotal };
     },
   });
 
@@ -758,6 +834,55 @@ export default function ReceptionQualitative() {
                       {recent.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-4 text-xs">Aucun ticket clôturé</TableCell></TableRow>}
                     </TableBody>
                   </Table>
+                </div>
+                
+                {/* KPI par période sous l'historique */}
+                <div className="mt-6 border-t pt-4">
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-semibold flex items-center gap-2">
+                        <TrendingDown className="h-4 w-4 text-primary" />
+                        Mes performances par période
+                      </h4>
+                      <Tabs value={activePeriod} onValueChange={(v: any) => setActivePeriod(v)} className="w-auto">
+                        <TabsList className="grid grid-cols-3 h-8 p-0.5 bg-muted/50">
+                          <TabsTrigger value="matin" className="text-[10px] px-2 h-7">Matin</TabsTrigger>
+                          <TabsTrigger value="apres-midi" className="text-[10px] px-2 h-7">A-M</TabsTrigger>
+                          <TabsTrigger value="nuit" className="text-[10px] px-2 h-7">Nuit</TabsTrigger>
+                        </TabsList>
+                      </Tabs>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-muted/30 rounded-lg p-3 flex flex-col items-center justify-center text-center border border-border/50">
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
+                          Abattement moyen
+                        </span>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-xl font-bold text-primary">
+                            {periodKpis.abattementMoyen.toFixed(2)}
+                          </span>
+                          <span className="text-xs font-semibold text-muted-foreground">%</span>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-muted/30 rounded-lg p-3 flex flex-col items-center justify-center text-center border border-border/50">
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
+                          Abattement total
+                        </span>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-xl font-bold text-foreground">
+                            {Math.round(periodKpis.abattementTotal).toLocaleString()}
+                          </span>
+                          <span className="text-xs font-semibold text-muted-foreground">kg</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="text-[10px] text-center text-muted-foreground italic">
+                      Calculé sur vos tickets clôturés entre {format(periodInterval.start, "HH:mm")} et {format(periodInterval.end, "HH:mm")}
+                    </div>
+                  </div>
                 </div>
               </AccordionContent>
             </AccordionItem>
