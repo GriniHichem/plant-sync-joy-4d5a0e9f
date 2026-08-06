@@ -250,20 +250,16 @@ export default function ReceptionQualitative() {
   const { data: recent = [] } = useQuery({
     queryKey: ["reception_tickets_recent", user?.id],
     queryFn: async () => {
-      // On utilise filter pour les champs qui ne sont pas dans le typage strict ou poser problème
-      let query = supabase.from("v_reception_global")
+      if (!user?.id) return [];
+      const { data, error } = await supabase.from("v_reception_global")
         .select("*")
         .eq("statut", "cloture")
-        .eq("cloture_by", user?.id)
-        .order("cloture_at", { ascending: false })
+        .eq("created_by", user.id) // Utilisation de created_by au lieu de cloture_by
+        .not("code_pesee", "ilike", "IMP-%")
+        .order("created_at", { ascending: false })
         .limit(10);
       
-      const { data, error } = await query;
       if (error) throw error;
-
-      // Filtrage manuel pour les tickets importés car statut_tech n'est pas dans le type v_reception_global
-      // On assume que les tickets importés ont un poids_brut_kg = 0 ou une autre marque distinctive si statut_tech manque
-      // Mais ici on va juste retourner les data et laisser le typage se stabiliser
       return (data ?? []) as any[];
     },
     enabled: !!user?.id,
