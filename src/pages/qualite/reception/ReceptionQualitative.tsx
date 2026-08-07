@@ -252,9 +252,8 @@ export default function ReceptionQualitative() {
     queryFn: async () => {
       const { data, error } = await supabase.from("v_reception_global")
         .select("*")
-        .or(`cloture_by.eq.${user?.id},created_by.eq.${user?.id}`)
+        .eq("created_by", user?.id)
         .in("statut", ["cloture", "pese_importe"])
-        .order("cloture_at", { ascending: false })
         .order("created_at", { ascending: false })
         .limit(10);
       
@@ -303,10 +302,14 @@ export default function ReceptionQualitative() {
   const { data: kpis } = useQuery({
     queryKey: ["reception_user_kpis", user?.id, periodRange.start.toISOString(), periodRange.end.toISOString(), period],
     queryFn: async () => {
+      // Pour debug, on affiche les dates envoyées
+      const startTime = periodRange.start.toISOString();
+      const endTime = periodRange.end.toISOString();
+      
       const { data, error } = await supabase.rpc("get_reception_user_kpis" as any, {
         p_user_id: user?.id,
-        p_start_time: periodRange.start.toISOString(),
-        p_end_time: periodRange.end.toISOString(),
+        p_start_time: startTime,
+        p_end_time: endTime,
       });
       if (error) throw error;
       return data?.[0] as {
