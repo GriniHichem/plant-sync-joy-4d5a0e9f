@@ -250,12 +250,10 @@ export default function ReceptionQualitative() {
   const { data: recent = [] } = useQuery({
     queryKey: ["reception_tickets_recent", user?.id],
     queryFn: async () => {
-      // On récupère les tickets clôturés par l'utilisateur OU créés par lui s'ils sont clôturés
-      // car certains tickets anciens n'ont peut-être pas cloture_by renseigné correctement
       const { data, error } = await supabase.from("v_reception_global")
         .select("*")
-        .eq("statut", "cloture")
         .or(`cloture_by.eq.${user?.id},created_by.eq.${user?.id}`)
+        .in("statut", ["cloture", "pese_importe"])
         .order("cloture_at", { ascending: false })
         .order("created_at", { ascending: false })
         .limit(10);
