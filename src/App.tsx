@@ -231,8 +231,8 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <AuthProvider>
-        <ImpersonationProvider>
+      <ImpersonationProvider>
+        <AuthProvider>
           <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<Auth />} />
@@ -405,8 +405,8 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
-        </ImpersonationProvider>
-      </AuthProvider>
+        </AuthProvider>
+      </ImpersonationProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
