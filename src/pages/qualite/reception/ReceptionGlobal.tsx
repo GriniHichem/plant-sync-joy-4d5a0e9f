@@ -234,7 +234,18 @@ export default function ReceptionGlobal() {
   const { data: stats } = useQuery({
     queryKey: ["v_reception_global_stats", statsArgs],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("reception_global_stats" as any, statsArgs as any);
+      const { data, error } = await supabase.rpc("get_reception_kpis" as any, {
+        p_date_from: statsArgs.p_from,
+        p_date_to: statsArgs.p_to,
+        p_dt_from: statsArgs.p_from_ts,
+        p_dt_to: statsArgs.p_to_ts,
+        p_campaign_id: statsArgs.p_campaign,
+        p_supplier_id: statsArgs.p_supplier,
+        p_product_id: statsArgs.p_product,
+        p_etat: statsArgs.p_etat,
+        p_conformite: statsArgs.p_conformite,
+        p_search: statsArgs.p_q
+      });
       if (error) throw error;
       return (data ?? {}) as any;
     },
@@ -250,10 +261,12 @@ export default function ReceptionGlobal() {
     net: Number(stats?.net ?? 0),
     abat: Number(stats?.abat ?? 0),
     moyDuree: stats?.moyDuree != null ? Number(stats.moyDuree) : null,
-    nbDuree: Number(stats?.nbDuree ?? 0),
-    tauxAbatMoyen: stats?.tauxAbatMoyen != null ? Number(stats.tauxAbatMoyen) : null,
+    nbDuree: Number(stats?.nb_duree ?? 0),
+    tauxAbatMoyen: stats?.net && (Number(stats.net) + Number(stats.abat)) > 0 
+      ? (Number(stats.abat) / (Number(stats.net) + Number(stats.abat))) * 100 
+      : 0,
     jours: Number(stats?.jours ?? 0),
-    moyNetJour: stats?.moyNetJour != null ? Number(stats.moyNetJour) : null,
+    moyNetJour: stats?.jours && Number(stats.jours) > 0 ? Number(stats.net) / Number(stats.jours) : 0,
   }), [stats]);
 
   const activeCampaign = campaigns.find((c) => c.id === f.campaign);
