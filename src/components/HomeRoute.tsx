@@ -42,18 +42,13 @@ export default function HomeRoute() {
     );
   }
 
+  // FORCE default landing to /apps as requested ("affichage app")
+  // instead of the complex redirection logic.
   if (defaultDashboard?.accessible && defaultDashboard.dashboard_id) {
     return <Navigate to={`/direction/dashboards/${defaultDashboard.dashboard_id}`} replace />;
   }
 
-  // If the resolved landing is "/" and the user can actually view the GMAO
-  // dashboard (or is admin) → render it. Otherwise redirect.
-  if (path === "/" && (hasRole("admin") || canView("dashboard"))) {
-    return <Dashboard />;
-  }
-  if (path === "/") {
-    // Safety net — shouldn't happen, but avoid an infinite loop.
-    return <Navigate to="/apps" replace />;
-  }
-  return <Navigate to={path} replace />;
+  // If a specific default dashboard is set and accessible, we keep it.
+  // Otherwise, the user wants the "apps" view as the default home.
+  return <Navigate to="/apps" replace />;
 }
