@@ -323,13 +323,10 @@ export default function ReceptionQualitative() {
       }
       console.log("KPIs data received:", data);
       return data?.[0] as {
-        total_brut: number;
-        total_net: number;
-        total_abattement_kg: number;
-        avg_abattement_pct: number;
-        ticket_count: number;
-        avg_duree: number;
+        count_pese: number;
         count_a_peser: number;
+        avg_abattement: number;
+        avg_duree: number;
       };
     },
     enabled: !!user?.id,
