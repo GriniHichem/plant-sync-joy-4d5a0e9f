@@ -120,7 +120,7 @@ export default function ReceptionGlobal() {
     queryKey: ["v_reception_global"],
     queryFn: async () => {
       const { data, error } = await supabase.from("v_reception_global")
-        .select("*").order("numero", { ascending: false }).limit(1000);
+        .select("*").in("statut", ["cloture", "pese_importe"]).order("numero", { ascending: false }).limit(1000);
       if (error) throw error;
       return (data ?? []) as any[];
     },
