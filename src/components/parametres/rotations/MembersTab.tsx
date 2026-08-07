@@ -181,7 +181,7 @@ export function MembersTab() {
 
   const remove = async (m: Member) => {
     if (!confirm(`Retirer ${fullName(m.profile)} de l'équipe ?`)) return;
-    const { error } = await supabase.from("shift_team_members").delete().eq("id", m.id);
+    const { error } = await (supabase.from("shift_team_members").delete() as any).eq("id", m.id);
     if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); return; }
     await logAudit({ action_type: "delete", module: "parametres", action: "shift_member_remove", entity_type: "shift_team_members", entity_id: m.id, description: "Membre retiré d'une équipe" });
     toast({ title: "Membre retiré" });
