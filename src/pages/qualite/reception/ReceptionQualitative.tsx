@@ -302,11 +302,14 @@ export default function ReceptionQualitative() {
   const { data: kpis } = useQuery({
     queryKey: ["reception_user_kpis", user?.id, periodRange.start.toISOString(), periodRange.end.toISOString(), period],
     queryFn: async () => {
-      // Normalisation des dates pour le serveur (sans fuseau horaire si possible, ou ISO strict)
+      // Pour debug, on affiche les dates envoyées
+      const startTime = periodRange.start.toISOString();
+      const endTime = periodRange.end.toISOString();
+      
       const { data, error } = await supabase.rpc("get_reception_user_kpis" as any, {
         p_user_id: user?.id,
-        p_start_time: periodRange.start.toISOString(),
-        p_end_time: periodRange.end.toISOString(),
+        p_start_time: startTime,
+        p_end_time: endTime,
       });
       if (error) throw error;
       return data?.[0] as {
