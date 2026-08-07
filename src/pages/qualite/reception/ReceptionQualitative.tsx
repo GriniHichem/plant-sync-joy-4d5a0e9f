@@ -774,7 +774,7 @@ export default function ReceptionQualitative() {
                         {kpis ? kpis.avg_abattement_pct.toFixed(2) : "0.00"}%
                       </div>
                       <div className="text-[10px] text-muted-foreground mt-0.5">
-                        {kpis?.ticket_count ?? 0} tickets pesés
+                        {kpis?.ticket_count ?? 0} pesés · {kpis?.a_peser_count ?? 0} à peser
                       </div>
                     </div>
                     <div className="bg-amber-500/5 rounded-lg p-3 border border-amber-500/10">
