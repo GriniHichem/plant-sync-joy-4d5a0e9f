@@ -36,10 +36,10 @@ export function useQualityPermissions() {
   useEffect(() => {
     if (!roles.length) { setPerms({}); setLoading(false); return; }
     (async () => {
-      const { data } = await supabase
+      const { data } = await (supabase
         .from("quality_permissions" as any)
-        .select("*")
-        .in("role", roles as string[]);
+        .select("*") as any)
+        .in("role", roles as any);
       const merged: Record<string, boolean> = {};
       for (const row of ((data ?? []) as unknown) as Record<string, unknown>[]) {
         for (const action of Object.keys(COL) as QualityAction[]) {
