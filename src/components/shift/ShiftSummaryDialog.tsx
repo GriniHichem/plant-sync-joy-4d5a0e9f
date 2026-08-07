@@ -45,19 +45,19 @@ export function ShiftSummaryDialog({ kind, session, open, onOpenChange }: Props)
 
       if (kind === "production") {
         const [{ data: decl }, { data: stops }, { data: tickets }] = await Promise.all([
-          supabase
+          (supabase
             .from("production_declarations")
-            .select("heure_production, quantite_produite, quantite_rebut, notes")
+            .select("heure_production, quantite_produite, quantite_rebut, notes") as any)
             .eq("shift_id", session.id)
             .order("heure_production"),
-          supabase
+          (supabase
             .from("production_stops")
-            .select("heure_debut, type, duree_minutes, description")
+            .select("heure_debut, type, duree_minutes, description") as any)
             .eq("shift_id", session.id)
             .order("heure_debut"),
-          supabase
+          (supabase
             .from("tickets")
-            .select("numero, created_at, priorite, statut, description")
+            .select("numero, created_at, priorite, statut, description") as any)
             .eq("shift_id", session.id)
             .order("created_at"),
         ]);
@@ -80,9 +80,9 @@ export function ShiftSummaryDialog({ kind, session, open, onOpenChange }: Props)
       } else if (kind === "maintenance") {
         const endTs = session.heure_fin ?? new Date().toISOString();
         const [{ data: interv }, { data: closedTickets }] = await Promise.all([
-          supabase
+          (supabase
             .from("interventions")
-            .select("date_debut, date_fin, description, statut, tickets(numero)")
+            .select("date_debut, date_fin, description, statut, tickets(numero)") as any)
             .eq("technicien_id", session.maintenancier_id)
             .gte("date_debut", session.heure_debut)
             .lte("date_debut", endTs)
@@ -120,14 +120,14 @@ export function ShiftSummaryDialog({ kind, session, open, onOpenChange }: Props)
         );
       } else {
         const [{ data: checks }, { data: ncs }] = await Promise.all([
-          supabase
+          (supabase
             .from("quality_checks" as any)
-            .select("control_time, is_conform, comment, quality_indicators(code, name), ordres_fabrication(numero)")
+            .select("control_time, is_conform, comment, quality_indicators(code, name), ordres_fabrication(numero)") as any)
             .eq("quality_shift_id", session.id)
             .order("control_time"),
-          supabase
+          (supabase
             .from("quality_non_conformities" as any)
-            .select("nc_number, detected_at, severity, nc_type, title, description")
+            .select("nc_number, detected_at, severity, nc_type, title, description") as any)
             .eq("quality_shift_id", session.id)
             .order("detected_at"),
         ]);
