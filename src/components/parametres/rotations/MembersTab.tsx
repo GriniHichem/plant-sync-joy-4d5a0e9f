@@ -127,7 +127,7 @@ export function MembersTab() {
       const { error } = await supabase.from("shift_team_members").insert({
         team_id: teamId, user_id: newUser, role_in_team: newRole, autorisation_libre: false, is_active: true,
         scope_kind: "all", cycle_pattern: [],
-      });
+      } as any);
       if (error) throw error;
       await logAudit({ action_type: "create", module: "parametres", action: "shift_member_add", entity_type: "shift_team_members", description: "Membre ajouté à une équipe" });
       toast({ title: "Membre ajouté", description: "Configurez son système et motif de cycle." });
@@ -139,7 +139,7 @@ export function MembersTab() {
   };
 
   const patch = async (m: Member, fields: Record<string, any>) => {
-    const { error } = await supabase.from("shift_team_members").update(fields as any).eq("id", m.id);
+    const { error } = await (supabase.from("shift_team_members").update(fields as any) as any).eq("id", m.id);
     if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); return; }
     await logAudit({ action_type: "update", module: "parametres", action: "shift_member_update", entity_type: "shift_team_members", entity_id: m.id, description: "Membre d'équipe modifié" });
     await loadMembers(teamId);
