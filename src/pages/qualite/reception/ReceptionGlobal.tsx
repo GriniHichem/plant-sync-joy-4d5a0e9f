@@ -255,7 +255,7 @@ export default function ReceptionGlobal() {
   const kpis = useMemo(() => ({
     total: Number(stats?.total ?? 0),
     pese: Number(stats?.pese ?? 0),
-    aPeser: Number(stats?.aPeser ?? 0),
+    aPeser: Number(stats?.a_peser ?? 0),
     hd: Number(stats?.hd ?? 0),
     brut: Number(stats?.brut ?? 0),
     net: Number(stats?.net ?? 0),
