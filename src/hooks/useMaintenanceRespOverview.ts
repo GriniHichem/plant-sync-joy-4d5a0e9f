@@ -195,11 +195,11 @@ export function useMaintenanceRespOverview(): MaintenanceRespOverview {
   }, []);
 
   useEffect(() => { reload(); }, [reload]);
-  useShiftRealtime("resp-overview-tickets", "tickets", reload, true);
-  useShiftRealtime("resp-overview-exec", "preventive_executions", reload, true);
-  useShiftRealtime("resp-overview-sessions", "preventive_action_sessions", reload, true);
-  useShiftRealtime("resp-overview-moves", "pdr_stock_movements", reload, true);
-  useShiftRealtime("resp-overview-reqs", "pdr_requests", reload, true);
+  useShiftRealtime("resp-overview-tickets", "tickets", reload, true, undefined, 60000);
+  useShiftRealtime("resp-overview-exec", "preventive_executions", reload, true, undefined, 60000);
+  useShiftRealtime("resp-overview-sessions", "preventive_action_sessions", reload, true, undefined, 60000);
+  useShiftRealtime("resp-overview-moves", "pdr_stock_movements", reload, true, undefined, 60000);
+  useShiftRealtime("resp-overview-reqs", "pdr_requests", reload, true, undefined, 60000);
 
   const activeTechs = useMemo<ActiveTech[]>(() => {
     const map = new Map<string, ActiveTech>();

@@ -100,8 +100,11 @@ export function MaintenanceRespDashboard() {
         <Kpi label="PDR" value={kpis.movementsToday} tone="amber" />
       </div>
 
-      {loading ? (
-        <div className="p-10 text-center text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin mx-auto" /></div>
+      {loading && tickets.length === 0 ? (
+        <div className="p-10 text-center text-muted-foreground flex flex-col items-center gap-2">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <p className="text-xs">Chargement des données en cours...</p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Curative tickets */}
