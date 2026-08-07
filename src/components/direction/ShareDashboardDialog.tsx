@@ -32,7 +32,7 @@ export function ShareDashboardDialog({ dashboardId, open, onOpenChange }: Props)
       const { data, error } = await supabase
         .from("direction_dashboard_shares" as any)
         .select("*")
-        .eq("dashboard_id", dashboardId);
+        .eq("dashboard_id" as any, dashboardId) as any;
       if (error) throw error;
       return (data ?? []) as any[];
     },

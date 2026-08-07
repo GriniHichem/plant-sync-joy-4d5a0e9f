@@ -116,7 +116,7 @@ export function PdrQuoteBuilder({ onDraft }: { onDraft: (d: QuoteDraft) => void 
     const t = setTimeout(async () => {
       let machinePdrIds: string[] | null = null;
       if (machineId !== "all") {
-        const { data } = await supabase.from("machine_pdr").select("pdr_id").eq("machine_id", machineId);
+        const { data } = await supabase.from("machine_pdr").select("pdr_id").eq("machine_id" as any, machineId) as any;
         machinePdrIds = ((data ?? []) as any[]).map((r) => r.pdr_id);
         if (machinePdrIds.length === 0) {
           if (!cancelled) { setResults([]); setSearching(false); }
@@ -126,7 +126,7 @@ export function PdrQuoteBuilder({ onDraft }: { onDraft: (d: QuoteDraft) => void 
       let query = supabase
         .from("pdr")
         .select("id, reference, designation, marque, modele, reference_constructeur, matiere, unite_stock, description, commentaire_technique, family_id")
-        .eq("is_active", true);
+        .eq("is_active" as any, true) as any;
       if (familyId !== "all") query = query.eq("family_id", familyId);
       if (machinePdrIds) query = query.in("id", machinePdrIds);
       if (q.length >= 2) query = query.or(`reference.ilike.%${q}%,designation.ilike.%${q}%`);

@@ -61,7 +61,7 @@ export function AuditFilters({ filters, onChange, onReset, canViewArchives }: Pr
   useEffect(() => {
     supabase
       .from("profiles")
-      .select("user_id, first_name, last_name")
+      .select("user_id, first_name, last_name") as any;
       .limit(500)
       .then(({ data }) => {
         if (data) {
