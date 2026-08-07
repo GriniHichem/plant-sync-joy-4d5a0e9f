@@ -217,7 +217,7 @@ async function getCurrentUser(): Promise<CurrentUser | null> {
       const { data: prof } = await supabase
         .from("profiles")
         .select("first_name, last_name")
-        .eq("user_id" as any, user.id)
+        .eq("user_id" as any, user.id as any)
         .maybeSingle() as any;
       if (prof) full_name = `${prof.first_name ?? ""} ${prof.last_name ?? ""}`.trim() || null;
     } catch { /* ignore */ }
