@@ -70,14 +70,14 @@ export function useEntityImages(entityType: string, entityId: string | undefined
   const load = useCallback(async () => {
     if (!entityId) { setImages([]); return; }
     setLoading(true);
-    const { data } = await supabase
+    const { data } = await (supabase
       .from("entity_images")
-      .select("*")
+      .select("*") as any)
       .eq("entity_type", entityType)
       .eq("entity_id", entityId)
       .order("is_primary", { ascending: false })
       .order("sort_order");
-    setImages((data as EntityImage[]) || []);
+    setImages((data as any[] || []) as EntityImage[]);
     setLoading(false);
   }, [entityType, entityId]);
 
@@ -115,15 +115,15 @@ export function useEntityImages(entityType: string, entityId: string | undefined
       const { data: urlData } = supabase.storage.from("entity-images").getPublicUrl(path);
 
       if (isPrimary) {
-        await supabase
+        await (supabase
           .from("entity_images")
-          .update({ is_primary: false } as any)
+          .update({ is_primary: false } as any) as any)
           .eq("entity_type", entityType)
           .eq("entity_id", entityId)
           .eq("is_primary", true);
       }
 
-      const { data: row, error: insErr } = await supabase
+      const { data: row, error: insErr } = await (supabase
         .from("entity_images")
         .insert({
           entity_type: entityType,
@@ -135,7 +135,7 @@ export function useEntityImages(entityType: string, entityId: string | undefined
           file_name: file.name,
           file_size: compressed.size,
           uploaded_by: user.id,
-        } as any)
+        } as any) as any)
         .select()
         .single();
 
@@ -143,7 +143,7 @@ export function useEntityImages(entityType: string, entityId: string | undefined
 
       await load();
       toast({ title: "Image ajoutée" });
-      return row as EntityImage;
+      return row as any as EntityImage;
     } catch (err: any) {
       toast({ title: "Erreur upload", description: err.message, variant: "destructive" });
       return null;
@@ -154,12 +154,12 @@ export function useEntityImages(entityType: string, entityId: string | undefined
 
   const deleteImage = async (image: EntityImage) => {
     await supabase.storage.from("entity-images").remove([image.storage_path]);
-    await supabase.from("entity_images").delete().eq("id", image.id);
+    await (supabase.from("entity_images").delete() as any).eq("id", image.id);
 
     if (image.is_primary) {
       const remaining = images.filter((i) => i.id !== image.id);
       if (remaining.length > 0) {
-        await supabase.from("entity_images").update({ is_primary: true } as any).eq("id", remaining[0].id);
+        await (supabase.from("entity_images").update({ is_primary: true } as any) as any).eq("id", remaining[0].id);
       }
     }
 
@@ -169,14 +169,14 @@ export function useEntityImages(entityType: string, entityId: string | undefined
 
   const setPrimary = async (image: EntityImage) => {
     if (!entityId) return;
-    await supabase
+    await (supabase
       .from("entity_images")
-      .update({ is_primary: false } as any)
+      .update({ is_primary: false } as any) as any)
       .eq("entity_type", entityType)
       .eq("entity_id", entityId);
-    await supabase
+    await (supabase
       .from("entity_images")
-      .update({ is_primary: true } as any)
+      .update({ is_primary: true } as any) as any)
       .eq("id", image.id);
     await load();
     toast({ title: "Image principale définie" });
