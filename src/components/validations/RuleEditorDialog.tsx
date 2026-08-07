@@ -64,9 +64,9 @@ export function RuleEditorDialog({ open, onOpenChange, rule, onSaved }: Props) {
   useEffect(() => {
     if (!open) return;
     (async () => {
-      const { data } = await (supabase
+      const { data } = await supabase
         .from("profiles")
-        .select("user_id,first_name,last_name") as any)
+        .select("user_id,first_name,last_name")
         .order("first_name");
       const opts: ProfileOption[] = (data ?? []).map((p: { user_id: string; first_name: string | null; last_name: string | null }) => ({
         user_id: p.user_id,
@@ -159,8 +159,8 @@ export function RuleEditorDialog({ open, onOpenChange, rule, onSaved }: Props) {
       conditions: conditionsObj,
     };
     const { error } = rule
-      ? await (supabase.from("validation_rules").update(payload as any) as any).eq("id", rule.id)
-      : await (supabase.from("validation_rules").insert(payload as any) as any);
+      ? await supabase.from("validation_rules").update(payload as never).eq("id", rule.id)
+      : await supabase.from("validation_rules").insert(payload as never);
     setBusy(false);
     if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); return; }
     await logAudit({

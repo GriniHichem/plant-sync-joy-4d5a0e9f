@@ -60,9 +60,9 @@ export function useAuditLogs({ filters, page, pageSize }: UseAuditLogsOptions) {
   const stableFilters = useMemo(() => JSON.stringify(filters), [filters]);
 
   const buildQuery = useCallback((countOnly = false) => {
-    let q = (supabase
+    let q = supabase
       .from("audit_logs")
-      .select("*", countOnly ? { count: "exact", head: true } : { count: "exact" }) as any);
+      .select("*", countOnly ? { count: "exact", head: true } : { count: "exact" });
 
     if (filters.dateFrom) q = q.gte("created_at", `${filters.dateFrom}T00:00:00.000Z`);
     if (filters.dateTo)   q = q.lte("created_at", `${filters.dateTo}T23:59:59.999Z`);
@@ -125,7 +125,7 @@ export async function fetchAllAuditLogs(filters: AuditFilters): Promise<AuditLog
   let from = 0;
   // eslint-disable-next-line no-constant-condition
   while (true) {
-    let q = (supabase.from("audit_logs").select("*") as any).order("created_at", { ascending: false });
+    let q = supabase.from("audit_logs").select("*").order("created_at", { ascending: false });
     if (filters.dateFrom) q = q.gte("created_at", `${filters.dateFrom}T00:00:00.000Z`);
     if (filters.dateTo)   q = q.lte("created_at", `${filters.dateTo}T23:59:59.999Z`);
     if (filters.userId)   q = q.eq("user_id", filters.userId);
@@ -188,14 +188,14 @@ export function useAuditKpis(refreshKey: number = 0) {
 
     // Use direct supabase calls per metric for clarity
     Promise.all([
-      (supabase.from("audit_logs").select("*", { count: "exact", head: true }) as any).is("archived_at", null),
-      (supabase.from("audit_logs").select("*", { count: "exact", head: true }) as any).is("archived_at", null).gte("created_at", todayIso),
-      (supabase.from("audit_logs").select("*", { count: "exact", head: true }) as any).is("archived_at", null).eq("severity", "critical"),
-      (supabase.from("audit_logs").select("*", { count: "exact", head: true }) as any).is("archived_at", null).eq("status", "denied"),
-      (supabase.from("audit_logs").select("*", { count: "exact", head: true }) as any).is("archived_at", null).eq("action_type", "error"),
-      (supabase.from("audit_logs").select("*", { count: "exact", head: true }) as any).is("archived_at", null).eq("action_type", "login").gte("created_at", todayIso),
-      (supabase.from("audit_logs").select("*", { count: "exact", head: true }) as any).is("archived_at", null).in("action_type", ["role_change", "permission_change", "delete"]).gte("created_at", todayIso),
-      (supabase.from("audit_logs").select("*", { count: "exact", head: true }) as any).is("archived_at", null).eq("module", "pdr_stock").gte("created_at", todayIso),
+      supabase.from("audit_logs").select("*", { count: "exact", head: true }).is("archived_at", null),
+      supabase.from("audit_logs").select("*", { count: "exact", head: true }).is("archived_at", null).gte("created_at", todayIso),
+      supabase.from("audit_logs").select("*", { count: "exact", head: true }).is("archived_at", null).eq("severity", "critical"),
+      supabase.from("audit_logs").select("*", { count: "exact", head: true }).is("archived_at", null).eq("status", "denied"),
+      supabase.from("audit_logs").select("*", { count: "exact", head: true }).is("archived_at", null).eq("action_type", "error"),
+      supabase.from("audit_logs").select("*", { count: "exact", head: true }).is("archived_at", null).eq("action_type", "login").gte("created_at", todayIso),
+      supabase.from("audit_logs").select("*", { count: "exact", head: true }).is("archived_at", null).in("action_type", ["role_change", "permission_change", "delete"]).gte("created_at", todayIso),
+      supabase.from("audit_logs").select("*", { count: "exact", head: true }).is("archived_at", null).eq("module", "pdr_stock").gte("created_at", todayIso),
     ]).then((results) => {
       if (cancelled) return;
       const [total, today, critical, denied, errors, loginsToday, sensitive, pdr] = results;

@@ -36,9 +36,9 @@ export function TicketOrientations({ ticketId }: Props) {
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ["orientations", ticketId],
     queryFn: async () => {
-      const { data, error } = await (supabase
+      const { data, error } = await supabase
         .from("v_reception_orientations" as any)
-        .select("id, ticket_id, user_id, taux_recommande, explication, created_at, author_name") as any)
+        .select("id, ticket_id, user_id, taux_recommande, explication, created_at, author_name")
         .eq("ticket_id", ticketId)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -67,9 +67,9 @@ export function TicketOrientations({ ticketId }: Props) {
         taux_recommande: val,
         explication: expl.trim() || null,
       };
-      const { error } = await (supabase
+      const { error } = await supabase
         .from("reception_ticket_orientations" as any)
-        .upsert(payload as any, { onConflict: "ticket_id,user_id" }) as any);
+        .upsert(payload, { onConflict: "ticket_id,user_id" });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -83,9 +83,9 @@ export function TicketOrientations({ ticketId }: Props) {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase
+      const { error } = await supabase
         .from("reception_ticket_orientations" as any)
-        .delete() as any)
+        .delete()
         .eq("id", id);
       if (error) throw error;
     },

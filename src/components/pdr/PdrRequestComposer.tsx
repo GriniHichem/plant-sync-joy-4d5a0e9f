@@ -48,11 +48,11 @@ export function PdrRequestComposer({ type, ticketId, preventivePlanId, machineId
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    (supabase.from("pdr").select("id, reference, designation, stock_actuel, stock_reserve, family_id, sous_famille, unite_stock") as any)
+    supabase.from("pdr").select("id, reference, designation, stock_actuel, stock_reserve, family_id, sous_famille, unite_stock")
       .eq("is_active", true).order("reference")
-      .then(({ data }: any) => setPdrList((data as any) || []));
-    (supabase.from("pdr_families" as any).select("id, name, parent_id") as any).eq("is_active", true).order("name")
-      .then(({ data }: any) => setFamilies((data as any) || []));
+      .then(({ data }) => setPdrList((data as any) || []));
+    supabase.from("pdr_families" as any).select("id, name, parent_id").eq("is_active", true).order("name")
+      .then(({ data }) => setFamilies((data as any) || []));
   }, []);
 
   const topFamilies = useMemo(() => families.filter((f) => !f.parent_id), [families]);

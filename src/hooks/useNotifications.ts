@@ -46,19 +46,19 @@ export function useNotifications(filters: NotificationFilters, page: number) {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    let q = (supabase
+    let q = supabase
       .from("notifications")
-      .select("*", { count: "exact" }) as any)
+      .select("*", { count: "exact" })
       .order("created_at", { ascending: false });
 
     if (filters.dateFrom) q = q.gte("created_at", filters.dateFrom);
     if (filters.dateTo) q = q.lte("created_at", filters.dateTo);
-    if (filters.status && filters.status !== "all") q = q.eq("status", filters.status as any);
-    if (filters.module) q = q.eq("module", filters.module as any);
-    if (filters.notification_type) q = q.eq("notification_type", filters.notification_type as any);
-    if (filters.severity) q = q.eq("severity", filters.severity as any);
-    if (filters.recipient_user_id) q = q.eq("recipient_user_id", filters.recipient_user_id as any);
-    if (filters.recipient_role) q = q.eq("recipient_role", filters.recipient_role as any);
+    if (filters.status && filters.status !== "all") q = q.eq("status", filters.status);
+    if (filters.module) q = q.eq("module", filters.module);
+    if (filters.notification_type) q = q.eq("notification_type", filters.notification_type);
+    if (filters.severity) q = q.eq("severity", filters.severity as "info"|"low"|"medium"|"high"|"critical");
+    if (filters.recipient_user_id) q = q.eq("recipient_user_id", filters.recipient_user_id);
+    if (filters.recipient_role) q = q.eq("recipient_role", filters.recipient_role);
     if (filters.entity_code) q = q.ilike("entity_code", `%${filters.entity_code}%`);
     if (filters.search) {
       const s = filters.search.replace(/[%,]/g, "");

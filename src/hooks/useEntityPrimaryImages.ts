@@ -18,14 +18,14 @@ export function useEntityPrimaryImages(
       return;
     }
 
-    (supabase
+    supabase
       .from("entity_images")
-      .select("entity_id, image_url, is_primary, sort_order") as any)
+      .select("entity_id, image_url, is_primary, sort_order")
       .eq("entity_type", entityType)
       .in("entity_id", uniqueIds)
       .order("is_primary", { ascending: false })
       .order("sort_order")
-      .then(({ data }: any) => {
+      .then(({ data }) => {
         const map: Record<string, string> = {};
         (data || []).forEach((row) => {
           // Keep only the first (primary) per entity

@@ -56,11 +56,11 @@ export function useActiveProductionShift() {
       try { await supabase.rpc("ensure_my_production_shift_session" as any); } catch { /* ignore */ }
     }
     // Date du jour calculée côté serveur via RPC ? Pour rester simple : on filtre par is_active uniquement.
-    const { data } = await (supabase
+    const { data } = await supabase
       .from("shifts")
       .select(
         "*, shift_teams(id, name, code, color), production_lines(id, code, designation), ordres_fabrication(id, numero, product_id)"
-      ) as any)
+      )
       .eq("chef_ligne_id", user.id)
       .eq("is_active", true)
       .order("heure_debut", { ascending: false });

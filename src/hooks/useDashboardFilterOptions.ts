@@ -20,9 +20,9 @@ export function useDashboardFilterOptions(period: ResolvedPeriod) {
     staleTime: 120_000,
     queryFn: async () => {
       const [lines, products, suppliers, campaigns, ofs, tickets] = await Promise.all([
-        (supabase.from("production_lines").select("id, code, designation") as any).eq("is_active", true),
-        (supabase.from("products").select("id, code, designation") as any).eq("is_active", true).limit(500),
-        (supabase.from("reception_suppliers").select("id, nom") as any).eq("actif", true).limit(500),
+        supabase.from("production_lines").select("id, code, designation").eq("is_active", true),
+        supabase.from("products").select("id, code, designation").eq("is_active", true).limit(500),
+        supabase.from("reception_suppliers").select("id, nom").eq("actif", true).limit(500),
         supabase
           .from("inventory_campaigns")
           .select("id, code, label")

@@ -49,7 +49,7 @@ export function EquivalencesTable({ pdrId, canValidate }: Props) {
   });
 
   useEffect(() => {
-    (supabase.from("pdr").select("id, reference, designation") as any).neq("id", pdrId).order("reference").then(({ data }: any) => {
+    supabase.from("pdr").select("id, reference, designation").neq("id", pdrId).order("reference").then(({ data }) => {
       setAllPdrs((data as any) || []);
     });
   }, [pdrId]);

@@ -71,19 +71,19 @@ export function useMaintenanceShiftWorkload(): MaintenanceWorkload {
     setLoading(true);
 
     // ---- Plans préventifs assignés au user ----
-    const { data: assigned } = await (supabase
+    const { data: assigned } = await supabase
       .from("preventive_plan_assignees")
-      .select("plan_id") as any)
+      .select("plan_id")
       .eq("user_id", user.id);
     const planIds = (assigned ?? []).map((a: any) => a.plan_id);
 
     let loadedPlans: any[] = [];
     if (planIds.length > 0) {
-      let q = (supabase
+      let q = supabase
         .from("preventive_plans")
-        .select("*, machines(id, code, designation), production_lines(id, code, designation)") as any)
-        .in("id", planIds as any)
-        .eq("statut_plan", "valide" as any)
+        .select("*, machines(id, code, designation), production_lines(id, code, designation)")
+        .in("id", planIds)
+        .eq("statut_plan", "valide")
         .eq("is_active", true);
       const { data } = await q;
       const all = (data ?? []) as any[];
@@ -94,11 +94,11 @@ export function useMaintenanceShiftWorkload(): MaintenanceWorkload {
         const machineIds = Array.from(new Set(all.map((p) => p.machine_id).filter(Boolean)));
         let machinesOnShiftLines = new Set<string>();
         if (machineIds.length > 0) {
-          const { data: ma } = await (supabase
+          const { data: ma } = await supabase
             .from("machine_line_assignments")
-            .select("machine_id, line_id") as any)
-            .in("machine_id", machineIds as any)
-            .in("line_id", shiftLineIds as any);
+            .select("machine_id, line_id")
+            .in("machine_id", machineIds)
+            .in("line_id", shiftLineIds);
           machinesOnShiftLines = new Set((ma ?? []).map((r: any) => r.machine_id));
         }
         loadedPlans = all.filter((p) =>
@@ -111,10 +111,10 @@ export function useMaintenanceShiftWorkload(): MaintenanceWorkload {
     }
 
     // ---- Tickets ouverts / en cours, mes assignés OU non assignés sur mes lignes ----
-    let tq = (supabase
+    let tq = supabase
       .from("tickets")
-      .select("*, machines(id, code, designation), production_lines(id, code, designation)") as any)
-      .in("statut", ["ouvert", "pris_en_charge"] as any);
+      .select("*, machines(id, code, designation), production_lines(id, code, designation)")
+      .in("statut", ["ouvert", "pris_en_charge"]);
 
     if (restrictedToShiftLines) {
       // (mine) OR (unassigned AND on my lines)
@@ -130,11 +130,11 @@ export function useMaintenanceShiftWorkload(): MaintenanceWorkload {
     const loadedPlanIds = (loadedPlans as any[]).map((p) => p.id);
     let openIds: string[] = [];
     if (loadedPlanIds.length > 0) {
-      const { data: openExecs } = await (supabase
+      const { data: openExecs } = await supabase
         .from("preventive_executions")
-        .select("plan_id") as any)
-        .eq("statut", "en_cours" as any)
-        .in("plan_id", loadedPlanIds as any);
+        .select("plan_id")
+        .eq("statut", "en_cours")
+        .in("plan_id", loadedPlanIds);
       openIds = Array.from(new Set((openExecs ?? []).map((e: any) => e.plan_id)));
     }
     setInProgressPlanIds(openIds);

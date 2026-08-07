@@ -39,9 +39,9 @@ export function ConfirmTakeDialog({ open, request, item, busy, onConfirm, onCanc
       return;
     }
     (async () => {
-      const { data: pdr } = await (supabase
+      const { data: pdr } = await supabase
         .from("pdr")
-        .select("family_id") as any)
+        .select("family_id")
         .eq("id", item.pdr_id)
         .maybeSingle();
       const familyId = (pdr as any)?.family_id as string | null;

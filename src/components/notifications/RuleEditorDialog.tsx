@@ -147,9 +147,9 @@ export function RuleEditorDialog({ open, onOpenChange, rule, onSaved }: Props) {
     };
     let error;
     if (form.id) {
-      ({ error } = await (supabase.from("notification_rules").update(payload as any) as any).eq("id", form.id));
+      ({ error } = await supabase.from("notification_rules").update(payload).eq("id", form.id));
     } else {
-      ({ error } = await supabase.from("notification_rules").insert({ ...payload, created_by: user?.id ?? null } as any));
+      ({ error } = await supabase.from("notification_rules").insert({ ...payload, created_by: user?.id ?? null }));
     }
     setSaving(false);
     if (error) {

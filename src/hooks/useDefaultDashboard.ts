@@ -21,18 +21,18 @@ export function useDefaultDashboard() {
     enabled: !!user?.id,
     staleTime: 30_000,
     queryFn: async (): Promise<DefaultDashboard | null> => {
-      const { data, error } = await (supabase
+      const { data, error } = await supabase
         .from("user_dashboard_preferences" as any)
-        .select("default_dashboard_id") as any)
+        .select("default_dashboard_id")
         .eq("user_id", user!.id)
         .maybeSingle();
       if (error) throw error;
       const id = (data as any)?.default_dashboard_id as string | undefined;
       if (!id) return null;
 
-      const { data: d, error: e2 } = await (supabase
+      const { data: d, error: e2 } = await supabase
         .from("direction_dashboards" as any)
-        .select("id, name") as any)
+        .select("id, name")
         .eq("id", id)
         .maybeSingle();
       if (e2) return null;
@@ -48,12 +48,12 @@ export function useSetDefaultDashboard() {
   return useMutation({
     mutationFn: async (dashboardId: string | null) => {
       if (!user?.id) throw new Error("Non authentifié");
-      const { error } = await (supabase
+      const { error } = await supabase
         .from("user_dashboard_preferences" as any)
         .upsert(
-          { user_id: user.id, default_dashboard_id: dashboardId, updated_at: new Date().toISOString() } as any,
-          { onConflict: "user_id" } as any,
-        ) as any);
+          { user_id: user.id, default_dashboard_id: dashboardId, updated_at: new Date().toISOString() },
+          { onConflict: "user_id" },
+        );
       if (error) throw error;
       return dashboardId;
     },

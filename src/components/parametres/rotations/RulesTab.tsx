@@ -20,7 +20,7 @@ export function RulesTab() {
   }
 
   async function handleUpdate(id: string, value: string) {
-    await (supabase.from("shift_settings").update({ value } as any) as any).eq("id", id);
+    await supabase.from("shift_settings").update({ value }).eq("id", id);
     toast({ title: "Paramètre mis à jour" });
     load();
   }

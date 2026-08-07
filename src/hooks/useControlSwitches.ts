@@ -27,10 +27,10 @@ export function useControlSwitches() {
 
   const reload = useCallback(async () => {
     setLoading(true);
-    const { data } = await (supabase
+    const { data } = await supabase
       .from("app_settings")
-      .select("key, value, label, description, updated_at") as any)
-      .in("key", CONTROL_KEYS as any);
+      .select("key, value, label, description, updated_at")
+      .in("key", CONTROL_KEYS as unknown as string[]);
     setSwitches(((data ?? []) as Array<{ key: string; value: string; label: string; description: string | null; updated_at: string }>).map((r) => ({
       key: r.key as ControlKey,
       value: r.value === "true",
@@ -42,7 +42,7 @@ export function useControlSwitches() {
   }, []);
 
   const setSwitch = useCallback(async (key: ControlKey, value: boolean) => {
-    await (supabase.from("app_settings").update({ value: value ? "true" : "false" } as any) as any).eq("key", key);
+    await supabase.from("app_settings").update({ value: value ? "true" : "false" }).eq("key", key);
     await reload();
   }, [reload]);
 

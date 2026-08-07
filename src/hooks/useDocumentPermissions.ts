@@ -31,9 +31,9 @@ export function useDocumentPermissions(entityType: string) {
     }
 
     async function load() {
-      const { data } = await (supabase
+      const { data } = await supabase
         .from("document_permissions")
-        .select("can_view, can_upload, can_download, can_delete, can_edit_metadata, role") as any)
+        .select("can_view, can_upload, can_download, can_delete, can_edit_metadata, role")
         .eq("entity_type", entityType)
         .in("role", roles as string[]);
 

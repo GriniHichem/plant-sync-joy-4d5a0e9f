@@ -40,9 +40,9 @@ export function DirectionFilterBar({
     staleTime: 5 * 60_000,
     queryFn: async () => {
       const [lines, products, suppliers, campaigns] = await Promise.all([
-        (supabase.from("production_lines").select("id, designation") as any).eq("is_active", true).order("designation"),
-        (supabase.from("products").select("id, designation") as any).eq("is_active", true).order("designation").limit(500),
-        (supabase.from("reception_suppliers").select("id, nom") as any).eq("actif", true).order("nom").limit(500),
+        supabase.from("production_lines").select("id, designation").eq("is_active", true).order("designation"),
+        supabase.from("products").select("id, designation").eq("is_active", true).order("designation").limit(500),
+        supabase.from("reception_suppliers").select("id, nom").eq("actif", true).order("nom").limit(500),
         supabase.from("reception_campaigns").select("id, libelle").order("date_debut", { ascending: false }).limit(100),
       ]);
       return {

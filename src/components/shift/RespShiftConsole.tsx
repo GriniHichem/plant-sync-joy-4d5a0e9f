@@ -81,18 +81,18 @@ export function RespShiftConsole({ kind }: RespShiftConsoleProps) {
   const loadSessions = useCallback(async () => {
     setLoading(true);
     if (kind === "production") {
-      const { data } = await (supabase
+      const { data } = await supabase
         .from("shifts")
         .select(
           "*, shift_teams(code, name, color), production_lines(id, code, designation), ordres_fabrication(numero), profiles!shifts_chef_ligne_id_fkey(first_name, last_name)"
-        ) as any)
+        )
         .eq("date_shift", today)
         .order("heure_debut", { ascending: false });
       setSessions((data as any[]) ?? []);
     } else if (kind === "maintenance") {
-      const { data } = await (supabase
+      const { data } = await supabase
         .from("maintenance_shifts" as any)
-        .select("*, shift_teams(code, name, color)") as any)
+        .select("*, shift_teams(code, name, color)")
         .eq("date_shift", today)
         .order("heure_debut", { ascending: false });
       // hydrate operator profile
@@ -108,9 +108,9 @@ export function RespShiftConsole({ kind }: RespShiftConsoleProps) {
       }
       setSessions(rows);
     } else {
-      const { data } = await (supabase
+      const { data } = await supabase
         .from("quality_shifts" as any)
-        .select("*, shift_teams(code, name, color)") as any)
+        .select("*, shift_teams(code, name, color)")
         .eq("date_shift", today)
         .order("heure_debut", { ascending: false });
       const rows = (data as any[]) ?? [];
@@ -149,23 +149,23 @@ export function RespShiftConsole({ kind }: RespShiftConsoleProps) {
     (async () => {
       const roles = OPERATOR_ROLES[kind];
       const [{ data: roleRows }, teamsRes, linesRes] = await Promise.all([
-        (supabase.from("user_roles").select("user_id") as any).in("role", roles as any),
-        (supabase.from("shift_teams").select("*") as any).eq("is_active", true).order("code"),
-        (supabase.from("production_lines").select("id, code, designation") as any).eq("is_active", true).order("code"),
+        supabase.from("user_roles").select("user_id").in("role", roles as any),
+        supabase.from("shift_teams").select("*").eq("is_active", true).order("code"),
+        supabase.from("production_lines").select("id, code, designation").eq("is_active", true).order("code"),
       ]);
       const userIds = Array.from(new Set((roleRows ?? []).map((r: any) => r.user_id)));
       const { data: profs } = userIds.length
-        ? await (supabase.from("profiles").select("user_id, first_name, last_name") as any).in("user_id", userIds as any)
+        ? await supabase.from("profiles").select("user_id, first_name, last_name").in("user_id", userIds)
         : { data: [] as any[] };
       setOperators((profs as any[]) ?? []);
       setTeams(teamsRes.data ?? []);
       setLines(linesRes.data ?? []);
 
       if (kind === "production") {
-        const { data: ofRows } = await (supabase
+        const { data: ofRows } = await supabase
           .from("ordres_fabrication")
-          .select("id, numero, line_id") as any)
-          .in("statut", ["en_cours", "planifie"] as any)
+          .select("id, numero, line_id")
+          .in("statut", ["en_cours", "planifie"])
           .order("numero", { ascending: false });
         setOfs((ofRows as any[]) ?? []);
       }
@@ -214,9 +214,9 @@ export function RespShiftConsole({ kind }: RespShiftConsoleProps) {
     try {
       if (kind === "production") {
         // Preflight : éviter doublon actif pour (of, ligne, jour, créneau)
-        const { data: dup } = await (supabase
+        const { data: dup } = await supabase
           .from("shifts")
-          .select("id") as any)
+          .select("id")
           .eq("of_id", ofId === "__none__" ? "00000000-0000-0000-0000-000000000000" : ofId)
           .eq("line_id", lineId)
           .eq("date_shift", today)
@@ -228,7 +228,7 @@ export function RespShiftConsole({ kind }: RespShiftConsoleProps) {
           setSubmitting(false);
           return;
         }
-        const { data, error } = await (supabase
+        const { data, error } = await supabase
           .from("shifts")
           .insert({
             date_shift: today,
@@ -240,7 +240,7 @@ export function RespShiftConsole({ kind }: RespShiftConsoleProps) {
             heure_debut: new Date().toISOString(),
             is_active: true,
             opened_by: user?.id,
-          } as any) as any)
+          } as any)
           .select()
           .single();
         if (error) throw error;
@@ -253,7 +253,7 @@ export function RespShiftConsole({ kind }: RespShiftConsoleProps) {
           description: `Ouverture session shift production pour opérateur (par responsable)`,
         });
       } else if (kind === "maintenance") {
-        const { data, error } = await (supabase
+        const { data, error } = await supabase
           .from("maintenance_shifts" as any)
           .insert({
             date_shift: today,
@@ -264,7 +264,7 @@ export function RespShiftConsole({ kind }: RespShiftConsoleProps) {
             heure_debut: new Date().toISOString(),
             is_active: true,
             opened_by: user?.id,
-          } as any) as any)
+          })
           .select()
           .single();
         if (error) throw error;
@@ -278,7 +278,7 @@ export function RespShiftConsole({ kind }: RespShiftConsoleProps) {
         });
       } else {
         const reason = interventionReason.trim();
-        const { data, error } = await (supabase
+        const { data, error } = await supabase
           .from("quality_shifts" as any)
           .insert({
             date_shift: today,
@@ -291,7 +291,7 @@ export function RespShiftConsole({ kind }: RespShiftConsoleProps) {
             is_self_intervention: isQualitySelf,
             intervention_reason: isQualitySelf ? reason : null,
             observations: isQualitySelf ? `[Intervention responsable] ${reason}` : null,
-          } as any) as any)
+          })
           .select()
           .single();
         if (error) throw error;
@@ -302,7 +302,7 @@ export function RespShiftConsole({ kind }: RespShiftConsoleProps) {
           production_line_id: lid,
         }));
         if (linkRows.length) {
-          await (supabase.from("quality_shift_lines" as any).insert(linkRows as any) as any);
+          await supabase.from("quality_shift_lines" as any).insert(linkRows);
         }
         await logAudit({
           action_type: "create",
@@ -335,13 +335,13 @@ export function RespShiftConsole({ kind }: RespShiftConsoleProps) {
       const tableName =
         kind === "production" ? "shifts" :
         kind === "maintenance" ? "maintenance_shifts" : "quality_shifts";
-      const { error } = await (supabase
+      const { error } = await supabase
         .from(tableName as any)
         .update({
           is_active: false,
           heure_fin: new Date().toISOString(),
           observations: `[Forcée par responsable] ${reason}${session.observations ? " | " + session.observations : ""}`,
-        } as any) as any)
+        })
         .eq("id", session.id);
       if (error) throw error;
       await logAudit({

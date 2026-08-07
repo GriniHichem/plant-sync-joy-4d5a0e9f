@@ -29,18 +29,18 @@ export function useUnreadNotifications(limit = 10) {
     if (!user) return;
     setLoading(true);
     // Recent notifications (any status) for the bell preview
-    const { data } = await (supabase
+    const { data } = await supabase
       .from("notifications")
-      .select("id,created_at,title,message,notification_type,module,entity_type,entity_id,entity_code,entity_label,severity,status,action_url,is_critical") as any)
-      .neq("status", "archived" as any)
+      .select("id,created_at,title,message,notification_type,module,entity_type,entity_id,entity_code,entity_label,severity,status,action_url,is_critical")
+      .neq("status", "archived")
       .order("created_at", { ascending: false })
       .limit(limit);
     setItems((data as unknown as UnreadNotification[]) ?? []);
 
-    const { count: c } = await (supabase
+    const { count: c } = await supabase
       .from("notifications")
-      .select("id", { count: "exact", head: true } as any) as any)
-      .eq("status", "unread" as any);
+      .select("id", { count: "exact", head: true })
+      .eq("status", "unread");
     setCount(c ?? 0);
     setLoading(false);
   }, [user, limit]);

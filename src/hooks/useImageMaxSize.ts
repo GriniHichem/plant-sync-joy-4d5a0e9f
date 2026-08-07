@@ -13,12 +13,12 @@ export function useImageMaxSize(entityType: string) {
       setMaxSizeMb(cache[key]);
       return;
     }
-    (supabase
+    supabase
       .from("app_settings")
-      .select("value") as any)
+      .select("value")
       .eq("key", key)
       .maybeSingle()
-      .then(({ data }: any) => {
+      .then(({ data }) => {
         const val = data ? Number(data.value) : DEFAULT_MAX_MB;
         const mb = isNaN(val) || val <= 0 ? DEFAULT_MAX_MB : val;
         cache[key] = mb;

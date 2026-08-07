@@ -30,10 +30,10 @@ export function useValidationPermissions() {
       return;
     }
     (async () => {
-      const { data } = await (supabase
+      const { data } = await supabase
         .from("validation_permissions")
-        .select("*") as any)
-        .in("role", roles as any);
+        .select("*")
+        .in("role", roles);
       if (data && data.length > 0) {
         const merged: ValidationPermission = { ...EMPTY };
         for (const row of data as unknown as ValidationPermission[]) {

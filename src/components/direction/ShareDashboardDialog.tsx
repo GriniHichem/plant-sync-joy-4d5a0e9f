@@ -1,33 +1,37 @@
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Search, UserPlus, UserMinus, Shield } from "lucide-react";
-import { useState, useMemo } from "react";
-import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
+import { ResponsiveDialog } from "@/components/responsive/ResponsiveDialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
+import { Eye, Search, Trash2, UserPlus, Users } from "lucide-react";
 
 interface Props {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   dashboardId: string;
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
 }
 
-export function ShareDashboardDialog({ open, onOpenChange, dashboardId }: Props) {
-  const [search, setSearch] = useState("");
-  const [role, setRole] = useState("");
+const roleLabel = (r: string) => r.split("_").join(" ");
+
+export function ShareDashboardDialog({ dashboardId, open, onOpenChange }: Props) {
   const qc = useQueryClient();
   const { user } = useAuth();
+  const [search, setSearch] = useState("");
+  const [role, setRole] = useState<string>("");
 
   const { data: shares = [] } = useQuery({
     queryKey: ["dashboard_shares", dashboardId],
     enabled: open && !!dashboardId,
     queryFn: async () => {
-      const { data, error } = await (supabase
+      const { data, error } = await supabase
         .from("direction_dashboard_shares" as any)
-        .select("*") as any)
+        .select("*")
         .eq("dashboard_id", dashboardId);
       if (error) throw error;
       return (data ?? []) as any[];
@@ -39,9 +43,9 @@ export function ShareDashboardDialog({ open, onOpenChange, dashboardId }: Props)
     enabled: open,
     staleTime: 300_000,
     queryFn: async () => {
-      const { data, error } = await (supabase
+      const { data, error } = await supabase
         .from("profiles")
-        .select("user_id, first_name, last_name, poste, is_active") as any)
+        .select("user_id, first_name, last_name, poste, is_active")
         .eq("is_active", true)
         .order("first_name");
       if (error) throw error;
@@ -61,11 +65,11 @@ export function ShareDashboardDialog({ open, onOpenChange, dashboardId }: Props)
   });
 
   const sharedUserIds = useMemo(
-    () => new Set(shares.filter((s: any) => s.shared_user_id).map((s: any) => s.shared_user_id)),
+    () => new Set(shares.filter((s) => s.shared_user_id).map((s) => s.shared_user_id)),
     [shares],
   );
   const sharedRoles = useMemo(
-    () => new Set(shares.filter((s: any) => s.shared_role).map((s: any) => s.shared_role)),
+    () => new Set(shares.filter((s) => s.shared_role).map((s) => s.shared_role)),
     [shares],
   );
 
@@ -87,7 +91,7 @@ export function ShareDashboardDialog({ open, onOpenChange, dashboardId }: Props)
 
   const addShare = useMutation({
     mutationFn: async (payload: { shared_user_id?: string; shared_role?: string }) => {
-      const { error } = await (supabase.from("direction_dashboard_shares" as any) as any).insert({
+      const { error } = await supabase.from("direction_dashboard_shares" as any).insert({
         dashboard_id: dashboardId,
         shared_user_id: payload.shared_user_id ?? null,
         shared_role: payload.shared_role ?? null,
@@ -105,7 +109,7 @@ export function ShareDashboardDialog({ open, onOpenChange, dashboardId }: Props)
 
   const removeShare = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase.from("direction_dashboard_shares" as any) as any).delete().eq("id", id);
+      const { error } = await supabase.from("direction_dashboard_shares" as any).delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -116,109 +120,90 @@ export function ShareDashboardDialog({ open, onOpenChange, dashboardId }: Props)
   });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Partager le tableau de bord</DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-6 py-2">
-          {/* Par Utilisateur */}
-          <div className="space-y-3">
-            <h4 className="text-sm font-medium">Par utilisateur</h4>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher un utilisateur..."
-                className="pl-9"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
-
-            {results.length > 0 && (
-              <div className="border rounded-lg divide-y bg-muted/30">
-                {results.map((p) => (
-                  <div key={p.user_id} className="flex items-center justify-between p-2">
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">
-                        {p.first_name} {p.last_name}
-                      </p>
-                      {p.poste && <p className="text-xs text-muted-foreground truncate">{p.poste}</p>}
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => addShare.mutate({ shared_user_id: p.user_id })}
-                    >
-                      <UserPlus className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Partager le dashboard"
+      description="Les personnes ajoutées y accèdent en lecture seule, avec leurs propres droits sur les données."
+      className="max-w-lg"
+    >
+      <div className="space-y-4">
+        <div>
+          <Label className="flex items-center gap-1.5"><UserPlus className="h-4 w-4" /> Ajouter des utilisateurs</Label>
+          <div className="relative mt-1.5">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              className="h-11 pl-8"
+              placeholder="Rechercher un nom ou un poste…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </div>
-
-          {/* Par Rôle */}
-          <div className="space-y-3">
-            <h4 className="text-sm font-medium">Par rôle industriel</h4>
-            <div className="flex gap-2">
-              <select
-                className="flex-1 h-9 rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background"
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-              >
-                <option value="">Sélectionner un rôle...</option>
-                {allRoles
-                  .filter((r) => !sharedRoles.has(r))
-                  .map((r) => (
-                    <option key={r} value={r}>
-                      {r.replace(/_/g, " ").toUpperCase()}
-                    </option>
-                  ))}
-              </select>
-              <Button
-                size="sm"
-                disabled={!role}
-                onClick={() => addShare.mutate({ shared_role: role })}
-              >
-                Ajouter
-              </Button>
-            </div>
-          </div>
-
-          {/* Liste des partages actifs */}
-          {shares.length > 0 && (
-            <div className="space-y-3">
-              <h4 className="text-sm font-medium">Partages actifs</h4>
-              <div className="space-y-2">
-                {shares.map((s: any) => (
-                  <div key={s.id} className="flex items-center justify-between p-2 border rounded-lg bg-background">
-                    <div className="flex items-center gap-2">
-                      {s.shared_role ? (
-                        <>
-                          <Shield className="h-4 w-4 text-primary" />
-                          <Badge variant="outline">{s.shared_role.replace(/_/g, " ").toUpperCase()}</Badge>
-                        </>
-                      ) : (
-                        <span className="text-sm">{nameOf(s.shared_user_id!)}</span>
-                      )}
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => removeShare.mutate(s.id)}
-                    >
-                      <UserMinus className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
+          {search.trim() && (
+            <div className="mt-2 rounded-md border divide-y max-h-52 overflow-auto">
+              {results.length === 0 ? (
+                <p className="p-3 text-sm text-muted-foreground">Aucun utilisateur trouvé.</p>
+              ) : (
+                results.map((p: any) => (
+                  <button
+                    key={p.user_id}
+                    type="button"
+                    className="w-full text-left px-3 py-2.5 hover:bg-accent/60 flex items-center gap-2"
+                    onClick={() => addShare.mutate({ shared_user_id: p.user_id })}
+                  >
+                    <span className="text-sm font-medium flex-1 truncate">
+                      {`${p.first_name ?? ""} ${p.last_name ?? ""}`.trim() || "Utilisateur"}
+                    </span>
+                    {p.poste && <span className="text-xs text-muted-foreground truncate">{p.poste}</span>}
+                  </button>
+                ))
+              )}
             </div>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+
+        <div>
+          <Label className="flex items-center gap-1.5"><Users className="h-4 w-4" /> Partager avec un rôle entier</Label>
+          <div className="flex gap-2 mt-1.5">
+            <Select value={role} onValueChange={setRole}>
+              <SelectTrigger className="h-11"><SelectValue placeholder="Choisir un rôle…" /></SelectTrigger>
+              <SelectContent>
+                {allRoles.filter((r) => !sharedRoles.has(r)).map((r) => (
+                  <SelectItem key={r} value={r} className="capitalize">{roleLabel(r)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button className="h-11" disabled={!role} onClick={() => addShare.mutate({ shared_role: role })}>
+              Ajouter
+            </Button>
+          </div>
+        </div>
+
+        <div>
+          <Label className="flex items-center gap-1.5"><Eye className="h-4 w-4" /> Accès actuels ({shares.length})</Label>
+          <div className="mt-1.5 rounded-md border divide-y">
+            {shares.length === 0 ? (
+              <p className="p-3 text-sm text-muted-foreground">Ce dashboard n'est partagé avec personne.</p>
+            ) : (
+              shares.map((s) => (
+                <div key={s.id} className="flex items-center gap-2 px-3 py-2">
+                  <Badge variant="outline" className="text-[10px] shrink-0">
+                    {s.shared_role ? "Rôle" : "Utilisateur"}
+                  </Badge>
+                  <span className="text-sm flex-1 truncate capitalize">
+                    {s.shared_role ? roleLabel(s.shared_role) : nameOf(s.shared_user_id)}
+                  </span>
+                  <Badge variant="secondary" className="text-[10px]">Lecture seule</Badge>
+                  <Button size="icon" variant="ghost" className="text-destructive h-8 w-8"
+                    onClick={() => removeShare.mutate(s.id)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    </ResponsiveDialog>
   );
 }

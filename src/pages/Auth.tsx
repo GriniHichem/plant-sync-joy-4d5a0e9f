@@ -46,13 +46,8 @@ export default function Auth() {
 
     try {
       if (isLogin) {
-        console.log("Attempting login for:", email);
         const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) {
-          console.error("Login error details:", { message: error.message, status: error.status });
-          throw error;
-        }
-        console.log("Login successful, navigating to home");
+        if (error) throw error;
         navigate("/");
       } else {
         const { error } = await supabase.auth.signUp({

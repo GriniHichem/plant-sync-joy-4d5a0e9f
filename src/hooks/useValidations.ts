@@ -22,20 +22,20 @@ export function useValidations(filters: ValidationFiltersState) {
   const reload = useCallback(async () => {
     setLoading(true);
     setError(null);
-    let q = (supabase
+    let q = supabase
       .from("validation_requests")
-      .select("*") as any)
+      .select("*")
       .order("created_at", { ascending: false })
       .limit(200);
 
     if (filters.date_from) q = q.gte("created_at", filters.date_from);
     if (filters.date_to) q = q.lte("created_at", filters.date_to);
-    if (filters.status && filters.status !== "all") q = q.eq("status", filters.status as any);
-    if (filters.module && filters.module !== "all") q = q.eq("module", filters.module as any);
-    if (filters.request_type && filters.request_type !== "all") q = q.eq("request_type", filters.request_type as any);
-    if (filters.priority && filters.priority !== "all") q = q.eq("priority", filters.priority as any);
-    if (filters.enforcement && filters.enforcement !== "all") q = q.eq("enforcement", filters.enforcement as any);
-    if (filters.submitted_by && filters.submitted_by !== "all") q = q.eq("submitted_by_user_id", filters.submitted_by as any);
+    if (filters.status && filters.status !== "all") q = q.eq("status", filters.status);
+    if (filters.module && filters.module !== "all") q = q.eq("module", filters.module);
+    if (filters.request_type && filters.request_type !== "all") q = q.eq("request_type", filters.request_type);
+    if (filters.priority && filters.priority !== "all") q = q.eq("priority", filters.priority);
+    if (filters.enforcement && filters.enforcement !== "all") q = q.eq("enforcement", filters.enforcement);
+    if (filters.submitted_by && filters.submitted_by !== "all") q = q.eq("submitted_by_user_id", filters.submitted_by);
     if (filters.search && filters.search.trim().length > 1) {
       const s = filters.search.trim().replace(/[%,]/g, "");
       q = q.or(
@@ -87,9 +87,9 @@ export function useValidationKpis(currentUserId: string | null) {
 
   useEffect(() => {
     (async () => {
-      const { data } = await (supabase
+      const { data } = await supabase
         .from("validation_requests")
-        .select("status,priority,module,enforcement,submitted_by_user_id,validated_at") as any)
+        .select("status,priority,module,enforcement,submitted_by_user_id,validated_at")
         .limit(1000);
       const items = (data ?? []) as Array<{
         status: ValidationStatus; priority: ValidationPriority;

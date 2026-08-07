@@ -99,7 +99,7 @@ export function PdrQuoteBuilder({ onDraft }: { onDraft: (d: QuoteDraft) => void 
     (async () => {
       const [m, f] = await Promise.all([
         supabase.from("machines").select("id, code, designation").order("code").limit(500),
-        (supabase.from("pdr_families").select("id, name") as any).eq("is_active", true).order("name").limit(500),
+        supabase.from("pdr_families").select("id, name").eq("is_active", true).order("name").limit(500),
       ]);
       setMachines(((m.data ?? []) as any[]).map((r) => ({ id: r.id, label: `${r.code} — ${r.designation}` })));
       setFamilies(((f.data ?? []) as any[]).map((r) => ({ id: r.id, label: r.name })));
@@ -116,16 +116,16 @@ export function PdrQuoteBuilder({ onDraft }: { onDraft: (d: QuoteDraft) => void 
     const t = setTimeout(async () => {
       let machinePdrIds: string[] | null = null;
       if (machineId !== "all") {
-        const { data } = await (supabase.from("machine_pdr").select("pdr_id") as any).eq("machine_id", machineId);
+        const { data } = await supabase.from("machine_pdr").select("pdr_id").eq("machine_id", machineId);
         machinePdrIds = ((data ?? []) as any[]).map((r) => r.pdr_id);
         if (machinePdrIds.length === 0) {
           if (!cancelled) { setResults([]); setSearching(false); }
           return;
         }
       }
-      let query = (supabase
+      let query = supabase
         .from("pdr")
-        .select("id, reference, designation, marque, modele, reference_constructeur, matiere, unite_stock, description, commentaire_technique, family_id") as any)
+        .select("id, reference, designation, marque, modele, reference_constructeur, matiere, unite_stock, description, commentaire_technique, family_id")
         .eq("is_active", true);
       if (familyId !== "all") query = query.eq("family_id", familyId);
       if (machinePdrIds) query = query.in("id", machinePdrIds);
@@ -149,11 +149,11 @@ export function PdrQuoteBuilder({ onDraft }: { onDraft: (d: QuoteDraft) => void 
     (async () => {
       const familyIds = Array.from(new Set(picked.map((p) => (p as unknown as { family_id?: string }).family_id).filter(Boolean))) as string[];
       const [direct, fam, imgs] = await Promise.all([
-        (supabase.from("pdr_suppliers").select("id, nom, email, contact_email, tel, contact_phone") as any).in("pdr_id", pickedIds),
+        supabase.from("pdr_suppliers").select("id, nom, email, contact_email, tel, contact_phone").in("pdr_id", pickedIds),
         familyIds.length
-          ? (supabase.from("pdr_family_suppliers").select("id, nom, email, tel") as any).in("family_id", familyIds)
+          ? supabase.from("pdr_family_suppliers").select("id, nom, email, tel").in("family_id", familyIds)
           : Promise.resolve({ data: [] as unknown[] }),
-        (supabase.from("entity_images").select("id, entity_id, image_url, file_name") as any).eq("entity_type", "pdr").in("entity_id", pickedIds),
+        supabase.from("entity_images").select("id, entity_id, image_url, file_name").eq("entity_type", "pdr").in("entity_id", pickedIds),
       ]);
       if (cancelled) return;
       const list: SupplierRow[] = [];

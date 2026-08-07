@@ -44,9 +44,9 @@ export function useActiveQualityShift() {
     setLoading(true);
     try { await supabase.rpc("ensure_my_quality_shifts" as any); } catch { /* ignore */ }
 
-    const { data: rows } = await (supabase
+    const { data: rows } = await supabase
       .from("quality_shifts" as any)
-      .select("*, shift_teams(id, name, code, color)") as any)
+      .select("*, shift_teams(id, name, code, color)")
       .eq("controller_id", user.id)
       .eq("is_active", true)
       .order("heure_debut", { ascending: false });
