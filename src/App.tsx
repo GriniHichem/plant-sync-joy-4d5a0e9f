@@ -255,10 +255,8 @@ const App = () => (
             <Route path="/qualite/shift/lignes" element={<ProtectedShiftRoute kind="quality"><QualityShiftLines /></ProtectedShiftRoute>} />
             {/* Magasin kiosk (full screen, no sidebar) */}
             <Route path="/magasin/shift/live" element={<ProtectedKioskRoute><MagasinKiosk /></ProtectedKioskRoute>} />
-              {/* Magasin kiosk (full screen, no sidebar) */}
-              <Route path="/magasin/shift/live" element={<ProtectedKioskRoute><MagasinKiosk /></ProtectedKioskRoute>} />
-              
-              <Route element={<ProtectedRoutes />}>
+            
+            <Route element={<ProtectedRoutes />}>
               {/* GMAO */}
               <Route path="/" element={<HomeRoute />} />
               <Route path="/apps" element={<Apps />} />
@@ -405,7 +403,6 @@ const App = () => (
               <Route path="/inventaire/campagnes/:id" element={<InventoryCampaignDetail />} />
               <Route path="/inventaire/compter/:campaignId" element={<InventoryCountScreen />} />
             </Route>
-            <Route path="*" element={<NotFound />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
