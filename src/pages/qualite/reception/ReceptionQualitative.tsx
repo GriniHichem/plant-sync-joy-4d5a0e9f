@@ -329,6 +329,7 @@ export default function ReceptionQualitative() {
         avg_abattement_pct: number;
         ticket_count: number;
         avg_duree?: number;
+        a_peser_count?: number;
       };
     },
     enabled: !!user?.id,
