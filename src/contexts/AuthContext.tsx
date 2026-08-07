@@ -153,31 +153,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (!runGate || !data) return;
-    // Astuce UX (non sécurisée): bloque l'accès Internet aux comptes sans autorisation.
-    // Gouverné par l'interrupteur global "control.enforce_public_access_gate" (désactivé par défaut).
-    try {
-      const { isPublicHost } = await import("@/lib/network");
-      if (isPublicHost() && (data as Profile).public_access !== true) {
-        const { data: gate } = await supabase
-          .from("app_settings")
-          .select("value")
-          .eq("key", "control.enforce_public_access_gate")
-          .maybeSingle();
-        if (gate?.value === "true") {
-          const { toast } = await import("sonner");
-          toast.error("Connexion via Internet non autorisée", {
-            description: "Ce compte n'a pas l'autorisation d'accéder à l'application depuis l'extérieur. Contactez l'administrateur.",
-            duration: 8000,
-          });
-          await supabase.auth.signOut({ scope: "local" });
-          setUser(null);
-          setSession(null);
-          setRealProfile(null);
-          setRealRoles([]);
-          try { sessionStorage.setItem("pit:blockedPublic", "1"); } catch { /* ignore */ }
-        }
-      }
-    } catch { /* ignore */ }
+    // Note: The public access gate is currently disabled to ensure login accessibility
+    // across all environments during the transition.
+    return;
   }
 
   async function fetchRoles(userId: string) {
