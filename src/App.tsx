@@ -132,9 +132,18 @@ import EmailModule from "@/pages/email/EmailModule";
 const queryClient = new QueryClient();
 
 function ProtectedRoutes() {
-  const { user, loading } = useAuth();
-  const { isInventoryOnly } = useInventoryPermissions();
+  const auth = useAuth();
+  const inventoryPermissions = useInventoryPermissions();
   const location = useLocation();
+
+  // Handle case where AuthProvider might be missing or hook used outside
+  if (!auth) {
+    console.error("useAuth must be used within AuthProvider");
+    return <Navigate to="/auth" replace />;
+  }
+
+  const { user, loading } = auth;
+  const { isInventoryOnly } = inventoryPermissions;
 
   if (loading) {
     return (
@@ -185,15 +194,15 @@ function ProtectedShiftRoute({
   children: React.ReactNode;
   allowWithoutShift?: boolean;
 }) {
-  const { user, loading } = useAuth();
-  if (loading) {
+  const auth = useAuth();
+  if (!auth || auth.loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
-  if (!user) return <Navigate to="/auth" replace />;
+  if (!auth.user) return <Navigate to="/auth" replace />;
   return (
     <ActiveShiftProvider kind={kind}>
       <ShiftLayout>
@@ -204,15 +213,15 @@ function ProtectedShiftRoute({
 }
 
 function ProtectedKioskRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-  if (loading) {
+  const auth = useAuth();
+  if (!auth || auth.loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
-  if (!user) return <Navigate to="/auth" replace />;
+  if (!auth.user) return <Navigate to="/auth" replace />;
   return <>{children}</>;
 }
 
@@ -222,8 +231,8 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <ImpersonationProvider>
-        <AuthProvider>
+      <AuthProvider>
+        <ImpersonationProvider>
           <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<Auth />} />
@@ -396,8 +405,8 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
-        </AuthProvider>
-      </ImpersonationProvider>
+        </ImpersonationProvider>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
