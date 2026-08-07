@@ -14,13 +14,12 @@ import { toast } from "sonner";
  *   a module they cannot access.
  */
 export default function HomeRoute() {
-  const { hasRole } = useAuth();
-  const { canView, loading: permsLoading } = usePermissions();
-  const { path, loading } = useDefaultLandingPath();
   const { data: defaultDashboard, isLoading: defaultDashboardLoading } = useDefaultDirectionDashboard();
+  const { loading: permsLoading } = usePermissions();
+  const { loading: landingLoading } = useDefaultLandingPath();
 
   useEffect(() => {
-    if (loading || permsLoading || defaultDashboardLoading) return;
+    if (landingLoading || permsLoading || defaultDashboardLoading) return;
     if (!defaultDashboard?.dashboard_id || defaultDashboard.accessible) return;
     try {
       const key = `default-dashboard-lost:${defaultDashboard.dashboard_id}`;
@@ -32,9 +31,9 @@ export default function HomeRoute() {
     } catch {
       /* sessionStorage indisponible : message ignoré */
     }
-  }, [defaultDashboard?.accessible, defaultDashboard?.dashboard_id, defaultDashboardLoading, loading, permsLoading]);
+  }, [defaultDashboard?.accessible, defaultDashboard?.dashboard_id, defaultDashboardLoading, landingLoading, permsLoading]);
 
-  if (loading || permsLoading || defaultDashboardLoading) {
+  if (landingLoading || permsLoading || defaultDashboardLoading) {
     return (
       <div className="min-h-[40vh] flex items-center justify-center">
         <div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -42,13 +41,11 @@ export default function HomeRoute() {
     );
   }
 
-  // FORCE default landing to /apps as requested ("affichage app")
-  // instead of the complex redirection logic.
+  // Si un dashboard de direction est défini par défaut et accessible, on l'affiche
   if (defaultDashboard?.accessible && defaultDashboard.dashboard_id) {
     return <Navigate to={`/direction/dashboards/${defaultDashboard.dashboard_id}`} replace />;
   }
 
-  // If a specific default dashboard is set and accessible, we keep it.
-  // Otherwise, the user wants the "apps" view as the default home.
+  // Par défaut, rediriger vers l'affichage des applications (/apps)
   return <Navigate to="/apps" replace />;
 }
