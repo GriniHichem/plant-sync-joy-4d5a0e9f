@@ -63,8 +63,8 @@ export function ModesTab() {
   async function load() {
     setLoading(true);
     const [modesRes, slotsRes] = await Promise.all([
-      supabase.from("shift_modes").select("*").order("code"),
-      supabase.from("shift_mode_slots").select("*").order("sort_order"),
+      (supabase.from("shift_modes").select("*") as any).order("code"),
+      (supabase.from("shift_mode_slots").select("*") as any).order("sort_order"),
     ]);
     setSystems((modesRes.data as ShiftSystem[]) ?? []);
     setSlots((slotsRes.data as SystemSlot[]) ?? []);
