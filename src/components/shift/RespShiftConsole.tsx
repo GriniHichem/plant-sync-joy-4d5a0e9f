@@ -155,7 +155,7 @@ export function RespShiftConsole({ kind }: RespShiftConsoleProps) {
       ]);
       const userIds = Array.from(new Set((roleRows ?? []).map((r: any) => r.user_id)));
       const { data: profs } = userIds.length
-        ? await supabase.from("profiles").select("user_id, first_name, last_name").in("user_id", userIds)
+        ? await (supabase.from("profiles").select("user_id, first_name, last_name") as any).in("user_id", userIds as any)
         : { data: [] as any[] };
       setOperators((profs as any[]) ?? []);
       setTeams(teamsRes.data ?? []);
