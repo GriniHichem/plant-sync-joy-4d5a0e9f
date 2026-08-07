@@ -96,10 +96,10 @@ export function ModesTab() {
       };
       // Un seul système par défaut.
       if (payload.is_default) {
-        await supabase.from("shift_modes").update({ is_default: false } as any).neq("id", sysDraft.id || "00000000-0000-0000-0000-000000000000");
+        await (supabase.from("shift_modes").update({ is_default: false } as any) as any).neq("id", sysDraft.id || "00000000-0000-0000-0000-000000000000");
       }
       if (sysDraft.id) {
-        const { error } = await supabase.from("shift_modes").update(payload as any).eq("id", sysDraft.id);
+        const { error } = await (supabase.from("shift_modes").update(payload as any) as any).eq("id", sysDraft.id);
         if (error) throw error;
         await logAudit({ action_type: "update", module: "parametres", action: "shift_system_update", entity_type: "shift_modes", entity_id: sysDraft.id, description: `Système ${payload.code} modifié` });
       } else {
@@ -120,8 +120,8 @@ export function ModesTab() {
   const removeSystem = async (s: ShiftSystem) => {
     if (s.is_default) { toast({ title: "Système par défaut", description: "Définissez un autre système par défaut avant de le supprimer.", variant: "destructive" }); return; }
     if (!confirm(`Supprimer le système « ${s.label} » et ses créneaux ?`)) return;
-    await supabase.from("shift_mode_slots").delete().eq("shift_mode_id", s.id);
-    const { error } = await supabase.from("shift_modes").delete().eq("id", s.id);
+    await (supabase.from("shift_mode_slots").delete() as any).eq("shift_mode_id", s.id);
+    const { error } = await (supabase.from("shift_modes").delete() as any).eq("id", s.id);
     if (error) { toast({ title: "Suppression impossible", description: error.message, variant: "destructive" }); return; }
     await logAudit({ action_type: "delete", module: "parametres", action: "shift_system_delete", entity_type: "shift_modes", entity_id: s.id, description: `Système ${s.code} supprimé` });
     toast({ title: "Système supprimé" });
@@ -129,7 +129,7 @@ export function ModesTab() {
   };
 
   const toggleActive = async (s: ShiftSystem) => {
-    await supabase.from("shift_modes").update({ is_active: !s.is_active } as any).eq("id", s.id);
+    await (supabase.from("shift_modes").update({ is_active: !s.is_active } as any) as any).eq("id", s.id);
     await load();
   };
 
