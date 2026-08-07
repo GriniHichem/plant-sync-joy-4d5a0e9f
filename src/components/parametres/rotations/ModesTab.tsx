@@ -157,7 +157,7 @@ export function ModesTab() {
         sort_order: slotDraft.sort_order,
       };
       if (slotDraft.id) {
-        const { error } = await supabase.from("shift_mode_slots").update(payload as any).eq("id", slotDraft.id);
+        const { error } = await (supabase.from("shift_mode_slots").update(payload as any) as any).eq("id", slotDraft.id);
         if (error) throw error;
       } else {
         const { error } = await supabase.from("shift_mode_slots").insert(payload as any);
@@ -175,7 +175,7 @@ export function ModesTab() {
 
   const removeSlot = async (slot: SystemSlot) => {
     if (!confirm(`Supprimer le créneau « ${slot.label} » ?`)) return;
-    const { error } = await supabase.from("shift_mode_slots").delete().eq("id", slot.id);
+    const { error } = await (supabase.from("shift_mode_slots").delete() as any).eq("id", slot.id);
     if (error) { toast({ title: "Suppression impossible", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Créneau supprimé" });
     await load();
