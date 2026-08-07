@@ -80,9 +80,9 @@ export function MembersTab() {
   useEffect(() => {
     (async () => {
       const [tRes, pRes, mRes, slRes] = await Promise.all([
-        supabase.from("shift_teams").select("id, code, name").eq("is_active", true).order("code"),
-        supabase.from("profiles").select("user_id, first_name, last_name, poste").eq("is_active", true).order("first_name"),
-        supabase.from("shift_modes").select("id, code, label").eq("is_active", true).order("code"),
+        (supabase.from("shift_teams").select("id, code, name") as any).eq("is_active", true).order("code"),
+        (supabase.from("profiles").select("user_id, first_name, last_name, poste") as any).eq("is_active", true).order("first_name"),
+        (supabase.from("shift_modes").select("id, code, label") as any).eq("is_active", true).order("code"),
         supabase.from("shift_mode_slots").select("shift_mode_id, label, sort_order").order("sort_order"),
       ]);
       const t = (tRes.data as Team[]) ?? [];
@@ -102,9 +102,9 @@ export function MembersTab() {
   const loadMembers = async (tid: string) => {
     if (!tid) return;
     setLoading(true);
-    const { data } = await supabase
+    const { data } = await (supabase
       .from("shift_team_members")
-      .select("id, user_id, role_in_team, autorisation_libre, is_active, shift_mode_id, cycle_pattern, anchor_date, scope_kind")
+      .select("id, user_id, role_in_team, autorisation_libre, is_active, shift_mode_id, cycle_pattern, anchor_date, scope_kind") as any)
       .eq("team_id", tid);
     const rows = (data as Member[]) ?? [];
     const byUser = new Map(profiles.map((p) => [p.user_id, p]));
