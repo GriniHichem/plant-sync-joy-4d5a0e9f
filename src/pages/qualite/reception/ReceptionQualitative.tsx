@@ -768,11 +768,12 @@ export default function ReceptionQualitative() {
                         <span className="text-[10px] font-medium uppercase">Abat. Moyen</span>
                       </div>
                       <div className="text-xl font-bold tabular-nums">
-                        {kpis ? kpis.avg_abattement_pct.toFixed(2) : "0.00"}%
+                        {kpis ? kpis.avg_abattement.toFixed(2) : "0.00"}%
                       </div>
                       <div className="text-[10px] text-muted-foreground mt-0.5">
-                        {kpis?.ticket_count ?? 0} pesés · {kpis?.count_a_peser ?? 0} à peser
+                        {kpis?.count_pese ?? 0} pesés · {kpis?.count_a_peser ?? 0} à peser
                       </div>
+
                     </div>
                     <div className="bg-amber-500/5 rounded-lg p-3 border border-amber-500/10">
                       <div className="flex items-center gap-1.5 text-amber-600 mb-1">
