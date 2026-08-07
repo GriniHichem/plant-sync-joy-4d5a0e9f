@@ -89,14 +89,7 @@ export default function Auth() {
           <CardDescription>
             {isLogin ? "Connectez-vous à votre espace" : "Créer un nouveau compte"}
           </CardDescription>
-          {publicHost && gateEnabled && (
-            <div className="flex items-center justify-center pt-1">
-              <Badge variant="outline" className="gap-1.5 border-amber-500/50 text-amber-700 dark:text-amber-400">
-                <Globe className="h-3 w-3" />
-                Accès via Internet — autorisation requise
-              </Badge>
-            </div>
-          )}
+          {/* Public gate UI elements hidden to simplify login process */}
         </CardHeader>
         <CardContent>
           {blockedPublic && (
