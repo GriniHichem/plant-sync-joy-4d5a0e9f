@@ -231,8 +231,8 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <AuthProvider>
-        <ImpersonationProvider>
+      <ImpersonationProvider>
+        <AuthProvider>
           <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<Auth />} />
@@ -255,7 +255,9 @@ const App = () => (
             <Route path="/qualite/shift/lignes" element={<ProtectedShiftRoute kind="quality"><QualityShiftLines /></ProtectedShiftRoute>} />
             {/* Magasin kiosk (full screen, no sidebar) */}
             <Route path="/magasin/shift/live" element={<ProtectedKioskRoute><MagasinKiosk /></ProtectedKioskRoute>} />
-            <Route element={<ProtectedRoutes />}>
+        </AuthProvider>
+      </ImpersonationProvider>
+      <ProtectedRoutes>
               {/* GMAO */}
               <Route path="/" element={<HomeRoute />} />
               <Route path="/apps" element={<Apps />} />
