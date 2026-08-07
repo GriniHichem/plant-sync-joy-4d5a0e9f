@@ -99,7 +99,7 @@ export function PdrQuoteBuilder({ onDraft }: { onDraft: (d: QuoteDraft) => void 
     (async () => {
       const [m, f] = await Promise.all([
         supabase.from("machines").select("id, code, designation").order("code").limit(500),
-        supabase.from("pdr_families").select("id, name").eq("is_active", true).order("name").limit(500),
+        (supabase.from("pdr_families").select("id, name") as any).eq("is_active", true).order("name").limit(500),
       ]);
       setMachines(((m.data ?? []) as any[]).map((r) => ({ id: r.id, label: `${r.code} — ${r.designation}` })));
       setFamilies(((f.data ?? []) as any[]).map((r) => ({ id: r.id, label: r.name })));
