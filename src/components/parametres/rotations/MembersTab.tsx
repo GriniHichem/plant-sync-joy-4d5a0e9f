@@ -162,13 +162,13 @@ export function MembersTab() {
     if (!surface && ePattern.length === 0) { toast({ title: "Motif de cycle requis", description: "Ajoutez au moins un jour.", variant: "destructive" }); return; }
     setSavingEdit(true);
     try {
-      const { error } = await supabase.from("shift_team_members").update({
+      const { error } = await (supabase.from("shift_team_members").update({
         shift_mode_id: eMode,
         scope_kind: eScope,
         anchor_date: surface ? null : eAnchor,
         cycle_pattern: surface ? [] : ePattern,
         autorisation_libre: eLibre,
-      }).eq("id", editMember.id);
+      } as any) as any).eq("id", editMember.id);
       if (error) throw error;
       await logAudit({ action_type: "update", module: "parametres", action: "shift_member_pattern", entity_type: "shift_team_members", entity_id: editMember.id, description: "Motif de rotation configuré" });
       toast({ title: "Configuration enregistrée" });
