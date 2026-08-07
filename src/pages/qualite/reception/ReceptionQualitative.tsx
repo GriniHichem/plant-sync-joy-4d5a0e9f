@@ -250,14 +250,19 @@ export default function ReceptionQualitative() {
   const { data: recent = [] } = useQuery({
     queryKey: ["reception_tickets_recent", user?.id],
     queryFn: async () => {
+      console.log("Fetching recent tickets for user:", user?.id);
       const { data, error } = await supabase.from("v_reception_global")
         .select("*")
-        .eq("created_by", user?.id)
+        .or(`created_by.eq.${user?.id},cloture_by.eq.${user?.id}`)
         .in("statut", ["cloture", "pese_importe"])
         .order("created_at", { ascending: false })
         .limit(10);
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching recent tickets:", error);
+        throw error;
+      }
+      console.log("Recent tickets found:", data?.length);
       return (data ?? []) as any[];
     },
     enabled: !!user?.id,
