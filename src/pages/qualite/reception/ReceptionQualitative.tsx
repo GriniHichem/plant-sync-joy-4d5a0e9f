@@ -250,14 +250,19 @@ export default function ReceptionQualitative() {
   const { data: recent = [] } = useQuery({
     queryKey: ["reception_tickets_recent", user?.id],
     queryFn: async () => {
+      console.log("Fetching recent tickets for user:", user?.id);
       const { data, error } = await supabase.from("v_reception_global")
         .select("*")
-        .eq("created_by", user?.id)
+        .or(`created_by.eq.${user?.id},cloture_by.eq.${user?.id}`)
         .in("statut", ["cloture", "pese_importe"])
         .order("created_at", { ascending: false })
         .limit(10);
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching recent tickets:", error);
+        throw error;
+      }
+      console.log("Recent tickets found:", data?.length);
       return (data ?? []) as any[];
     },
     enabled: !!user?.id,
@@ -300,18 +305,23 @@ export default function ReceptionQualitative() {
   }, [period]);
 
   const { data: kpis } = useQuery({
-    queryKey: ["reception_user_kpis", user?.id, periodRange.start.toISOString(), periodRange.end.toISOString(), period],
+    queryKey: ["reception_user_kpis", user?.id, periodRange.start.toISOString().split('.')[0], periodRange.end.toISOString().split('.')[0], period],
     queryFn: async () => {
-      // Pour debug, on affiche les dates envoyées
-      const startTime = periodRange.start.toISOString();
-      const endTime = periodRange.end.toISOString();
+      const startTime = periodRange.start.toISOString().split('.')[0].replace('T', ' ');
+      const endTime = periodRange.end.toISOString().split('.')[0].replace('T', ' ');
+      
+      console.log("Fetching KPIs for user:", user?.id, "Period:", startTime, "to", endTime);
       
       const { data, error } = await supabase.rpc("get_reception_user_kpis" as any, {
         p_user_id: user?.id,
         p_start_time: startTime,
         p_end_time: endTime,
       });
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching user KPIs:", error);
+        throw error;
+      }
+      console.log("KPIs data received:", data);
       return data?.[0] as {
         total_brut: number;
         total_net: number;
