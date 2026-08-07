@@ -781,8 +781,9 @@ export default function ReceptionQualitative() {
                         <span className="text-[10px] font-medium uppercase">Abat. Total</span>
                       </div>
                       <div className="text-xl font-bold tabular-nums">
-                        {kpis ? Math.round(kpis.total_abattement_kg).toLocaleString("fr-FR") : "0"} <span className="text-xs font-normal">kg</span>
+                        {Math.round(kpis?.avg_duree ?? 0)} <span className="text-xs font-normal">min</span>
                       </div>
+
                       <div className="text-[10px] text-muted-foreground mt-0.5">
                         Période {period === "matin" ? "6h-14h" : period === "apres_midi" ? "14h-22h" : "22h-6h"}
                         {kpis?.avg_duree ? ` · Durée moy: ${Math.round(kpis.avg_duree)} min` : ""}
