@@ -8127,16 +8127,16 @@ export type Database = {
       }
       reception_global_stats: {
         Args: {
-          p_campaign?: string
+          p_campaign_id?: string
           p_conformite?: string
+          p_date_from?: string
+          p_date_to?: string
+          p_dt_from?: string
+          p_dt_to?: string
           p_etat?: string
-          p_from?: string
-          p_from_ts?: string
-          p_product?: string
-          p_q?: string
-          p_supplier?: string
-          p_to?: string
-          p_to_ts?: string
+          p_product_id?: string
+          p_search?: string
+          p_supplier_id?: string
         }
         Returns: Json
       }
