@@ -231,8 +231,8 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <AuthProvider>
-        <ImpersonationProvider>
+      <ImpersonationProvider>
+        <AuthProvider>
           <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<Auth />} />
