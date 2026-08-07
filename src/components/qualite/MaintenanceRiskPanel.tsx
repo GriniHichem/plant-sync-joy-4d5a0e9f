@@ -107,9 +107,9 @@ export function MaintenanceRiskPanel({ ofId, ofNumero, lineId, qualityShiftId }:
 
     const ticketIds = ctxRows.filter((r) => r.kind === "ticket").map((r) => r.id);
     if (ticketIds.length) {
-      const { data: flags } = await supabase
+      const { data: flags } = await (supabase
         .from("tickets")
-        .select("id, quality_risk, quality_risk_level")
+        .select("id, quality_risk, quality_risk_level") as any)
         .in("id", ticketIds);
       const map: Record<string, { risk: boolean; level: string | null }> = {};
       for (const f of (flags as any[]) ?? []) map[f.id] = { risk: !!f.quality_risk, level: f.quality_risk_level };
@@ -127,9 +127,9 @@ export function MaintenanceRiskPanel({ ofId, ofNumero, lineId, qualityShiftId }:
   // Load active lines for the create dialog.
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
+      const { data } = await (supabase
         .from("production_lines")
-        .select("id, code, designation, machine_id")
+        .select("id, code, designation, machine_id") as any)
         .eq("is_active", true)
         .order("code");
       setLines(((data as any[]) ?? []) as LineRow[]);
@@ -141,9 +141,9 @@ export function MaintenanceRiskPanel({ ofId, ofNumero, lineId, qualityShiftId }:
     (async () => {
       if (!selectedLineId) { setMachines([]); return; }
       const line = lines.find((l) => l.id === selectedLineId);
-      const { data: assigns } = await supabase
+      const { data: assigns } = await (supabase
         .from("machine_line_assignments")
-        .select("machine_id, machines(id, code, designation)")
+        .select("machine_id, machines(id, code, designation)") as any)
         .eq("line_id", selectedLineId)
         .order("sort_order");
       const list: MachineRow[] = [];
@@ -153,9 +153,9 @@ export function MaintenanceRiskPanel({ ofId, ofNumero, lineId, qualityShiftId }:
         if (m && !seen.has(m.id)) { list.push(m); seen.add(m.id); }
       }
       if (line?.machine_id && !seen.has(line.machine_id)) {
-        const { data: mainM } = await supabase
+        const { data: mainM } = await (supabase
           .from("machines")
-          .select("id, code, designation")
+          .select("id, code, designation") as any)
           .eq("id", line.machine_id)
           .maybeSingle();
         if (mainM) list.unshift(mainM as any);
@@ -170,9 +170,9 @@ export function MaintenanceRiskPanel({ ofId, ofNumero, lineId, qualityShiftId }:
 
   const notifyMaintenance = async (ticketId: string, numero: string | null, level: string, decision: string) => {
     try {
-      const { data: resp } = await supabase
+      const { data: resp } = await (supabase
         .from("user_roles")
-        .select("user_id")
+        .select("user_id") as any)
         .eq("role", "resp_maintenance" as any);
       const recipients = ((resp as any[]) ?? []).map((r) => r.user_id).filter((uid) => uid && uid !== user?.id);
       const arret = decision === "arret";
