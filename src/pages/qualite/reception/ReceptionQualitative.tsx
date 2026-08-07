@@ -14,7 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Check, Clock, Lock, Truck, XCircle, Search, Lightbulb, TrendingDown, Weight } from "lucide-react";
+import { Check, Clock, Lock, Truck, XCircle, Search, Lightbulb, TrendingDown, Weight, Timer } from "lucide-react";
 import { toast } from "sonner";
 import { PhotoSlot } from "./PhotoSlot";
 import { SupplierCombobox } from "@/components/reception/SupplierCombobox";
