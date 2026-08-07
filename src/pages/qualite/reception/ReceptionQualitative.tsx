@@ -307,8 +307,9 @@ export default function ReceptionQualitative() {
   const { data: kpis } = useQuery({
     queryKey: ["reception_user_kpis", user?.id, periodRange.start.toISOString().split('.')[0], periodRange.end.toISOString().split('.')[0], period],
     queryFn: async () => {
-      const startTime = periodRange.start.toISOString().split('.')[0].replace('T', ' ');
-      const endTime = periodRange.end.toISOString().split('.')[0].replace('T', ' ');
+      const startTime = periodRange.start.toISOString();
+      const endTime = periodRange.end.toISOString();
+
       
       console.log("Fetching KPIs for user:", user?.id, "Period:", startTime, "to", endTime);
       
