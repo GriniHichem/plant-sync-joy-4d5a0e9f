@@ -234,7 +234,7 @@ const App = () => (
       <ImpersonationProvider>
         <AuthProvider>
           <BrowserRouter>
-          <Routes>
+            <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             {/* Isolated kiosk shift apps — no global sidebar (operator-only) */}
@@ -255,9 +255,10 @@ const App = () => (
             <Route path="/qualite/shift/lignes" element={<ProtectedShiftRoute kind="quality"><QualityShiftLines /></ProtectedShiftRoute>} />
             {/* Magasin kiosk (full screen, no sidebar) */}
             <Route path="/magasin/shift/live" element={<ProtectedKioskRoute><MagasinKiosk /></ProtectedKioskRoute>} />
-        </AuthProvider>
-      </ImpersonationProvider>
-      <ProtectedRoutes>
+              {/* Magasin kiosk (full screen, no sidebar) */}
+              <Route path="/magasin/shift/live" element={<ProtectedKioskRoute><MagasinKiosk /></ProtectedKioskRoute>} />
+              
+              <Route element={<ProtectedRoutes />}>
               {/* GMAO */}
               <Route path="/" element={<HomeRoute />} />
               <Route path="/apps" element={<Apps />} />
@@ -405,12 +406,13 @@ const App = () => (
               <Route path="/inventaire/compter/:campaignId" element={<InventoryCountScreen />} />
             </Route>
             <Route path="*" element={<NotFound />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
-        </ImpersonationProvider>
       </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
+    </ImpersonationProvider>
+  </TooltipProvider>
+</QueryClientProvider>
 );
 
 export default App;
