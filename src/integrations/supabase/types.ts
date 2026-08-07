@@ -7930,7 +7930,9 @@ export type Database = {
       get_reception_user_kpis: {
         Args: { p_end_time: string; p_start_time: string; p_user_id: string }
         Returns: {
+          a_peser_count: number
           avg_abattement_pct: number
+          avg_duree: number
           ticket_count: number
           total_abattement_kg: number
           total_brut: number
