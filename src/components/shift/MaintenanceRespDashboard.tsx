@@ -90,14 +90,14 @@ export function MaintenanceRespDashboard() {
         </div>
       )}
 
-      {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        <Kpi label="Tickets ouverts" value={kpis.openTickets} tone="danger" onClick={() => navigate("/tickets")} />
-        <Kpi label="Urgents" value={kpis.urgentTickets} sub="critique / haute" tone="danger" />
-        <Kpi label="Signalés aujourd'hui" value={kpis.todayTickets} />
-        <Kpi label="Préventifs en cours" value={kpis.preventiveInProgress} tone="primary" />
-        <Kpi label="Maintenanciers actifs" value={kpis.activeTechCount} tone="primary" />
-        <Kpi label="Mouvements PDR" value={kpis.movementsToday} sub="aujourd'hui" tone="amber" />
+      {/* KPIs - Using a more compact grid to reduce initial vertical space */}
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+        <Kpi label="Ouverts" value={kpis.openTickets} tone="danger" onClick={() => navigate("/tickets")} />
+        <Kpi label="Urgents" value={kpis.urgentTickets} tone="danger" />
+        <Kpi label="Aujourd'hui" value={kpis.todayTickets} />
+        <Kpi label="Préventifs" value={kpis.preventiveInProgress} tone="primary" />
+        <Kpi label="Actifs" value={kpis.activeTechCount} tone="primary" />
+        <Kpi label="PDR" value={kpis.movementsToday} tone="amber" />
       </div>
 
       {loading ? (

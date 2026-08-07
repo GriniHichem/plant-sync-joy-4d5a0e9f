@@ -82,12 +82,11 @@ export function useMaintenanceRespOverview(): MaintenanceRespOverview {
     const todayIso = new Date();
     todayIso.setHours(0, 0, 0, 0);
 
-    const [ticketsRes, execRes, movesRes, openReqRes] = await Promise.all([
+    // Initial parallel fetch for core data
+    const [ticketsRes, execRes, openReqRes] = await Promise.all([
       supabase
         .from("tickets")
-        .select(
-          "id, numero, statut, priorite, description, heure_declaration, heure_prise_en_charge, declarant_id, assignee_id, assignment_status, machines(id, code, designation), production_lines(id, code, designation)"
-        )
+        .select("id, numero, statut, priorite, description, heure_declaration, heure_prise_en_charge, declarant_id, assignee_id, machines(id, code, designation), production_lines(id, code, designation)")
         .in("statut", ["ouvert", "pris_en_charge"])
         .order("heure_declaration", { ascending: false }),
       supabase
@@ -95,16 +94,26 @@ export function useMaintenanceRespOverview(): MaintenanceRespOverview {
         .select("id, plan_id, executed_by, heure_debut, session_id, preventive_plans(numero, title, prochaine_echeance, machines(id, code, designation))")
         .eq("statut", "en_cours"),
       supabase
-        .from("pdr_stock_movements")
-        .select("id, type, quantite, motif, source_type, source_id, created_at, user_id, pdr(reference, designation, unite_stock)")
-        .gte("created_at", todayIso.toISOString())
-        .order("created_at", { ascending: false })
-        .limit(80),
-      supabase
         .from("pdr_requests")
         .select("ticket_id")
         .in("statut", ["demandee", "prete", "partielle"]),
     ]);
+
+    const ticketRows = (ticketsRes.data as any[]) ?? [];
+    const execRows = (execRes.data as any[]) ?? [];
+    const waitingTicketIds = new Set(
+      ((openReqRes.data as any[]) ?? []).map((r) => r.ticket_id).filter(Boolean)
+    );
+
+    // Movements are usually the heaviest, load them separately or limit strictly
+    const movesRes = await supabase
+      .from("pdr_stock_movements")
+      .select("id, type, quantite, motif, source_type, source_id, created_at, user_id, pdr(reference, designation, unite_stock)")
+      .gte("created_at", todayIso.toISOString())
+      .order("created_at", { ascending: false })
+      .limit(20); // Reduced limit for dashboard overview
+
+    const moveRows = (movesRes.data as any[]) ?? [];
 
     const ticketRows = (ticketsRes.data as any[]) ?? [];
     const execRows = (execRes.data as any[]) ?? [];
