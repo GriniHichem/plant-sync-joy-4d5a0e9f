@@ -7928,16 +7928,8 @@ export type Database = {
         Returns: Json
       }
       get_reception_user_kpis: {
-        Args: { p_end_time: string; p_start_time: string; p_user_id: string }
-        Returns: {
-          a_peser_count: number
-          avg_abattement_pct: number
-          avg_duree: number
-          ticket_count: number
-          total_abattement_kg: number
-          total_brut: number
-          total_net: number
-        }[]
+        Args: { _end_date: string; _start_date: string; _user_id: string }
+        Returns: Json
       }
       get_recipe_for_of: {
         Args: { p_of_id: string }
@@ -8127,21 +8119,23 @@ export type Database = {
         Args: { p_quality_shift_id: string }
         Returns: number
       }
-      reception_global_stats: {
-        Args: {
-          p_campaign?: string
-          p_conformite?: string
-          p_etat?: string
-          p_from?: string
-          p_from_ts?: string
-          p_product?: string
-          p_q?: string
-          p_supplier?: string
-          p_to?: string
-          p_to_ts?: string
-        }
-        Returns: Json
-      }
+      reception_global_stats:
+        | { Args: { _end_date: string; _start_date: string }; Returns: Json }
+        | {
+            Args: {
+              p_campaign?: string
+              p_conformite?: string
+              p_etat?: string
+              p_from?: string
+              p_from_ts?: string
+              p_product?: string
+              p_q?: string
+              p_supplier?: string
+              p_to?: string
+              p_to_ts?: string
+            }
+            Returns: Json
+          }
       refuse_request_item: {
         Args: { p_item_id: string; p_motif: string }
         Returns: undefined
