@@ -59,19 +59,19 @@ export function AuditFilters({ filters, onChange, onReset, canViewArchives }: Pr
   const [localSearch, setLocalSearch] = useState(filters.search ?? "");
 
   useEffect(() => {
-    supabase
+    (supabase
       .from("profiles")
-      .select("user_id, first_name, last_name") as any;
+      .select("user_id, first_name, last_name") as any)
       .limit(500)
-      .then(({ data }) => {
+      .then(({ data }: any) => {
         if (data) {
           setUsers(
             data
-              .map((p) => ({
+              .map((p: any) => ({
                 id: p.user_id,
                 label: `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim() || p.user_id.slice(0, 8),
               }))
-              .sort((a, b) => a.label.localeCompare(b.label))
+              .sort((a: any, b: any) => a.label.localeCompare(b.label))
           );
         }
       });

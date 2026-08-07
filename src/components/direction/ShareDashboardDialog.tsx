@@ -43,10 +43,10 @@ export function ShareDashboardDialog({ dashboardId, open, onOpenChange }: Props)
     enabled: open,
     staleTime: 300_000,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase
         .from("profiles")
         .select("user_id, first_name, last_name, poste, is_active")
-        .eq("is_active", true)
+        .eq("is_active" as any, true) as any)
         .order("first_name");
       if (error) throw error;
       return data ?? [];

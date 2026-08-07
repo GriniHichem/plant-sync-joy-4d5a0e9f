@@ -35,10 +35,10 @@ function useProfiles(enabled: boolean) {
     enabled,
     queryKey: ["share_profiles"],
     queryFn: async (): Promise<ProfileLite[]> => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase
         .from("profiles")
         .select("user_id, first_name, last_name, poste")
-        .eq("is_active", true)
+        .eq("is_active" as any, true) as any)
         .order("first_name");
       if (error) throw error;
       return (data ?? []) as ProfileLite[];
