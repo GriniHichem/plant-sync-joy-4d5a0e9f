@@ -14,13 +14,12 @@ import { toast } from "sonner";
  *   a module they cannot access.
  */
 export default function HomeRoute() {
-  const { hasRole } = useAuth();
-  const { canView, loading: permsLoading } = usePermissions();
-  const { path, loading } = useDefaultLandingPath();
   const { data: defaultDashboard, isLoading: defaultDashboardLoading } = useDefaultDirectionDashboard();
+  const { loading: permsLoading } = usePermissions();
+  const { loading: landingLoading } = useDefaultLandingPath();
 
   useEffect(() => {
-    if (loading || permsLoading || defaultDashboardLoading) return;
+    if (landingLoading || permsLoading || defaultDashboardLoading) return;
     if (!defaultDashboard?.dashboard_id || defaultDashboard.accessible) return;
     try {
       const key = `default-dashboard-lost:${defaultDashboard.dashboard_id}`;
@@ -32,9 +31,9 @@ export default function HomeRoute() {
     } catch {
       /* sessionStorage indisponible : message ignoré */
     }
-  }, [defaultDashboard?.accessible, defaultDashboard?.dashboard_id, defaultDashboardLoading, loading, permsLoading]);
+  }, [defaultDashboard?.accessible, defaultDashboard?.dashboard_id, defaultDashboardLoading, landingLoading, permsLoading]);
 
-  if (loading || permsLoading || defaultDashboardLoading) {
+  if (landingLoading || permsLoading || defaultDashboardLoading) {
     return (
       <div className="min-h-[40vh] flex items-center justify-center">
         <div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -42,18 +41,11 @@ export default function HomeRoute() {
     );
   }
 
+  // Si un dashboard de direction est défini par défaut et accessible, on l'affiche
   if (defaultDashboard?.accessible && defaultDashboard.dashboard_id) {
     return <Navigate to={`/direction/dashboards/${defaultDashboard.dashboard_id}`} replace />;
   }
 
-  // If the resolved landing is "/" and the user can actually view the GMAO
-  // dashboard (or is admin) → render it. Otherwise redirect.
-  if (path === "/" && (hasRole("admin") || canView("dashboard"))) {
-    return <Dashboard />;
-  }
-  if (path === "/") {
-    // Safety net — shouldn't happen, but avoid an infinite loop.
-    return <Navigate to="/apps" replace />;
-  }
-  return <Navigate to={path} replace />;
+  // Par défaut, rediriger vers l'affichage des applications (/apps)
+  return <Navigate to="/apps" replace />;
 }
