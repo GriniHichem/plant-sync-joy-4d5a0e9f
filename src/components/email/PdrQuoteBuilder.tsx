@@ -116,7 +116,7 @@ export function PdrQuoteBuilder({ onDraft }: { onDraft: (d: QuoteDraft) => void 
     const t = setTimeout(async () => {
       let machinePdrIds: string[] | null = null;
       if (machineId !== "all") {
-        const { data } = await supabase.from("machine_pdr").select("pdr_id").eq("machine_id" as any, machineId) as any;
+        const { data } = await (supabase.from("machine_pdr").select("pdr_id") as any).eq("machine_id", machineId);
         machinePdrIds = ((data ?? []) as any[]).map((r) => r.pdr_id);
         if (machinePdrIds.length === 0) {
           if (!cancelled) { setResults([]); setSearching(false); }
