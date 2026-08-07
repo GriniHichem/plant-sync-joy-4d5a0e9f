@@ -25,12 +25,12 @@ export function useMaintenanceHoldings(onlyHeld = true) {
 
   const reload = useCallback(async () => {
     if (!user) { setHoldings([]); setLoading(false); return; }
-    let q = supabase
+    let q = (supabase
       .from("pdr_maintenance_holdings" as any)
-      .select("*, pdr(id, reference, designation, unite_stock)")
+      .select("*, pdr(id, reference, designation, unite_stock)") as any)
       .eq("holder_id", user.id)
       .order("created_at", { ascending: false });
-    if (onlyHeld) q = q.eq("statut", "en_main");
+    if (onlyHeld) q = q.eq("statut", "en_main" as any);
     const { data } = await q;
     setHoldings((data as any) || []);
     setLoading(false);
