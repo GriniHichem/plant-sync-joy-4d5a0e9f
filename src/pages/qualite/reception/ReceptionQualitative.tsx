@@ -303,7 +303,7 @@ export default function ReceptionQualitative() {
   }, [period]);
 
   const { data: kpis } = useQuery({
-    queryKey: ["reception_user_kpis", user?.id, periodRange.start.toISOString(), periodRange.end.toISOString()],
+    queryKey: ["reception_user_kpis", user?.id, periodRange.start.toISOString(), periodRange.end.toISOString(), period],
     queryFn: async () => {
       const { data, error } = await supabase.rpc("get_reception_user_kpis" as any, {
         p_user_id: user?.id,
