@@ -231,10 +231,10 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <AuthProvider>
-        <ImpersonationProvider>
+      <ImpersonationProvider>
+        <AuthProvider>
           <BrowserRouter>
-          <Routes>
+            <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             {/* Isolated kiosk shift apps — no global sidebar (operator-only) */}
@@ -255,6 +255,7 @@ const App = () => (
             <Route path="/qualite/shift/lignes" element={<ProtectedShiftRoute kind="quality"><QualityShiftLines /></ProtectedShiftRoute>} />
             {/* Magasin kiosk (full screen, no sidebar) */}
             <Route path="/magasin/shift/live" element={<ProtectedKioskRoute><MagasinKiosk /></ProtectedKioskRoute>} />
+            
             <Route element={<ProtectedRoutes />}>
               {/* GMAO */}
               <Route path="/" element={<HomeRoute />} />
@@ -405,10 +406,10 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
-        </ImpersonationProvider>
       </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
+    </ImpersonationProvider>
+  </TooltipProvider>
+</QueryClientProvider>
 );
 
 export default App;
