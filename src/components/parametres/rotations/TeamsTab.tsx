@@ -35,8 +35,8 @@ export function TeamsTab({ onChange }: { onChange?: () => void }) {
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase.from("shift_teams").select("*").order("code");
-    setRows((data as ShiftTeam[]) ?? []);
+    const { data } = await (supabase.from("shift_teams").select("*") as any).order("code");
+    setRows((data as any[]) ?? []);
     setLoading(false);
   };
   useEffect(() => { load(); }, []);
@@ -58,11 +58,11 @@ export function TeamsTab({ onChange }: { onChange?: () => void }) {
         is_active: draft.is_active,
       };
       if (draft.id) {
-        const { error } = await supabase.from("shift_teams").update(payload).eq("id", draft.id);
+        const { error } = await (supabase.from("shift_teams").update(payload as any) as any).eq("id", draft.id);
         if (error) throw error;
         await logAudit({ action_type: "update", module: "parametres", action: "shift_team_update", entity_type: "shift_teams", entity_id: draft.id, description: `Équipe ${payload.code} modifiée` });
       } else {
-        const { error } = await supabase.from("shift_teams").insert(payload);
+        const { error } = await supabase.from("shift_teams").insert(payload as any);
         if (error) throw error;
         await logAudit({ action_type: "create", module: "parametres", action: "shift_team_create", entity_type: "shift_teams", description: `Équipe ${payload.code} créée` });
       }
@@ -79,7 +79,7 @@ export function TeamsTab({ onChange }: { onChange?: () => void }) {
 
   const remove = async (t: ShiftTeam) => {
     if (!confirm(`Supprimer l'équipe ${t.code} ?`)) return;
-    const { error } = await supabase.from("shift_teams").delete().eq("id", t.id);
+    const { error } = await (supabase.from("shift_teams").delete() as any).eq("id", t.id);
     if (error) { toast({ title: "Suppression impossible", description: error.message, variant: "destructive" }); return; }
     await logAudit({ action_type: "delete", module: "parametres", action: "shift_team_delete", entity_type: "shift_teams", entity_id: t.id, description: `Équipe ${t.code} supprimée` });
     toast({ title: "Équipe supprimée" });

@@ -17,15 +17,15 @@ export function useDefaultLandingPath() {
 
   useEffect(() => {
     let cancelled = false;
-    supabase
+    (supabase
       .from("app_settings")
-      .select("value")
+      .select("value") as any)
       .eq("key", "landing.defaults_by_role")
       .maybeSingle()
       .then(({ data }) => {
         if (cancelled) return;
         try {
-          const parsed = data?.value ? JSON.parse(data.value as unknown as string) : {};
+          const parsed = (data as any)?.value ? JSON.parse((data as any).value as string) : {};
           setOverrides(parsed && typeof parsed === "object" ? parsed : {});
         } catch {
           setOverrides({});

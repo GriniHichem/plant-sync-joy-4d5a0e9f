@@ -125,9 +125,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // maybeSingle() so a missing profile row does NOT throw and leave the UI stuck
     // showing just "utilisateur". This is common right after signup on self-hosting
     // if the auto-create trigger did not run.
-    const { data, error } = await supabase
+    const { data, error } = await (supabase
       .from("profiles")
-      .select("*")
+      .select("*") as any)
       .eq("user_id", userId)
       .maybeSingle();
 
@@ -139,7 +139,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (data) {
-      setRealProfile(data as Profile);
+      setRealProfile(data as any as Profile);
     } else {
       // Fallback: keep a minimal profile so the app can render menus/roles.
       setRealProfile((prev) => prev ?? ({
@@ -159,9 +159,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function fetchRoles(userId: string) {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase
       .from("user_roles")
-      .select("role")
+      .select("role") as any)
       .eq("user_id", userId);
     if (error) {
       // Never wipe roles on a transient error — the user would lose module access.
@@ -169,7 +169,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.warn("[Auth] fetchRoles failed:", error.message);
       return;
     }
-    setRealRoles((data ?? []).map((r) => r.role as AppRole));
+    setRealRoles((data ?? []).map((r: any) => r.role as AppRole));
   }
 
   // Effective values: when impersonating, override roles & profile

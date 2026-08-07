@@ -142,17 +142,17 @@ export function useLineSynopticData(lineId: string | undefined): LineSynopticDat
       setError(null);
       try {
         const [lRes, mlaRes, eqRes] = await Promise.all([
-          supabase.from("production_lines").select("*").eq("id", lineId).single(),
-          supabase
+          (supabase.from("production_lines").select("*") as any).eq("id", lineId).single(),
+          (supabase
             .from("machine_line_assignments")
             .select(
               "sort_order, priority, machines(id, code, designation, statut, criticite, criticite_maintenance, role_fonctionnel, impact_ligne, disponibilite_pdr, marque, modele)"
-            )
+            ) as any)
             .eq("line_id", lineId)
             .order("sort_order"),
-          supabase
+          (supabase
             .from("equipements")
-            .select("id, code, designation, type, statut, criticite, criticite_maintenance, role_fonctionnel, machine_id, line_id")
+            .select("id, code, designation, type, statut, criticite, criticite_maintenance, role_fonctionnel, machine_id, line_id") as any)
             .eq("line_id", lineId)
             .order("code"),
         ]);
@@ -162,7 +162,7 @@ export function useLineSynopticData(lineId: string | undefined): LineSynopticDat
         const ms: MachineRow[] = (mlaRes.data || [])
           .map((r: any) => (r.machines ? { ...r.machines, sort_order: r.sort_order } : null))
           .filter(Boolean);
-        const eqs: EquipementRow[] = eqRes.data || [];
+        const eqs: EquipementRow[] = (eqRes.data as any[] || []) as EquipementRow[];
 
         const machineIds = ms.map((m) => m.id);
         const equipementIds = eqs.map((e) => e.id);
@@ -171,9 +171,9 @@ export function useLineSynopticData(lineId: string | undefined): LineSynopticDat
         const [orgRes, tkRes, ppRes, pdrRes] = await Promise.all([
           // Organes attached to any machine OR equipement of the line
           machineIds.length || equipementIds.length
-            ? supabase
+            ? (supabase
                 .from("organes")
-                .select("id, code, designation, type, statut, criticite, machine_id, equipement_id, sort_order")
+                .select("id, code, designation, type, statut, criticite, machine_id, equipement_id, sort_order") as any)
                 .or(
                   [
                     machineIds.length ? `machine_id.in.(${machineIds.join(",")})` : "",
@@ -187,10 +187,10 @@ export function useLineSynopticData(lineId: string | undefined): LineSynopticDat
             : Promise.resolve({ data: [], error: null } as any),
           // Open tickets on machines/equipements/organes (we'll filter organes after)
           machineIds.length || equipementIds.length
-            ? supabase
+            ? (supabase
                 .from("tickets")
-                .select("id, numero, statut, priorite, description, machine_id, equipement_id, organe_id, heure_declaration")
-                .in("statut", OPEN_TICKET_STATUSES)
+                .select("id, numero, statut, priorite, description, machine_id, equipement_id, organe_id, heure_declaration") as any)
+                .in("statut", OPEN_TICKET_STATUSES as any)
                 .or(
                   [
                     machineIds.length ? `machine_id.in.(${machineIds.join(",")})` : "",
@@ -202,11 +202,11 @@ export function useLineSynopticData(lineId: string | undefined): LineSynopticDat
             : Promise.resolve({ data: [], error: null } as any),
           // Active preventive plans
           machineIds.length || equipementIds.length
-            ? supabase
+            ? (supabase
                 .from("preventive_plans")
                 .select(
                   "id, title, frequence, prochaine_echeance, derniere_execution, statut_plan, is_active, machine_id, equipement_id, organe_id"
-                )
+                ) as any)
                 .eq("is_active", true)
                 .or(
                   [
@@ -219,11 +219,11 @@ export function useLineSynopticData(lineId: string | undefined): LineSynopticDat
             : Promise.resolve({ data: [], error: null } as any),
           // PDR links for machines + equipements
           machineIds.length || equipementIds.length
-            ? supabase
+            ? (supabase
                 .from("pdr_entity_links")
                 .select(
                   "id, pdr_id, entity_type, entity_id, quantite_recommandee, pdr:pdr_id(id, reference, designation, stock_actuel, stock_min, stock_securite, statut_pdr)"
-                )
+                ) as any)
                 .or(
                   [
                     machineIds.length ? `and(entity_type.eq.machine,entity_id.in.(${machineIds.join(",")}))` : "",
@@ -243,29 +243,29 @@ export function useLineSynopticData(lineId: string | undefined): LineSynopticDat
         // Extra fetch: tickets + plans + pdr links for organes
         const [orgTkRes, orgPpRes, orgPdrRes] = await Promise.all([
           organeIds.length
-            ? supabase
+            ? (supabase
                 .from("tickets")
-                .select("id, numero, statut, priorite, description, machine_id, equipement_id, organe_id, heure_declaration")
-                .in("statut", OPEN_TICKET_STATUSES)
-                .in("organe_id", organeIds)
+                .select("id, numero, statut, priorite, description, machine_id, equipement_id, organe_id, heure_declaration") as any)
+                .in("statut", OPEN_TICKET_STATUSES as any)
+                .in("organe_id", organeIds as any)
             : Promise.resolve({ data: [], error: null } as any),
           organeIds.length
-            ? supabase
+            ? (supabase
                 .from("preventive_plans")
                 .select(
                   "id, title, frequence, prochaine_echeance, derniere_execution, statut_plan, is_active, machine_id, equipement_id, organe_id"
-                )
+                ) as any)
                 .eq("is_active", true)
-                .in("organe_id", organeIds)
+                .in("organe_id", organeIds as any)
             : Promise.resolve({ data: [], error: null } as any),
           organeIds.length
-            ? supabase
+            ? (supabase
                 .from("pdr_entity_links")
                 .select(
                   "id, pdr_id, entity_type, entity_id, quantite_recommandee, pdr:pdr_id(id, reference, designation, stock_actuel, stock_min, stock_securite, statut_pdr)"
-                )
-                .eq("entity_type", "organe")
-                .in("entity_id", organeIds)
+                ) as any)
+                .eq("entity_type", "organe" as any)
+                .in("entity_id", organeIds as any)
             : Promise.resolve({ data: [], error: null } as any),
         ]);
 
@@ -300,11 +300,11 @@ export function useLineSynopticData(lineId: string | undefined): LineSynopticDat
         for (const type of ["machine", "equipement", "organe"] as const) {
           const ids = allEntityIds.filter(([t]) => t === type).map(([, id]) => id);
           if (ids.length) {
-            const { data } = await supabase
+            const { data } = await (supabase
               .from("entity_images")
-              .select("entity_id, image_url, is_primary, sort_order")
-              .eq("entity_type", type)
-              .in("entity_id", ids)
+              .select("entity_id, image_url, is_primary, sort_order") as any)
+              .eq("entity_type", type as any)
+              .in("entity_id", ids as any)
               .order("is_primary", { ascending: false })
               .order("sort_order");
             (data || []).forEach((row: any) => {

@@ -32,9 +32,9 @@ export function usePdrEquivalences(pdrId?: string) {
   const reload = useCallback(async () => {
     if (!pdrId) return;
     setLoading(true);
-    const { data } = await supabase
+    const { data } = await (supabase
       .from("pdr_equivalences" as any)
-      .select("*, equivalent_pdr:pdr!pdr_equivalences_equivalent_pdr_id_fkey(id, reference, designation)")
+      .select("*, equivalent_pdr:pdr!pdr_equivalences_equivalent_pdr_id_fkey(id, reference, designation)") as any)
       .eq("pdr_id", pdrId)
       .order("created_at", { ascending: false });
     setItems((data as any) || []);
@@ -58,16 +58,16 @@ export function usePdrEquivalences(pdrId?: string) {
   };
 
   const validate = async (id: string, status: ValidationStatus) => {
-    return supabase.from("pdr_equivalences" as any).update({
+    return (supabase.from("pdr_equivalences" as any).update({
       validation_status: status,
       validated_by: status === "non_valide" ? null : user?.id || null,
       validated_at: status === "non_valide" ? null : new Date().toISOString(),
       updated_by: user?.id || null,
-    } as any).eq("id", id);
+    } as any) as any).eq("id", id);
   };
 
   const remove = async (id: string) => {
-    return supabase.from("pdr_equivalences" as any).delete().eq("id", id);
+    return (supabase.from("pdr_equivalences" as any).delete() as any).eq("id", id);
   };
 
   return { items, loading, reload, add, validate, remove };

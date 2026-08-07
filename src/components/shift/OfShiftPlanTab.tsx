@@ -66,14 +66,14 @@ export function OfShiftPlanTab({ ofId, ofStatut, autoGenerate, ofCreatedBy, onCh
     (async () => {
       setLoading(true);
       const [tRes, cRes, aRes] = await Promise.all([
-        supabase.from("shift_teams").select("id, code, name, color").eq("is_active", true).order("code"),
-        supabase
+        (supabase.from("shift_teams").select("id, code, name, color") as any).eq("is_active", true).order("code"),
+        (supabase
           .from("user_roles")
-          .select("user_id, profiles:profiles!inner(user_id, first_name, last_name)")
+          .select("user_id, profiles:profiles!inner(user_id, first_name, last_name)") as any)
           .eq("role", "chef_ligne" as any),
-        supabase
+        (supabase
           .from("of_shift_assignments" as any)
-          .select("*")
+          .select("*") as any)
           .eq("of_id", ofId),
       ]);
       setTeams(tRes.data ?? []);
@@ -108,9 +108,9 @@ export function OfShiftPlanTab({ ofId, ofStatut, autoGenerate, ofCreatedBy, onCh
     try {
       // 1. Toggle auto_generate
       if (autoOn !== autoGenerate) {
-        const { error } = await supabase
+        const { error } = await (supabase
           .from("ordres_fabrication")
-          .update({ auto_generate_shifts: autoOn } as any)
+          .update({ auto_generate_shifts: autoOn } as any) as any)
           .eq("id", ofId);
         if (error) throw error;
         await logAudit({
@@ -129,26 +129,26 @@ export function OfShiftPlanTab({ ofId, ofStatut, autoGenerate, ofCreatedBy, onCh
         if (!cur || !cur.team_id || !cur.chef_ligne_id) {
           // delete if existed
           if (cur?.id) {
-            await supabase.from("of_shift_assignments" as any).delete().eq("id", cur.id);
+            await (supabase.from("of_shift_assignments" as any).delete() as any).eq("id", cur.id);
           }
           continue;
         }
         if (cur.id) {
-          await supabase
+          await (supabase
             .from("of_shift_assignments" as any)
             .update({
               shift_team_id: cur.team_id,
               chef_ligne_id: cur.chef_ligne_id,
-            })
+            } as any) as any)
             .eq("id", cur.id);
         } else {
-          await supabase.from("of_shift_assignments" as any).insert({
+          await (supabase.from("of_shift_assignments" as any).insert({
             of_id: ofId,
             shift_type: slot.type,
             shift_team_id: cur.team_id,
             chef_ligne_id: cur.chef_ligne_id,
             created_by: user?.id ?? null,
-          });
+          } as any) as any);
         }
       }
 

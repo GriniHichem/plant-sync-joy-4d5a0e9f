@@ -72,8 +72,8 @@ export function SelfOpenShiftDialog({ kind }: Props) {
     if (!open) return;
     (async () => {
       const [tRes, lRes] = await Promise.all([
-        supabase.from("shift_teams").select("id, code, name").eq("is_active", true).order("code"),
-        supabase.from("production_lines").select("id, code, designation").eq("is_active", true).order("code"),
+        (supabase.from("shift_teams").select("id, code, name") as any).eq("is_active", true).order("code"),
+        (supabase.from("production_lines").select("id, code, designation") as any).eq("is_active", true).order("code"),
       ]);
       setTeams(tRes.data ?? []);
       setLines(lRes.data ?? []);
@@ -81,10 +81,10 @@ export function SelfOpenShiftDialog({ kind }: Props) {
         // Production : pas d'auto-ouverture, ni de pré-remplissage par planning.
         setPlan(null);
         setShiftType(deriveShiftTypeFromHour(new Date().getHours()));
-        const { data } = await supabase
+        const { data } = await (supabase
           .from("ordres_fabrication")
-          .select("id, numero, line_id")
-          .in("statut", ["en_cours", "planifie"])
+          .select("id, numero, line_id") as any)
+          .in("statut", ["en_cours", "planifie"] as any)
           .order("numero", { ascending: false });
         setOfs(data ?? []);
         return;
@@ -124,9 +124,9 @@ export function SelfOpenShiftDialog({ kind }: Props) {
 
       // Qualité : les lignes ciblées sont automatiquement déduites des OF actifs.
       if (kind === "quality") {
-        const { data: ofRows } = await supabase
+        const { data: ofRows } = await (supabase
           .from("ordres_fabrication")
-          .select("line_id")
+          .select("line_id") as any)
           .eq("statut", "en_cours" as any);
         const derived = Array.from(
           new Set((ofRows ?? []).map((o: any) => o.line_id).filter(Boolean)),
@@ -146,29 +146,29 @@ export function SelfOpenShiftDialog({ kind }: Props) {
         if (ofId === "__none__") { toast({ title: "Sélectionnez un OF en cours", variant: "destructive" }); setSubmitting(false); return; }
         // preflight duplicate
         const today = (new Date()).toISOString().slice(0, 10);
-        const { data: dup } = await supabase
+        const { data: dup } = await (supabase
           .from("shifts")
-          .select("id")
+          .select("id") as any)
           .eq("of_id", ofId)
           .eq("line_id", lineId)
           .eq("date_shift", today)
-          .eq("shift_type", shiftType)
+          .eq("shift_type", shiftType as any)
           .eq("is_active", true)
           .maybeSingle();
         if (dup) {
           toast({ title: "Session déjà ouverte pour ce créneau", description: "Aucune nouvelle session créée." });
           setOpen(false); await refresh(); setSubmitting(false); return;
         }
-        const { error } = await supabase.from("shifts").insert({
+        const { error } = await (supabase.from("shifts").insert({
           of_id: ofId,
           line_id: lineId,
-          shift_type: shiftType,
+          shift_type: shiftType as any,
           shift_team_id: teamId === "__none__" ? null : teamId,
           chef_ligne_id: user.id,
           heure_debut: new Date().toISOString(),
           is_active: true,
           opened_by: user.id,
-        } as any);
+        } as any) as any);
         if (error) throw error;
         await logAudit({
           action_type: "create", module: "gpao", action: "shift_self_open",
@@ -176,15 +176,15 @@ export function SelfOpenShiftDialog({ kind }: Props) {
         });
       } else if (kind === "maintenance") {
         if (selectedLineIds.length === 0) { toast({ title: "Sélectionnez au moins une ligne", variant: "destructive" }); setSubmitting(false); return; }
-        const { error } = await supabase.from("maintenance_shifts" as any).insert({
-          shift_type: shiftType,
+        const { error } = await (supabase.from("maintenance_shifts" as any).insert({
+          shift_type: shiftType as any,
           shift_team_id: teamId === "__none__" ? null : teamId,
           maintenancier_id: user.id,
           line_ids: selectedLineIds,
           heure_debut: new Date().toISOString(),
           is_active: true,
           opened_by: user.id,
-        });
+        } as any) as any);
         if (error) throw error;
         await logAudit({
           action_type: "create", module: "interventions", action: "maintenance_shift_self_open",
@@ -192,17 +192,17 @@ export function SelfOpenShiftDialog({ kind }: Props) {
         });
       } else {
         // Qualité : les lignes sont déduites automatiquement (planning ou OF actifs), pas de blocage.
-        const { data: qs, error } = await supabase.from("quality_shifts" as any).insert({
-          shift_type: shiftType,
+        const { data: qs, error } = await (supabase.from("quality_shifts" as any).insert({
+          shift_type: shiftType as any,
           shift_team_id: teamId === "__none__" ? null : teamId,
           controller_id: user.id,
           heure_debut: new Date().toISOString(),
           is_active: true,
           opened_by: user.id,
-        }).select().single();
+        } as any) as any).select().single();
         if (error) throw error;
         const rows = selectedLineIds.map((lid) => ({ quality_shift_id: (qs as any).id, production_line_id: lid }));
-        if (rows.length) await supabase.from("quality_shift_lines" as any).insert(rows);
+        if (rows.length) await (supabase.from("quality_shift_lines" as any).insert(rows as any) as any);
         await logAudit({
           action_type: "create", module: "qualite" as any, action: "quality_shift_self_open",
           entity_type: "quality_shifts", description: "Démarrage shift qualité par l'opérateur",

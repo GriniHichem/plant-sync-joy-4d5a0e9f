@@ -48,9 +48,9 @@ export function OrientationsAdvisorDialog({ open, onOpenChange, campaignId, prod
     queryKey: ["orientations-advisor-v2", campaignId ?? null, productId ?? null],
     enabled: open,
     queryFn: async () => {
-      let q = supabase
+      let q = (supabase
         .from("v_reception_ticket_orientations_summary" as any)
-        .select("*")
+        .select("*") as any)
         .order("last_orientation_at", { ascending: false })
         .limit(30);
       if (campaignId) q = q.eq("campaign_id", campaignId);
@@ -67,9 +67,9 @@ export function OrientationsAdvisorDialog({ open, onOpenChange, campaignId, prod
     queryKey: ["orientations-advisor-photos", ticketIds],
     enabled: open && ticketIds.length > 0,
     queryFn: async () => {
-      const { data } = await supabase
+      const { data } = await (supabase
         .from("reception_ticket_photos" as any)
-        .select("ticket_id, slot, storage_path")
+        .select("ticket_id, slot, storage_path") as any)
         .in("ticket_id", ticketIds)
         .order("slot");
       const rows = (data ?? []) as any[];

@@ -39,14 +39,14 @@ export function usePdrStockPermissions() {
     }
 
     async function load() {
-      const { data } = await supabase
+      const { data } = await (supabase
         .from("pdr_stock_permissions")
-        .select("*")
-        .in("role", roles as string[]);
+        .select("*") as any)
+        .in("role", roles as any);
 
       if (data && data.length > 0) {
         const merged: PdrStockPerms = { ...EMPTY };
-        for (const row of data) {
+        for (const row of (data as any[])) {
           merged.can_view_suppliers = merged.can_view_suppliers || row.can_view_suppliers;
           merged.can_create_supplier = merged.can_create_supplier || row.can_create_supplier;
           merged.can_edit_supplier = merged.can_edit_supplier || row.can_edit_supplier;

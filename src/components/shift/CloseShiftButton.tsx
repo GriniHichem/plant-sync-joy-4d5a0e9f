@@ -52,13 +52,13 @@ export function CloseShiftButton() {
     }
     setSubmitting(true);
     try {
-      const { error } = await supabase
+      const { error } = await (supabase
         .from(tableName as any)
         .update({
           is_active: false,
           heure_fin: new Date().toISOString(),
           observations: observations.trim(),
-        } as any)
+        } as any) as any)
         .eq("id", activeId);
       if (error) throw error;
 

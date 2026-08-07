@@ -84,19 +84,19 @@ export function useMaintenanceRespOverview(): MaintenanceRespOverview {
 
     // Initial parallel fetch for core data
     const [ticketsRes, execRes, openReqRes] = await Promise.all([
-      supabase
+      (supabase
         .from("tickets")
-        .select("id, numero, statut, priorite, description, heure_declaration, heure_prise_en_charge, declarant_id, assignee_id, machines(id, code, designation), production_lines(id, code, designation)")
-        .in("statut", ["ouvert", "pris_en_charge"])
+        .select("id, numero, statut, priorite, description, heure_declaration, heure_prise_en_charge, declarant_id, assignee_id, machines(id, code, designation), production_lines(id, code, designation)") as any)
+        .in("statut", ["ouvert", "pris_en_charge"] as any)
         .order("heure_declaration", { ascending: false }),
-      supabase
+      (supabase
         .from("preventive_executions")
-        .select("id, plan_id, executed_by, heure_debut, session_id, preventive_plans(numero, title, prochaine_echeance, machines(id, code, designation))")
-        .eq("statut", "en_cours"),
-      supabase
+        .select("id, plan_id, executed_by, heure_debut, session_id, preventive_plans(numero, title, prochaine_echeance, machines(id, code, designation))") as any)
+        .eq("statut", "en_cours" as any),
+      (supabase
         .from("pdr_requests")
-        .select("ticket_id")
-        .in("statut", ["demandee", "prete", "partielle"]),
+        .select("ticket_id") as any)
+        .in("statut", ["demandee", "prete", "partielle"] as any),
     ]);
 
     const ticketRows = (ticketsRes.data as any[]) ?? [];
@@ -106,9 +106,9 @@ export function useMaintenanceRespOverview(): MaintenanceRespOverview {
     );
 
     // Movements are usually the heaviest, load them separately or limit strictly
-    const movesRes = await supabase
+    const movesRes = await (supabase
       .from("pdr_stock_movements")
-      .select("id, type, quantite, motif, source_type, source_id, created_at, user_id, pdr(reference, designation, unite_stock)")
+      .select("id, type, quantite, motif, source_type, source_id, created_at, user_id, pdr(reference, designation, unite_stock)") as any)
       .gte("created_at", todayIso.toISOString())
       .order("created_at", { ascending: false })
       .limit(20); // Reduced limit for dashboard overview
@@ -126,10 +126,10 @@ export function useMaintenanceRespOverview(): MaintenanceRespOverview {
 
     const [profsRes, moveTicketsRes] = await Promise.all([
       userIds.size
-        ? supabase.from("profiles").select("user_id, first_name, last_name").in("user_id", [...userIds])
+        ? (supabase.from("profiles").select("user_id, first_name, last_name") as any).in("user_id", [...userIds] as any)
         : Promise.resolve({ data: [] as any[] }),
       ticketIds.length
-        ? supabase.from("tickets").select("id, numero").in("id", ticketIds)
+        ? (supabase.from("tickets").select("id, numero") as any).in("id", ticketIds as any)
         : Promise.resolve({ data: [] as any[] }),
     ]);
 

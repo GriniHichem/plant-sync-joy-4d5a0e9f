@@ -13,9 +13,9 @@ export function useEntityDocuments(entityType: string, entityId?: string) {
 
   const fetchDocuments = useCallback(async () => {
     if (!entityId) return;
-    const { data } = await supabase
+    const { data } = await (supabase
       .from("entity_documents")
-      .select("*, document_categories(name)")
+      .select("*, document_categories(name)") as any)
       .eq("entity_type", entityType)
       .eq("entity_id", entityId)
       .order("created_at", { ascending: false });
@@ -24,9 +24,9 @@ export function useEntityDocuments(entityType: string, entityId?: string) {
   }, [entityType, entityId]);
 
   const fetchCategories = useCallback(async () => {
-    const { data } = await supabase
+    const { data } = await (supabase
       .from("document_categories")
-      .select("*")
+      .select("*") as any)
       .eq("is_active", true)
       .order("sort_order");
     setCategories(data || []);
@@ -79,7 +79,7 @@ export function useEntityDocuments(entityType: string, entityId?: string) {
 
   const deleteDocument = async (doc: any) => {
     await supabase.storage.from("entity-documents").remove([doc.storage_path]);
-    await supabase.from("entity_documents").delete().eq("id", doc.id);
+    await (supabase.from("entity_documents").delete() as any).eq("id", doc.id);
     toast({ title: "Document supprimé" });
     await fetchDocuments();
   };

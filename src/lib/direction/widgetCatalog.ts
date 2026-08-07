@@ -147,8 +147,8 @@ export const WIDGETS: WidgetDef[] = [
     supportsFilters: ["line"],
     defaultSize: { w: 3, h: 4 },
     fetch: async (ctx) => {
-      let q = supabase.from("tickets").select("id", { count: "exact", head: true }).neq("statut", "cloture");
-      if (ctx.lineId) q = q.eq("ligne_id", ctx.lineId);
+      let q = (supabase.from("tickets") as any).select("id", { count: "exact", head: true }).neq("statut", "cloture");
+      if (ctx.lineId) q = q.eq("ligne_id", ctx.lineId as any);
       const { count } = await q;
       return { value: count ?? 0, hint: "en cours de traitement", higherIsBetter: false };
     },
@@ -162,11 +162,11 @@ export const WIDGETS: WidgetDef[] = [
     permissionModule: "tickets",
     defaultSize: { w: 3, h: 4 },
     fetch: async () => {
-      const { count } = await supabase
+      const { count } = await (supabase
         .from("tickets")
-        .select("id", { count: "exact", head: true })
-        .eq("priorite", "critique")
-        .neq("statut", "cloture");
+        .select("id", { count: "exact", head: true } as any) as any)
+        .eq("priorite", "critique" as any)
+        .neq("statut", "cloture" as any);
       return { value: count ?? 0, hint: "priorité critique", higherIsBetter: false };
     },
   },
@@ -183,12 +183,12 @@ export const WIDGETS: WidgetDef[] = [
     defaultSize: { w: 3, h: 4 },
     fetch: async (ctx) => {
       const run = async (from: string, to: string) => {
-        let q = supabase
+        let q = (supabase
           .from("tickets")
-          .select("id", { count: "exact", head: true })
+          .select("id", { count: "exact", head: true } as any) as any)
           .gte("heure_declaration", from)
           .lt("heure_declaration", to);
-        if (ctx.lineId) q = q.eq("ligne_id", ctx.lineId);
+        if (ctx.lineId) q = q.eq("ligne_id", ctx.lineId as any);
         const { count } = await q;
         return count ?? 0;
       };
@@ -208,9 +208,9 @@ export const WIDGETS: WidgetDef[] = [
     defaultSize: { w: 3, h: 4 },
     fetch: async (ctx) => {
       const run = async (from: string, to: string) => {
-        const { data } = await supabase
+        const { data } = await (supabase
           .from("tickets")
-          .select("temps_arret_minutes")
+          .select("temps_arret_minutes") as any)
           .gte("heure_declaration", from)
           .lt("heure_declaration", to)
           .limit(MAX_ROWS);
@@ -238,12 +238,12 @@ export const WIDGETS: WidgetDef[] = [
     defaultSize: { w: 3, h: 4 },
     fetch: async (ctx) => {
       const run = async (from: string, to: string) => {
-        const { data } = await supabase
+        const { data } = await (supabase
           .from("tickets")
-          .select("temps_intervention_minutes")
+          .select("temps_intervention_minutes") as any)
           .gte("heure_declaration", from)
           .lt("heure_declaration", to)
-          .not("temps_intervention_minutes", "is", null)
+          .not("temps_intervention_minutes", "is", null as any)
           .limit(MAX_ROWS);
         const rows = (data ?? []) as any[];
         if (!rows.length) return 0;
@@ -268,13 +268,13 @@ export const WIDGETS: WidgetDef[] = [
     defaultSize: { w: 3, h: 4 },
     fetch: async (ctx) => {
       const run = async (from: string, to: string) => {
-        let q = supabase
+        let q = (supabase
           .from("production_stops")
-          .select("duree_minutes")
+          .select("duree_minutes") as any)
           .gte("heure_debut", from)
           .lt("heure_debut", to)
           .limit(MAX_ROWS);
-        if (ctx.lineId) q = q.eq("line_id", ctx.lineId);
+        if (ctx.lineId) q = q.eq("line_id", ctx.lineId as any);
         const { data } = await q;
         const stop = ((data ?? []) as any[]).reduce((s, r) => s + Number(r.duree_minutes ?? 0), 0);
         const spanMin = (new Date(to).getTime() - new Date(from).getTime()) / 60_000;
@@ -293,10 +293,10 @@ export const WIDGETS: WidgetDef[] = [
     permissionModule: "preventif",
     defaultSize: { w: 3, h: 4 },
     fetch: async () => {
-      const { count } = await supabase
+      const { count } = await (supabase
         .from("preventive_plans")
-        .select("id", { count: "exact", head: true })
-        .eq("is_active", true)
+        .select("id", { count: "exact", head: true } as any) as any)
+        .eq("is_active", true as any)
         .lt("prochaine_echeance", new Date().toISOString().slice(0, 10));
       return { value: count ?? 0, hint: "échéance dépassée", higherIsBetter: false };
     },
@@ -312,9 +312,9 @@ export const WIDGETS: WidgetDef[] = [
     supportsPeriod: true,
     defaultSize: { w: 6, h: 9 },
     fetch: async (ctx) => {
-      const { data } = await supabase
+      const { data } = await (supabase
         .from("tickets")
-        .select("statut")
+        .select("statut") as any)
         .gte("heure_declaration", ctx.from)
         .lt("heure_declaration", ctx.to)
         .limit(MAX_ROWS);
@@ -332,9 +332,9 @@ export const WIDGETS: WidgetDef[] = [
     supportsPeriod: true,
     defaultSize: { w: 6, h: 9 },
     fetch: async (ctx) => {
-      const { data } = await supabase
+      const { data } = await (supabase
         .from("tickets")
-        .select("priorite")
+        .select("priorite") as any)
         .gte("heure_declaration", ctx.from)
         .lt("heure_declaration", ctx.to)
         .limit(MAX_ROWS);
@@ -352,9 +352,9 @@ export const WIDGETS: WidgetDef[] = [
     supportsPeriod: true,
     defaultSize: { w: 6, h: 9 },
     fetch: async (ctx) => {
-      const { data } = await supabase
+      const { data } = await (supabase
         .from("tickets")
-        .select("heure_declaration")
+        .select("heure_declaration") as any)
         .gte("heure_declaration", ctx.from)
         .lt("heure_declaration", ctx.to)
         .limit(MAX_ROWS);
@@ -373,13 +373,13 @@ export const WIDGETS: WidgetDef[] = [
     supportsFilters: ["line"],
     defaultSize: { w: 6, h: 9 },
     fetch: async (ctx) => {
-      let q = supabase
+      let q = (supabase
         .from("production_stops")
-        .select("duree_minutes, machines(nom:designation)")
+        .select("duree_minutes, machines(nom:designation)") as any)
         .gte("heure_debut", ctx.from)
         .lt("heure_debut", ctx.to)
         .limit(MAX_ROWS);
-      if (ctx.lineId) q = q.eq("line_id", ctx.lineId);
+      if (ctx.lineId) q = q.eq("line_id", ctx.lineId as any);
       const { data } = await q;
       return groupSum(
         (data ?? []) as any[],
@@ -399,14 +399,14 @@ export const WIDGETS: WidgetDef[] = [
     supportsFilters: ["line"],
     defaultSize: { w: 6, h: 9 },
     fetch: async (ctx) => {
-      let q = supabase
+      let q = (supabase
         .from("tickets")
-        .select("numero, priorite, statut, heure_declaration, machines(designation)")
+        .select("numero, priorite, statut, heure_declaration, machines(designation)") as any)
         .gte("heure_declaration", ctx.from)
         .lt("heure_declaration", ctx.to)
         .order("heure_declaration", { ascending: false })
         .limit(ctx.limit);
-      if (ctx.lineId) q = q.eq("ligne_id", ctx.lineId);
+      if (ctx.lineId) q = q.eq("ligne_id", ctx.lineId as any);
       const { data } = await q;
       return {
         columns: [
@@ -439,9 +439,9 @@ export const WIDGETS: WidgetDef[] = [
     defaultSize: { w: 3, h: 4 },
     fetch: async (ctx) => {
       const run = async (from: string, to: string) => {
-        const { data } = await supabase
+        const { data } = await (supabase
           .from("production_declarations")
-          .select("quantite_produite, ordres_fabrication!inner(line_id, product_id)")
+          .select("quantite_produite, ordres_fabrication!inner(line_id, product_id)") as any)
           .gte("heure_production", from)
           .lt("heure_production", to)
           .limit(MAX_ROWS);
@@ -464,9 +464,9 @@ export const WIDGETS: WidgetDef[] = [
     supportsFilters: ["line", "product"],
     defaultSize: { w: 3, h: 4 },
     fetch: async (ctx) => {
-      let q = supabase.from("ordres_fabrication").select("id", { count: "exact", head: true }).eq("statut", "en_cours");
-      if (ctx.lineId) q = q.eq("line_id", ctx.lineId);
-      if (ctx.productId) q = q.eq("product_id", ctx.productId);
+      let q = (supabase.from("ordres_fabrication") as any).select("id", { count: "exact", head: true } as any).eq("statut", "en_cours" as any);
+      if (ctx.lineId) q = q.eq("line_id", ctx.lineId as any);
+      if (ctx.productId) q = q.eq("product_id", ctx.productId as any);
       const { count } = await q;
       return { value: count ?? 0, hint: "ordres actifs", higherIsBetter: true };
     },

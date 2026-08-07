@@ -81,9 +81,9 @@ export function useMyPdrRequests() {
 
   const reload = useCallback(async () => {
     if (!user) { setRequests([]); setLoading(false); return; }
-    const { data } = await supabase
+    const { data } = await (supabase
       .from("pdr_requests" as any)
-      .select(SELECT)
+      .select(SELECT) as any)
       .eq("requested_by", user.id)
       .order("created_at", { ascending: false })
       .limit(100);

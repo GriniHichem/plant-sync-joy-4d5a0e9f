@@ -29,9 +29,9 @@ export function PackagingConfig({ entityType, entityId, poidsUnitaire = 0, unite
 
   useEffect(() => {
     const load = async () => {
-      const { data } = await supabase
+      const { data } = await (supabase
         .from("packaging_levels")
-        .select("*")
+        .select("*") as any)
         .eq("entity_type", entityType)
         .eq("entity_id", entityId)
         .order("level_order");
@@ -78,7 +78,7 @@ export function PackagingConfig({ entityType, entityId, poidsUnitaire = 0, unite
   const save = async () => {
     setSaving(true);
     // Delete existing
-    await supabase.from("packaging_levels").delete().eq("entity_type", entityType).eq("entity_id", entityId);
+    await (supabase.from("packaging_levels").delete() as any).eq("entity_type", entityType).eq("entity_id", entityId);
     
     if (levels.length > 0) {
       const rows = levels.map((l, i) => ({

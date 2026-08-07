@@ -21,9 +21,9 @@ export function usePdrLinksByPdr(pdrId?: string) {
   const reload = useCallback(async () => {
     if (!pdrId) return;
     setLoading(true);
-    const { data } = await supabase
+    const { data } = await (supabase
       .from("pdr_entity_links" as any)
-      .select("*")
+      .select("*") as any)
       .eq("pdr_id", pdrId)
       .order("created_at", { ascending: false });
     setLinks((data as any) || []);
@@ -43,10 +43,10 @@ export function usePdrLinksByEntity(entityType?: PdrEntityType, entityId?: strin
   const reload = useCallback(async () => {
     if (!entityType || !entityId) return;
     setLoading(true);
-    const { data } = await supabase
+    const { data } = await (supabase
       .from("pdr_entity_links" as any)
-      .select("*, pdr(*)")
-      .eq("entity_type", entityType)
+      .select("*, pdr(*)") as any)
+      .eq("entity_type", entityType as any)
       .eq("entity_id", entityId);
     setLinks((data as any) || []);
     setLoading(false);
@@ -71,5 +71,5 @@ export async function linkPdrToEntity(
 }
 
 export async function unlinkPdr(linkId: string) {
-  return supabase.from("pdr_entity_links" as any).delete().eq("id", linkId);
+  return (supabase.from("pdr_entity_links" as any).delete() as any).eq("id", linkId);
 }

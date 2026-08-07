@@ -55,17 +55,17 @@ export function useShiftSessionStats(kind: ShiftKind, sessionId: string | null):
     async function load() {
       if (kind === "production") {
         const [{ data: decl }, { data: stops }, { data: shiftTickets }] = await Promise.all([
-          supabase
+          (supabase
             .from("production_declarations")
-            .select("quantite_produite, quantite_rebut")
+            .select("quantite_produite, quantite_rebut") as any)
             .eq("shift_id", sessionId),
-          supabase
+          (supabase
             .from("production_stops")
-            .select("duree_minutes, heure_debut, heure_fin, ticket_id")
+            .select("duree_minutes, heure_debut, heure_fin, ticket_id") as any)
             .eq("shift_id", sessionId),
-          supabase
+          (supabase
             .from("tickets")
-            .select("id, temps_arret_minutes, statut")
+            .select("id, temps_arret_minutes, statut") as any)
             .eq("shift_id", sessionId),
         ]);
         const totalProd = (decl ?? []).reduce((s, d: any) => s + Number(d.quantite_produite || 0), 0);
@@ -100,9 +100,9 @@ export function useShiftSessionStats(kind: ShiftKind, sessionId: string | null):
           ],
         });
       } else if (kind === "maintenance") {
-        const { data: shiftRow } = await supabase
+        const { data: shiftRow } = await (supabase
           .from("maintenance_shifts" as any)
-          .select("maintenancier_id, heure_debut, heure_fin")
+          .select("maintenancier_id, heure_debut, heure_fin") as any)
           .eq("id", sessionId)
           .maybeSingle();
         if (!shiftRow) {
@@ -118,15 +118,15 @@ export function useShiftSessionStats(kind: ShiftKind, sessionId: string | null):
         const s = shiftRow as any;
         const endTs = s.heure_fin ?? new Date().toISOString();
         const [{ data: interv }, { data: closedTickets }] = await Promise.all([
-          supabase
+          (supabase
             .from("interventions")
-            .select("date_debut, date_fin, statut, description, role, ticket_id")
+            .select("date_debut, date_fin, statut, description, role, ticket_id") as any)
             .eq("technicien_id", s.maintenancier_id)
             .gte("date_debut", s.heure_debut)
             .lte("date_debut", endTs),
-          supabase
+          (supabase
             .from("tickets")
-            .select("temps_arret_minutes, temps_intervention_minutes")
+            .select("temps_arret_minutes, temps_intervention_minutes") as any)
             // C2: valid enum is resolu|cloture (never 'ferme'). Includes both lifecycle endpoints.
             .in("statut", ["resolu", "cloture"] as any)
             .gte("heure_resolution", s.heure_debut)
@@ -171,13 +171,13 @@ export function useShiftSessionStats(kind: ShiftKind, sessionId: string | null):
         });
       } else {
         const [{ data: checks }, { count: ncs }] = await Promise.all([
-          supabase
+          (supabase
             .from("quality_checks" as any)
-            .select("is_conform, status")
+            .select("is_conform, status") as any)
             .eq("quality_shift_id", sessionId),
-          supabase
+          (supabase
             .from("quality_non_conformities" as any)
-            .select("id", { count: "exact", head: true })
+            .select("id", { count: "exact", head: true } as any) as any)
             .eq("quality_shift_id", sessionId),
         ]);
         // Business rule: exclude rejected checks from the conformity rate

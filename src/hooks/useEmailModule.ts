@@ -71,9 +71,9 @@ export function useEmailAccount() {
 
   const refresh = useCallback(async () => {
     if (!user) return;
-    const { data } = await supabase
+    const { data } = await (supabase
       .from("user_email_accounts")
-      .select("id, email, provider, smtp_host, smtp_port, smtp_secure, display_name, is_connected, connected_at, last_error")
+      .select("id, email, provider, smtp_host, smtp_port, smtp_secure, display_name, is_connected, connected_at, last_error") as any)
       .eq("user_id", user.id)
       .maybeSingle();
     setAccount((data as EmailAccount) ?? null);
@@ -105,9 +105,9 @@ export function useEmailTemplates() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const { data } = await supabase
+      const { data } = await (supabase
         .from("email_templates")
-        .select("id, name, category, subject, body, is_html, default_recipients, variables, description")
+        .select("id, name, category, subject, body, is_html, default_recipients, variables, description") as any)
         .eq("is_active", true)
         .order("category")
         .order("name");
@@ -128,9 +128,9 @@ export function useEmailLogs() {
 
   const refresh = useCallback(async () => {
     if (!user) return;
-    const { data } = await supabase
+    const { data } = await (supabase
       .from("email_logs")
-      .select("id, template_name, template_id, from_email, sent_to, cc, subject, body, is_html, status, error_message, sent_at, created_at")
+      .select("id, template_name, template_id, from_email, sent_to, cc, subject, body, is_html, status, error_message, sent_at, created_at") as any)
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(200);

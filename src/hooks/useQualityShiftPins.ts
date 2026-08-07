@@ -25,9 +25,9 @@ export function useQualityShiftPins(qualityShiftId: string | null) {
       return;
     }
     setLoading(true);
-    const { data } = await supabase
+    const { data } = await (supabase
       .from("quality_shift_pins" as any)
-      .select("id, quality_shift_id, of_id, indicator_id")
+      .select("id, quality_shift_id, of_id, indicator_id") as any)
       .eq("quality_shift_id", qualityShiftId);
     setPins(((data as any[]) ?? []) as QualityShiftPin[]);
     setLoading(false);
@@ -49,7 +49,7 @@ export function useQualityShiftPins(qualityShiftId: string | null) {
       const existing = pins.find((p) => p.of_id === ofId && p.indicator_id === indicatorId);
       if (existing) {
         setPins((prev) => prev.filter((p) => p.id !== existing.id));
-        await supabase.from("quality_shift_pins" as any).delete().eq("id", existing.id);
+        await (supabase.from("quality_shift_pins" as any).delete() as any).eq("id", existing.id);
       } else {
         const { data } = await supabase
           .from("quality_shift_pins" as any)
