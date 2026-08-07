@@ -115,12 +115,6 @@ export function useMaintenanceRespOverview(): MaintenanceRespOverview {
 
     const moveRows = (movesRes.data as any[]) ?? [];
 
-    const ticketRows = (ticketsRes.data as any[]) ?? [];
-    const execRows = (execRes.data as any[]) ?? [];
-    const moveRows = (movesRes.data as any[]) ?? [];
-    const waitingTicketIds = new Set(
-      ((openReqRes.data as any[]) ?? []).map((r) => r.ticket_id).filter(Boolean)
-    );
 
     // collect user ids
     const userIds = new Set<string>();
