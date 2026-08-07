@@ -777,9 +777,10 @@ export default function ReceptionQualitative() {
                     </div>
                     <div className="bg-amber-500/5 rounded-lg p-3 border border-amber-500/10">
                       <div className="flex items-center gap-1.5 text-amber-600 mb-1">
-                        <Weight className="h-3.5 w-3.5" />
-                        <span className="text-[10px] font-medium uppercase">Abat. Total</span>
+                        <Timer className="h-3.5 w-3.5" />
+                        <span className="text-[10px] font-medium uppercase">Durée Moyenne</span>
                       </div>
+
                       <div className="text-xl font-bold tabular-nums">
                         {Math.round(kpis?.avg_duree ?? 0)} <span className="text-xs font-normal">min</span>
                       </div>
