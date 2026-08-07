@@ -252,9 +252,8 @@ export default function ReceptionQualitative() {
     queryFn: async () => {
       const { data, error } = await supabase.from("v_reception_global")
         .select("*")
-        .or(`cloture_by.eq.${user?.id},created_by.eq.${user?.id}`)
+        .eq("created_by", user?.id)
         .in("statut", ["cloture", "pese_importe"])
-        .order("cloture_at", { ascending: false })
         .order("created_at", { ascending: false })
         .limit(10);
       
