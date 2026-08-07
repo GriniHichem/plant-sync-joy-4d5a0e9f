@@ -602,6 +602,7 @@ export default function ReceptionGlobal() {
             <span className="ml-auto tabular-nums">
               <span className="font-medium text-foreground">{filtered.length}</span> ligne(s) affichée(s) sur{" "}
               <span className="font-medium text-foreground">{kpis.total}</span> ticket(s)
+              {kpis.moyDuree ? ` · Durée moy: ${Math.round(kpis.moyDuree)} min` : ""}
             </span>
           </div>
 
