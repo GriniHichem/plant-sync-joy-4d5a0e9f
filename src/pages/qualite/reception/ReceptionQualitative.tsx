@@ -328,6 +328,7 @@ export default function ReceptionQualitative() {
         total_abattement_kg: number;
         avg_abattement_pct: number;
         ticket_count: number;
+        avg_duree?: number;
       };
     },
     enabled: !!user?.id,
@@ -785,6 +786,7 @@ export default function ReceptionQualitative() {
                       </div>
                       <div className="text-[10px] text-muted-foreground mt-0.5">
                         Période {period === "matin" ? "6h-14h" : period === "apres_midi" ? "14h-22h" : "22h-6h"}
+                        {kpis?.avg_duree ? ` · Durée moy: ${Math.round(kpis.avg_duree)} min` : ""}
                       </div>
                     </div>
                   </div>
