@@ -328,8 +328,8 @@ export default function ReceptionQualitative() {
         total_abattement_kg: number;
         avg_abattement_pct: number;
         ticket_count: number;
-        avg_duree?: number;
-        a_peser_count?: number;
+        avg_duree: number;
+        count_a_peser: number;
       };
     },
     enabled: !!user?.id,
