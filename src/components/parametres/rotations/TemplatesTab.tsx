@@ -56,7 +56,7 @@ export function TemplatesTab({ onChange }: { onChange?: () => void }) {
     setLoading(true);
     const [tRes, sRes] = await Promise.all([
       supabase.from("shift_templates").select("*").order("sort_order"),
-      supabase.from("shift_modes").select("id, code, label").eq("is_active", true).order("code"),
+      (supabase.from("shift_modes").select("id, code, label") as any).eq("is_active", true).order("code"),
     ]);
     setRows((tRes.data as ShiftTemplate[]) ?? []);
     setSystems((sRes.data as ShiftSystem[]) ?? []);
@@ -92,7 +92,7 @@ export function TemplatesTab({ onChange }: { onChange?: () => void }) {
         shift_mode_id: draft.shift_mode_id || null,
       };
       if (draft.id) {
-        const { error } = await supabase.from("shift_templates").update(payload as any).eq("id", draft.id);
+        const { error } = await (supabase.from("shift_templates").update(payload as any) as any).eq("id", draft.id);
         if (error) throw error;
         await logAudit({ action_type: "update", module: "parametres", action: "shift_template_update", entity_type: "shift_templates", entity_id: draft.id, description: `Modèle ${payload.code} modifié` });
       } else {
@@ -113,7 +113,7 @@ export function TemplatesTab({ onChange }: { onChange?: () => void }) {
 
   const remove = async (t: ShiftTemplate) => {
     if (!confirm(`Supprimer le modèle ${t.label} ?`)) return;
-    const { error } = await supabase.from("shift_templates").delete().eq("id", t.id);
+    const { error } = await (supabase.from("shift_templates").delete() as any).eq("id", t.id);
     if (error) { toast({ title: "Suppression impossible", description: error.message, variant: "destructive" }); return; }
     await logAudit({ action_type: "delete", module: "parametres", action: "shift_template_delete", entity_type: "shift_templates", entity_id: t.id, description: `Modèle ${t.code} supprimé` });
     toast({ title: "Modèle supprimé" });
