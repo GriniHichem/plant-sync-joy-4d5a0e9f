@@ -43,8 +43,8 @@ export function ImpersonationProvider({ children }: { children: React.ReactNode 
     setLoading(true);
     try {
       const [{ data: profile }, { data: roles }] = await Promise.all([
-        supabase.from("profiles").select("user_id, first_name, last_name, poste, avatar_url").eq("user_id", userId).maybeSingle(),
-        supabase.from("user_roles").select("role").eq("user_id", userId),
+        (supabase.from("profiles").select("user_id, first_name, last_name, poste, avatar_url") as any).eq("user_id", userId).maybeSingle(),
+        (supabase.from("user_roles").select("role") as any).eq("user_id", userId),
       ]);
       const state: ImpersonationState = {
         targetUserId: userId,
@@ -74,9 +74,9 @@ export function ImpersonationProvider({ children }: { children: React.ReactNode 
           sessionStorage.removeItem(SS_KEY);
           return;
         }
-        const { data: roles } = await supabase
+        const { data: roles } = await (supabase
           .from("user_roles")
-          .select("role")
+          .select("role") as any)
           .eq("user_id", user.id);
         const isAdmin = (roles ?? []).some((r: any) => r.role === "admin");
         if (!isAdmin) {

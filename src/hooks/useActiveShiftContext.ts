@@ -40,9 +40,9 @@ export function useActiveShiftContext(refreshIntervalMs = 5 * 60 * 1000) {
       setLoading(false);
       return;
     }
-    const { data: rows, error } = await supabase.rpc("get_active_shift_context", {
+    const { data: rows, error } = await (supabase.rpc("get_active_shift_context", {
       _user_id: user.id,
-    });
+    }) as any);
     if (error || !rows || (rows as any[]).length === 0) {
       setData(EMPTY);
       setLoading(false);
