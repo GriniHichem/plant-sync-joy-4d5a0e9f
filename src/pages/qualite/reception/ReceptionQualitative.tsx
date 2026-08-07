@@ -14,7 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Check, Clock, Lock, Truck, XCircle, Search, Lightbulb, TrendingDown, Weight } from "lucide-react";
+import { Check, Clock, Lock, Truck, XCircle, Search, Lightbulb, TrendingDown, Weight, Timer } from "lucide-react";
 import { toast } from "sonner";
 import { PhotoSlot } from "./PhotoSlot";
 import { SupplierCombobox } from "@/components/reception/SupplierCombobox";
@@ -307,8 +307,9 @@ export default function ReceptionQualitative() {
   const { data: kpis } = useQuery({
     queryKey: ["reception_user_kpis", user?.id, periodRange.start.toISOString().split('.')[0], periodRange.end.toISOString().split('.')[0], period],
     queryFn: async () => {
-      const startTime = periodRange.start.toISOString().split('.')[0].replace('T', ' ');
-      const endTime = periodRange.end.toISOString().split('.')[0].replace('T', ' ');
+      const startTime = periodRange.start.toISOString();
+      const endTime = periodRange.end.toISOString();
+
       
       console.log("Fetching KPIs for user:", user?.id, "Period:", startTime, "to", endTime);
       
@@ -323,13 +324,10 @@ export default function ReceptionQualitative() {
       }
       console.log("KPIs data received:", data);
       return data?.[0] as {
-        total_brut: number;
-        total_net: number;
-        total_abattement_kg: number;
-        avg_abattement_pct: number;
-        ticket_count: number;
-        avg_duree?: number;
-        a_peser_count?: number;
+        count_pese: number;
+        count_a_peser: number;
+        avg_abattement: number;
+        avg_duree: number;
       };
     },
     enabled: !!user?.id,
@@ -771,23 +769,26 @@ export default function ReceptionQualitative() {
                         <span className="text-[10px] font-medium uppercase">Abat. Moyen</span>
                       </div>
                       <div className="text-xl font-bold tabular-nums">
-                        {kpis ? kpis.avg_abattement_pct.toFixed(2) : "0.00"}%
+                        {kpis ? kpis.avg_abattement.toFixed(2) : "0.00"}%
                       </div>
                       <div className="text-[10px] text-muted-foreground mt-0.5">
-                        {kpis?.ticket_count ?? 0} pesés · {kpis?.a_peser_count ?? 0} à peser
+                        {kpis?.count_pese ?? 0} pesés · {kpis?.count_a_peser ?? 0} à peser
                       </div>
+
                     </div>
                     <div className="bg-amber-500/5 rounded-lg p-3 border border-amber-500/10">
                       <div className="flex items-center gap-1.5 text-amber-600 mb-1">
-                        <Weight className="h-3.5 w-3.5" />
-                        <span className="text-[10px] font-medium uppercase">Abat. Total</span>
+                        <Timer className="h-3.5 w-3.5" />
+                        <span className="text-[10px] font-medium uppercase">Durée Moyenne</span>
                       </div>
+
                       <div className="text-xl font-bold tabular-nums">
-                        {kpis ? Math.round(kpis.total_abattement_kg).toLocaleString("fr-FR") : "0"} <span className="text-xs font-normal">kg</span>
+                        {Math.round(kpis?.avg_duree ?? 0)} <span className="text-xs font-normal">min</span>
                       </div>
+
                       <div className="text-[10px] text-muted-foreground mt-0.5">
                         Période {period === "matin" ? "6h-14h" : period === "apres_midi" ? "14h-22h" : "22h-6h"}
-                        {kpis?.avg_duree ? ` · Durée moy: ${Math.round(kpis.avg_duree)} min` : ""}
+
                       </div>
                     </div>
                   </div>

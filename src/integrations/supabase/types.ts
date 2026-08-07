@@ -7928,7 +7928,7 @@ export type Database = {
         Returns: Json
       }
       get_reception_user_kpis: {
-        Args: { _end_date: string; _start_date: string; _user_id: string }
+        Args: { p_end_time: string; p_start_time: string; p_user_id: string }
         Returns: Json
       }
       get_recipe_for_of: {
@@ -8120,7 +8120,6 @@ export type Database = {
         Returns: number
       }
       reception_global_stats:
-        | { Args: { _end_date: string; _start_date: string }; Returns: Json }
         | {
             Args: {
               p_campaign?: string
@@ -8136,6 +8135,7 @@ export type Database = {
             }
             Returns: Json
           }
+        | { Args: { p_end_date: string; p_start_date: string }; Returns: Json }
       refuse_request_item: {
         Args: { p_item_id: string; p_motif: string }
         Returns: undefined

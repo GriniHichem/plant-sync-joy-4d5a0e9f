@@ -261,7 +261,7 @@ export default function ReceptionGlobal() {
     net: Number(stats?.net ?? 0),
     abat: Number(stats?.abat ?? 0),
     moyDuree: stats?.moy_duree != null ? Number(stats.moy_duree) : null,
-    nbDuree: Number(stats?.nb_duree ?? 0),
+    nbDuree: Number(stats?.clotures ?? 0),
     tauxAbatMoyen: stats?.net && (Number(stats.net) + Number(stats.abat)) > 0 
       ? (Number(stats.abat) / (Number(stats.net) + Number(stats.abat))) * 100 
       : 0,
