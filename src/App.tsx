@@ -405,8 +405,8 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
-        </AuthProvider>
-      </ImpersonationProvider>
+        </ImpersonationProvider>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
