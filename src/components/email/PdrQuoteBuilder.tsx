@@ -123,10 +123,10 @@ export function PdrQuoteBuilder({ onDraft }: { onDraft: (d: QuoteDraft) => void 
           return;
         }
       }
-      let query = supabase
+      let query = (supabase
         .from("pdr")
-        .select("id, reference, designation, marque, modele, reference_constructeur, matiere, unite_stock, description, commentaire_technique, family_id")
-        .eq("is_active" as any, true) as any;
+        .select("id, reference, designation, marque, modele, reference_constructeur, matiere, unite_stock, description, commentaire_technique, family_id") as any)
+        .eq("is_active", true);
       if (familyId !== "all") query = query.eq("family_id", familyId);
       if (machinePdrIds) query = query.in("id", machinePdrIds);
       if (q.length >= 2) query = query.or(`reference.ilike.%${q}%,designation.ilike.%${q}%`);
@@ -149,11 +149,11 @@ export function PdrQuoteBuilder({ onDraft }: { onDraft: (d: QuoteDraft) => void 
     (async () => {
       const familyIds = Array.from(new Set(picked.map((p) => (p as unknown as { family_id?: string }).family_id).filter(Boolean))) as string[];
       const [direct, fam, imgs] = await Promise.all([
-        supabase.from("pdr_suppliers").select("id, nom, email, contact_email, tel, contact_phone").in("pdr_id" as any, pickedIds),
+        (supabase.from("pdr_suppliers").select("id, nom, email, contact_email, tel, contact_phone") as any).in("pdr_id", pickedIds),
         familyIds.length
-          ? supabase.from("pdr_family_suppliers").select("id, nom, email, tel").in("family_id" as any, familyIds)
+          ? (supabase.from("pdr_family_suppliers").select("id, nom, email, tel") as any).in("family_id", familyIds)
           : Promise.resolve({ data: [] as unknown[] }),
-        supabase.from("entity_images").select("id, entity_id, image_url, file_name").eq("entity_type" as any, "pdr").in("entity_id" as any, pickedIds),
+        (supabase.from("entity_images").select("id, entity_id, image_url, file_name") as any).eq("entity_type", "pdr").in("entity_id", pickedIds),
       ]);
       if (cancelled) return;
       const list: SupplierRow[] = [];

@@ -37,8 +37,8 @@ function useProfiles(enabled: boolean) {
     queryFn: async (): Promise<ProfileLite[]> => {
       const { data, error } = await (supabase
         .from("profiles")
-        .select("user_id, first_name, last_name, poste")
-        .eq("is_active" as any, true) as any)
+        .select("user_id, first_name, last_name, poste") as any)
+        .eq("is_active", true)
         .order("first_name");
       if (error) throw error;
       return (data ?? []) as ProfileLite[];
