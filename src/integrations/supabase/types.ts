@@ -7928,7 +7928,7 @@ export type Database = {
         Returns: Json
       }
       get_reception_user_kpis: {
-        Args: { _end_date: string; _start_date: string; _user_id: string }
+        Args: { p_end_time: string; p_start_time: string; p_user_id: string }
         Returns: Json
       }
       get_recipe_for_of: {
