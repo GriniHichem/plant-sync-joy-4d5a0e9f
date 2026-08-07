@@ -58,7 +58,7 @@ export function usePdrEquivalences(pdrId?: string) {
   };
 
   const validate = async (id: string, status: ValidationStatus) => {
-    return supabase.from("pdr_equivalences" as any).update({
+    return (supabase.from("pdr_equivalences" as any).update({
       validation_status: status,
       validated_by: status === "non_valide" ? null : user?.id || null,
       validated_at: status === "non_valide" ? null : new Date().toISOString(),

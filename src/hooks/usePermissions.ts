@@ -51,9 +51,9 @@ export function usePermissions() {
       // it inherits from (unless overridden in role_permissions).
       const effectiveRoles = new Set<string>(roles);
       try {
-        const { data: cr } = await supabase
+        const { data: cr } = await (supabase
           .from("custom_roles")
-          .select("code, inherits_from, is_active");
+          .select("code, inherits_from, is_active") as any);
         const byCode = new Map<string, { inherits_from: string | null; is_active: boolean }>();
         (cr ?? []).forEach((r: any) => byCode.set(r.code, { inherits_from: r.inherits_from, is_active: r.is_active }));
         // Walk inheritance chain up to 10 levels to avoid cycles.
@@ -68,9 +68,9 @@ export function usePermissions() {
         }
       } catch {}
 
-      const { data } = await supabase
+      const { data } = await (supabase
         .from("role_permissions")
-        .select("module, can_view, can_create, can_edit, can_delete, role")
+        .select("module, can_view, can_create, can_edit, can_delete, role") as any)
         .in("role", Array.from(effectiveRoles) as any);
 
 
@@ -78,7 +78,7 @@ export function usePermissions() {
       if (data) {
         // Merge permissions across roles (OR logic)
         const merged = new Map<string, Permission>();
-        for (const row of data) {
+        for (const row of (data as any[])) {
           const existing = merged.get(row.module);
           if (existing) {
             existing.can_view = existing.can_view || row.can_view;
