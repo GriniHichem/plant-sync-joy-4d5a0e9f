@@ -58,8 +58,8 @@ export function TemplatesTab({ onChange }: { onChange?: () => void }) {
       supabase.from("shift_templates").select("*").order("sort_order"),
       (supabase.from("shift_modes").select("id, code, label") as any).eq("is_active", true).order("code"),
     ]);
-    setRows((tRes.data as ShiftTemplate[]) ?? []);
-    setSystems((sRes.data as ShiftSystem[]) ?? []);
+    setRows((tRes.data as any[]) ?? []);
+    setSystems((sRes.data as any[]) ?? []);
     setLoading(false);
   };
   useEffect(() => { load(); }, []);
