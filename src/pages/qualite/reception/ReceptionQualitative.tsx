@@ -698,45 +698,38 @@ export default function ReceptionQualitative() {
 
                 <div className="pt-4 border-t space-y-3">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Mes indicateurs</h4>
-                    <Tabs value={period} onValueChange={(v: any) => setPeriod(v)} className="h-8">
-                      <TabsList className="h-8 p-0.5">
-                        <TabsTrigger value="matin" className="text-[10px] h-7 px-2">Matin</TabsTrigger>
-                        <TabsTrigger value="apres_midi" className="text-[10px] h-7 px-2">A-M</TabsTrigger>
-                        <TabsTrigger value="nuit" className="text-[10px] h-7 px-2">Nuit</TabsTrigger>
-                      </TabsList>
-                    </Tabs>
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Indicateurs par période</h4>
+                    <span className="text-[10px] text-muted-foreground tabular-nums">Journée du {format(new Date(), "dd/MM/yyyy")}</span>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="bg-primary/5 rounded-lg p-3 border border-primary/10">
-                      <div className="flex items-center gap-1.5 text-primary mb-1">
-                        <TrendingDown className="h-3.5 w-3.5" />
-                        <span className="text-[10px] font-medium uppercase">Abat. Moyen</span>
-                      </div>
-                      <div className="text-xl font-bold tabular-nums">
-                        {kpis ? kpis.avg_abattement.toFixed(2) : "0.00"}%
-                      </div>
-                      <div className="text-[10px] text-muted-foreground mt-0.5">
-                        {kpis?.count_pese ?? 0} pesés · {kpis?.count_a_peser ?? 0} à peser
-                      </div>
-
-                    </div>
-                    <div className="bg-amber-500/5 rounded-lg p-3 border border-amber-500/10">
-                      <div className="flex items-center gap-1.5 text-amber-600 mb-1">
-                        <Timer className="h-3.5 w-3.5" />
-                        <span className="text-[10px] font-medium uppercase">Durée Moyenne</span>
-                      </div>
-
-                      <div className="text-xl font-bold tabular-nums">
-                        {Math.round(kpis?.avg_duree ?? 0)} <span className="text-xs font-normal">min</span>
-                      </div>
-
-                      <div className="text-[10px] text-muted-foreground mt-0.5">
-                        Période {period === "matin" ? "6h-14h" : period === "apres_midi" ? "14h-22h" : "22h-6h"}
-
-                      </div>
-                    </div>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="hover:bg-transparent border-b-0">
+                          <TableHead className="h-7 text-[10px] px-1 font-bold">Période</TableHead>
+                          <TableHead className="h-7 text-[10px] px-1 font-bold text-right">Abat. (%)</TableHead>
+                          <TableHead className="h-7 text-[10px] px-1 font-bold text-right">Abat. (kg)</TableHead>
+                          <TableHead className="h-7 text-[10px] px-1 font-bold text-right">Net (kg)</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {globalKpis.map((kpi: any) => (
+                          <TableRow key={kpi.period_name} className="hover:bg-transparent">
+                            <TableCell className="py-2 px-1 text-[10px] font-medium">{kpi.period_name}</TableCell>
+                            <TableCell className="py-2 px-1 text-[10px] text-right tabular-nums">{Number(kpi.avg_abattement_pct ?? 0).toFixed(2)} %</TableCell>
+                            <TableCell className="py-2 px-1 text-[10px] text-right tabular-nums font-medium text-amber-600">{Number(kpi.total_abattement_kg ?? 0).toLocaleString()} kg</TableCell>
+                            <TableCell className="py-2 px-1 text-[10px] text-right tabular-nums font-medium text-primary">{Number(kpi.total_net_kg ?? 0).toLocaleString()} kg</TableCell>
+                          </TableRow>
+                        ))}
+                        {globalKpis.length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={4} className="text-center text-muted-foreground py-4 text-[10px]">
+                              Aucune donnée disponible
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
                   </div>
                 </div>
               </AccordionContent>
