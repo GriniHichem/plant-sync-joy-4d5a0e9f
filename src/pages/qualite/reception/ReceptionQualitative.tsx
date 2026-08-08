@@ -663,7 +663,7 @@ export default function ReceptionQualitative() {
 
             <AccordionItem value="recent" className="border-b-0">
               <AccordionTrigger className="py-0 hover:no-underline xl:[&>svg]:hidden">
-                <CardTitle className="text-base">Mon historique (10 derniers)</CardTitle>
+                <CardTitle className="text-base">Historique (10 derniers)</CardTitle>
               </AccordionTrigger>
               <AccordionContent className="pt-3 pb-0 space-y-4">
                 <div className="overflow-x-auto -mx-2 px-2">
