@@ -684,7 +684,35 @@ export default function ReceptionQualitative() {
 
             <AccordionItem value="recent" className="border-b-0">
               <AccordionTrigger className="py-0 hover:no-underline xl:[&>svg]:hidden">
-                <CardTitle className="text-base">Historique (10 derniers)</CardTitle>
+                <CardTitle className="text-base flex items-center justify-between w-full">
+                  <span>Historique (10 derniers)</span>
+                  {selectedIds.length > 0 && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="sm" className="h-7 px-2 text-[10px]">
+                          Supprimer ({selectedIds.length})
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Supprimer les tickets sélectionnés ?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Cette action est irréversible. Les tickets et leurs pesées associées seront définitivement supprimés.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Annuler</AlertDialogCancel>
+                          <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            onClick={() => deleteTickets.mutate(selectedIds)}
+                          >
+                            Supprimer
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                </CardTitle>
               </AccordionTrigger>
               <AccordionContent className="pt-3 pb-0 space-y-4">
                 <div className="overflow-x-auto -mx-2 px-2">
