@@ -36,6 +36,7 @@ export default function ReceptionQualitative() {
 
 
   const [ticketId, setTicketId] = useState<string | undefined>();
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   
   const [advisorOpen, setAdvisorOpen] = useState(false);
   const [form, setForm] = useState({
@@ -264,11 +265,23 @@ export default function ReceptionQualitative() {
     },
   });
 
+  const deleteTickets = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase.from("reception_tickets" as any).delete().in("id", ids);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Tickets supprimés avec succès");
+      setSelectedIds([]);
+      qc.invalidateQueries({ queryKey: ["reception_tickets_recent_global"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const { data: globalKpis = [] } = useQuery({
     queryKey: ["reception_global_kpis", format(new Date(), "yyyy-MM-dd"), new Date().getHours()],
     queryFn: async () => {
       const now = new Date();
-      // If hour is between 00:00 and 05:59, we are technically in the "Nuit" shift of the previous day.
       const logicalDate = now.getHours() < 6 
         ? subDays(now, 1) 
         : now;
@@ -671,12 +684,49 @@ export default function ReceptionQualitative() {
 
             <AccordionItem value="recent" className="border-b-0">
               <AccordionTrigger className="py-0 hover:no-underline xl:[&>svg]:hidden">
-                <CardTitle className="text-base">Historique (10 derniers)</CardTitle>
+                <CardTitle className="text-base flex items-center justify-between w-full">
+                  <span>Historique (10 derniers)</span>
+                  {selectedIds.length > 0 && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="sm" className="h-7 px-2 text-[10px]">
+                          Supprimer ({selectedIds.length})
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Supprimer les tickets sélectionnés ?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Cette action est irréversible. Les tickets et leurs pesées associées seront définitivement supprimés.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Annuler</AlertDialogCancel>
+                          <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            onClick={() => deleteTickets.mutate(selectedIds)}
+                          >
+                            Supprimer
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                </CardTitle>
               </AccordionTrigger>
               <AccordionContent className="pt-3 pb-0 space-y-4">
                 <div className="overflow-x-auto -mx-2 px-2">
                   <Table>
                     <TableHeader><TableRow className="text-xs">
+                      <TableHead className="h-8 px-2 w-8">
+                        <Checkbox
+                          checked={recent.length > 0 && selectedIds.length === recent.length}
+                          onCheckedChange={(checked) => {
+                            if (checked) setSelectedIds(recent.map((t: any) => t.id));
+                            else setSelectedIds([]);
+                          }}
+                        />
+                      </TableHead>
                       <TableHead className="h-8 px-2">N°</TableHead>
                       <TableHead className="h-8 px-2">Date</TableHead>
                       <TableHead className="h-8 px-2">Fournisseur</TableHead>
@@ -689,9 +739,18 @@ export default function ReceptionQualitative() {
                         return (
                           <TableRow
                             key={t.id}
-                            className="cursor-pointer hover:bg-muted/60"
+                            className={`cursor-pointer hover:bg-muted/60 ${selectedIds.includes(t.id) ? "bg-muted" : ""}`}
                             onClick={() => setDetailRow(t)}
                           >
+                            <TableCell className="py-1.5 px-2" onClick={(e) => e.stopPropagation()}>
+                              <Checkbox
+                                checked={selectedIds.includes(t.id)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) setSelectedIds([...selectedIds, t.id]);
+                                  else setSelectedIds(selectedIds.filter(id => id !== t.id));
+                                }}
+                              />
+                            </TableCell>
                             <TableCell className="font-mono text-xs py-1.5 px-2 whitespace-nowrap">{t.numero}</TableCell>
                             <TableCell className="text-xs py-1.5 px-2 whitespace-nowrap tabular-nums">{dateStr}</TableCell>
                             <TableCell className="text-xs py-1.5 px-2 truncate max-w-[140px]">{t.fournisseur ?? "—"}</TableCell>
