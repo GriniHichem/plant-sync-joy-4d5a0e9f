@@ -268,8 +268,8 @@ export default function ReceptionQualitative() {
   const { data: globalKpis = [] } = useQuery({
     queryKey: ["reception_global_kpis", format(new Date(), "yyyy-MM-dd"), new Date().getHours()],
     queryFn: async () => {
-      // Calculate logical target date: if before 06:00, target date is yesterday
       const now = new Date();
+      // If hour is between 00:00 and 05:59, we are technically in the "Nuit" shift of the previous day.
       const logicalDate = now.getHours() < 6 
         ? subDays(now, 1) 
         : now;
