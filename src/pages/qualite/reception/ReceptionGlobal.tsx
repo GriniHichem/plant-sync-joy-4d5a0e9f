@@ -294,6 +294,30 @@ export default function ReceptionGlobal() {
     const r = receptionDayRange();
     setF((p) => ({ ...p, from: "", to: "", fromDT: r.from, toDT: r.to }));
   };
+  const applyPeriod = (name: "matin" | "apres_midi" | "nuit") => {
+    const now = new Date();
+    const logicalDate = now.getHours() < 6 ? new Date(now.getTime() - 24 * 3600 * 1000) : now;
+    const year = logicalDate.getFullYear();
+    const month = pad(logicalDate.getMonth() + 1);
+    const day = pad(logicalDate.getDate());
+    
+    let from = `${year}-${month}-${day}T`;
+    let to = `${year}-${month}-${day}T`;
+
+    if (name === "matin") {
+      from += "06:00";
+      to += "14:00";
+    } else if (name === "apres_midi") {
+      from += "14:00";
+      to += "22:00";
+    } else {
+      from += "22:00";
+      const nextDay = new Date(logicalDate.getTime() + 24 * 3600 * 1000);
+      to = `${nextDay.getFullYear()}-${pad(nextDay.getMonth() + 1)}-${pad(nextDay.getDate())}T06:00`;
+    }
+    setF((p) => ({ ...p, from: "", to: "", fromDT: from, toDT: to }));
+  };
+
   const isTodayActive = (() => {
     const r = receptionDayRange();
     return f.fromDT === r.from && f.toDT === r.to;
@@ -301,7 +325,7 @@ export default function ReceptionGlobal() {
 
   const filtersForm = (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
-      <div className="sm:col-span-2 md:col-span-4 flex flex-wrap gap-2">
+      <div className="sm:col-span-2 md:col-span-4 flex flex-wrap gap-2 items-center">
         <Button
           type="button"
           size="sm"
@@ -309,7 +333,7 @@ export default function ReceptionGlobal() {
           className="h-9"
           onClick={() => (isTodayActive ? setF({ ...f, fromDT: "", toDT: "" }) : applyToday())}
         >
-          Aujourd'hui (6h → 6h)
+          Aujourd'hui
         </Button>
         <Button
           type="button"
@@ -321,11 +345,42 @@ export default function ReceptionGlobal() {
             setF({ ...f, from: "", to: "", fromDT: r.from, toDT: r.to });
           }}
         >
-          Hier (6h → 6h)
+          Hier
         </Button>
+
+        <div className="h-4 w-px bg-border mx-1" />
+
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="h-8 text-xs px-2"
+          onClick={() => applyPeriod("matin")}
+        >
+          Matin (6h-14h)
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="h-8 text-xs px-2"
+          onClick={() => applyPeriod("apres_midi")}
+        >
+          Aprem (14h-22h)
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="h-8 text-xs px-2"
+          onClick={() => applyPeriod("nuit")}
+        >
+          Nuit (22h-6h)
+        </Button>
+
         {(f.fromDT || f.toDT) && (
-          <Button type="button" size="sm" variant="ghost" className="h-9" onClick={() => setF({ ...f, fromDT: "", toDT: "" })}>
-            Effacer date+heure
+          <Button type="button" size="sm" variant="ghost" className="h-9 ml-auto" onClick={() => setF({ ...f, fromDT: "", toDT: "" })}>
+            Effacer
           </Button>
         )}
       </div>
