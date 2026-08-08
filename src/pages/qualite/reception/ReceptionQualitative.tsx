@@ -264,69 +264,19 @@ export default function ReceptionQualitative() {
     },
   });
 
-  const [period, setPeriod] = useState<"matin" | "apres_midi" | "nuit">(() => {
-    const now = new Date();
-    const h = now.getHours();
-    if (h >= 6 && h < 14) return "matin";
-    if (h >= 14 && h < 22) return "apres_midi";
-    return "nuit";
-  });
-
-  const periodRange = useMemo(() => {
-    const now = new Date();
-    let start = startOfToday();
-    
-    // Si on est avant 6h, la "journée de réception" a commencé hier à 6h
-    if (now.getHours() < 6) {
-      start = subDays(start, 1);
-    }
-    
-    start = setHours(start, 6);
-    start = setMinutes(start, 0);
-    start = setSeconds(start, 0);
-
-    let pStart, pEnd;
-    if (period === "matin") {
-      pStart = start;
-      pEnd = setHours(start, 14);
-    } else if (period === "apres_midi") {
-      pStart = setHours(start, 14);
-      pEnd = setHours(start, 22);
-    } else {
-      pStart = setHours(start, 22);
-      pEnd = addDays(start, 1);
-      pEnd = setHours(pEnd, 6);
-    }
-    return { start: pStart, end: pEnd };
-  }, [period]);
-
-  const { data: kpis } = useQuery({
-    queryKey: ["reception_user_kpis", user?.id, periodRange.start.toISOString().split('.')[0], periodRange.end.toISOString().split('.')[0], period],
+  const { data: globalKpis = [] } = useQuery({
+    queryKey: ["reception_global_kpis", format(new Date(), "yyyy-MM-dd")],
     queryFn: async () => {
-      const startTime = periodRange.start.toISOString();
-      const endTime = periodRange.end.toISOString();
-
-      
-      console.log("Fetching KPIs for user:", user?.id, "Period:", startTime, "to", endTime);
-      
-      const { data, error } = await supabase.rpc("get_reception_user_kpis" as any, {
-        p_user_id: user?.id,
-        p_start_time: startTime,
-        p_end_time: endTime,
+      const { data, error } = await supabase.rpc("get_reception_qualitative_kpis", {
+        p_target_date: format(new Date(), "yyyy-MM-dd")
       });
       if (error) {
-        console.error("Error fetching user KPIs:", error);
+        console.error("Error fetching global KPIs:", error);
         throw error;
       }
-      console.log("KPIs data received:", data);
-      return data?.[0] as {
-        count_pese: number;
-        count_a_peser: number;
-        avg_abattement: number;
-        avg_duree: number;
-      };
+      return (data ?? []) as any[];
     },
-    enabled: !!user?.id,
+    refetchInterval: 30000,
   });
 
   // Dernier numéro de ticket en base (tous statuts) pour contrôle de continuité
