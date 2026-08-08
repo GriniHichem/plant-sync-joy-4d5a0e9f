@@ -253,8 +253,7 @@ export default function ReceptionQualitative() {
       const { data, error } = await supabase.from("v_reception_global")
         .select("*")
         .in("statut", ["cloture", "pese_importe"])
-        .order("cloture_at", { ascending: false })
-        .order("created_at", { ascending: false })
+        .order("cloture_at", { ascending: false, nullsFirst: false })
         .limit(10);
       
       if (error) {
