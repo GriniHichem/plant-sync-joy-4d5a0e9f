@@ -717,7 +717,6 @@ export default function ReceptionQualitative() {
                         <TableRow className="hover:bg-transparent border-b-0 text-[10px]">
                           <TableHead className="h-7 px-1 font-bold">Période</TableHead>
                           <TableHead className="h-7 px-1 font-bold text-right">Abatt. Moy. (%)</TableHead>
-                          <TableHead className="h-7 px-1 font-bold text-right">Abatt. (kg)</TableHead>
                           <TableHead className="h-7 px-1 font-bold text-right">Net Total (kg)</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -726,13 +725,12 @@ export default function ReceptionQualitative() {
                           <TableRow key={kpi.period_name} className="hover:bg-transparent border-b-0">
                             <TableCell className="py-2 px-1 text-[10px] font-medium">{kpi.period_name}</TableCell>
                             <TableCell className="py-2 px-1 text-[10px] text-right tabular-nums">{Number(kpi.avg_abattement_pct ?? 0).toFixed(2)}%</TableCell>
-                            <TableCell className="py-2 px-1 text-[10px] text-right tabular-nums text-amber-600">{Number(kpi.total_abat_kg ?? 0).toLocaleString()}kg</TableCell>
                             <TableCell className="py-2 px-1 text-[10px] text-right tabular-nums font-bold text-primary">{Number(kpi.total_net_kg ?? 0).toLocaleString()}kg</TableCell>
                           </TableRow>
                         ))}
                         {globalKpis.length === 0 && (
                           <TableRow>
-                            <TableCell colSpan={4} className="text-center text-muted-foreground py-4 text-[10px]">
+                            <TableCell colSpan={3} className="text-center text-muted-foreground py-4 text-[10px]">
                               Aucune donnée disponible
                             </TableCell>
                           </TableRow>
