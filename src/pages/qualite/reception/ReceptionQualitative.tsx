@@ -248,11 +248,18 @@ export default function ReceptionQualitative() {
 
 
   const { data: recent = [] } = useQuery({
-    queryKey: ["reception_tickets_recent_global"],
+    queryKey: ["reception_tickets_recent_global", format(new Date(), "yyyy-MM-dd"), new Date().getHours()],
     queryFn: async () => {
+      const now = new Date();
+      // Calculate logical start of Reception Day (06:00)
+      const logicalDate = now.getHours() < 6 ? subDays(now, 1) : now;
+      const startOfReceptionDay = new Date(logicalDate);
+      startOfReceptionDay.setHours(6, 0, 0, 0);
+      
       const { data, error } = await supabase.from("v_reception_global")
         .select("*")
         .in("statut", ["cloture", "pese_importe"])
+        .gte("cloture_at", startOfReceptionDay.toISOString())
         .order("cloture_at", { ascending: false })
         .order("created_at", { ascending: false })
         .limit(10);
