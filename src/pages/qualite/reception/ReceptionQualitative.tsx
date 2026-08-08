@@ -708,7 +708,9 @@ export default function ReceptionQualitative() {
                 <div className="pt-4 border-t space-y-3">
                   <div className="flex items-center justify-between">
                     <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Indicateurs par période</h4>
-                    <span className="text-[10px] text-muted-foreground tabular-nums">Journée du {format(new Date(), "dd/MM/yyyy")}</span>
+                    <span className="text-[10px] text-muted-foreground tabular-nums">
+                      Journée du {format(new Date().getHours() < 6 ? subDays(new Date(), 1) : new Date(), "dd/MM/yyyy")}
+                    </span>
                   </div>
                   
                   <div className="overflow-x-auto">
