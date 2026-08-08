@@ -716,7 +716,6 @@ export default function ReceptionQualitative() {
                       <TableHeader>
                         <TableRow className="hover:bg-transparent border-b-0 text-[10px]">
                           <TableHead className="h-7 px-1 font-bold">Période</TableHead>
-                          <TableHead className="h-7 px-1 font-bold text-right">Durée Moy. (min)</TableHead>
                           <TableHead className="h-7 px-1 font-bold text-right">Abatt. Moy. (%)</TableHead>
                           <TableHead className="h-7 px-1 font-bold text-right">Net Total (kg)</TableHead>
                         </TableRow>
@@ -725,12 +724,6 @@ export default function ReceptionQualitative() {
                         {globalKpis.map((kpi: any) => (
                           <TableRow key={kpi.period_name} className="hover:bg-transparent border-b-0">
                             <TableCell className="py-2 px-1 text-[10px] font-medium">{kpi.period_name}</TableCell>
-                            <TableCell className="py-2 px-1 text-[10px] text-right tabular-nums font-medium text-blue-600">
-                              <div className="flex items-center justify-end gap-1">
-                                <Timer className="h-3 w-3" />
-                                {Number(kpi.avg_duration_min ?? 0).toFixed(1)}
-                              </div>
-                            </TableCell>
                             <TableCell className="py-2 px-1 text-[10px] text-right tabular-nums">{Number(kpi.avg_abattement_pct ?? 0).toFixed(2)}%</TableCell>
                             <TableCell className="py-2 px-1 text-[10px] text-right tabular-nums font-bold text-primary">{Number(kpi.total_net_kg ?? 0).toLocaleString()}kg</TableCell>
                           </TableRow>
