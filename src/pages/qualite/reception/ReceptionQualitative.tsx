@@ -730,7 +730,7 @@ export default function ReceptionQualitative() {
                         ))}
                         {globalKpis.length === 0 && (
                           <TableRow>
-                            <TableCell colSpan={4} className="text-center text-muted-foreground py-4 text-[10px]">
+                            <TableCell colSpan={3} className="text-center text-muted-foreground py-4 text-[10px]">
                               Aucune donnée disponible
                             </TableCell>
                           </TableRow>
