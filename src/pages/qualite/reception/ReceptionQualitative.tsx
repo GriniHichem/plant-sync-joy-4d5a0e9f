@@ -36,6 +36,7 @@ export default function ReceptionQualitative() {
 
 
   const [ticketId, setTicketId] = useState<string | undefined>();
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   
   const [advisorOpen, setAdvisorOpen] = useState(false);
   const [form, setForm] = useState({
