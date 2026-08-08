@@ -739,9 +739,18 @@ export default function ReceptionQualitative() {
                         return (
                           <TableRow
                             key={t.id}
-                            className="cursor-pointer hover:bg-muted/60"
+                            className={`cursor-pointer hover:bg-muted/60 ${selectedIds.includes(t.id) ? "bg-muted" : ""}`}
                             onClick={() => setDetailRow(t)}
                           >
+                            <TableCell className="py-1.5 px-2" onClick={(e) => e.stopPropagation()}>
+                              <Checkbox
+                                checked={selectedIds.includes(t.id)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) setSelectedIds([...selectedIds, t.id]);
+                                  else setSelectedIds(selectedIds.filter(id => id !== t.id));
+                                }}
+                              />
+                            </TableCell>
                             <TableCell className="font-mono text-xs py-1.5 px-2 whitespace-nowrap">{t.numero}</TableCell>
                             <TableCell className="text-xs py-1.5 px-2 whitespace-nowrap tabular-nums">{dateStr}</TableCell>
                             <TableCell className="text-xs py-1.5 px-2 truncate max-w-[140px]">{t.fournisseur ?? "—"}</TableCell>
