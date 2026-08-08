@@ -707,9 +707,9 @@ export default function ReceptionQualitative() {
                       <TableHeader>
                         <TableRow className="hover:bg-transparent border-b-0">
                           <TableHead className="h-7 text-[10px] px-1 font-bold">Période</TableHead>
-                          <TableHead className="h-7 text-[10px] px-1 font-bold text-right">Abat. (%)</TableHead>
-                          <TableHead className="h-7 text-[10px] px-1 font-bold text-right">Abat. (kg)</TableHead>
-                          <TableHead className="h-7 text-[10px] px-1 font-bold text-right">Net (kg)</TableHead>
+                          <TableHead className="h-7 text-[10px] px-1 font-bold text-right">Abattement moyen (%)</TableHead>
+                          <TableHead className="h-7 text-[10px] px-1 font-bold text-right">Abattement total (kg)</TableHead>
+                          <TableHead className="h-7 text-[10px] px-1 font-bold text-right">Poids net total (kg)</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
