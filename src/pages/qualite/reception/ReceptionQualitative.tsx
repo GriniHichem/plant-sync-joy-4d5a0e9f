@@ -274,8 +274,10 @@ export default function ReceptionQualitative() {
         ? subDays(now, 1) 
         : now;
       
+      const targetDateStr = format(logicalDate, "yyyy-MM-dd");
+      
       const { data, error } = await supabase.rpc("get_reception_qualitative_kpis", {
-        p_target_date: format(logicalDate, "yyyy-MM-dd")
+        p_target_date: targetDateStr
       });
       if (error) {
         console.error("Error fetching global KPIs:", error);
