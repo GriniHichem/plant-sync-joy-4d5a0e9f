@@ -248,89 +248,35 @@ export default function ReceptionQualitative() {
 
 
   const { data: recent = [] } = useQuery({
-    queryKey: ["reception_tickets_recent", user?.id],
+    queryKey: ["reception_tickets_recent_global"],
     queryFn: async () => {
-      console.log("Fetching recent tickets for user:", user?.id);
       const { data, error } = await supabase.from("v_reception_global")
         .select("*")
-        .or(`created_by.eq.${user?.id},cloture_by.eq.${user?.id}`)
         .in("statut", ["cloture", "pese_importe"])
-        .order("created_at", { ascending: false })
+        .order("cloture_at", { ascending: false, nullsFirst: false })
         .limit(10);
       
       if (error) {
         console.error("Error fetching recent tickets:", error);
         throw error;
       }
-      console.log("Recent tickets found:", data?.length);
       return (data ?? []) as any[];
     },
-    enabled: !!user?.id,
   });
 
-  const [period, setPeriod] = useState<"matin" | "apres_midi" | "nuit">(() => {
-    const now = new Date();
-    const h = now.getHours();
-    if (h >= 6 && h < 14) return "matin";
-    if (h >= 14 && h < 22) return "apres_midi";
-    return "nuit";
-  });
-
-  const periodRange = useMemo(() => {
-    const now = new Date();
-    let start = startOfToday();
-    
-    // Si on est avant 6h, la "journée de réception" a commencé hier à 6h
-    if (now.getHours() < 6) {
-      start = subDays(start, 1);
-    }
-    
-    start = setHours(start, 6);
-    start = setMinutes(start, 0);
-    start = setSeconds(start, 0);
-
-    let pStart, pEnd;
-    if (period === "matin") {
-      pStart = start;
-      pEnd = setHours(start, 14);
-    } else if (period === "apres_midi") {
-      pStart = setHours(start, 14);
-      pEnd = setHours(start, 22);
-    } else {
-      pStart = setHours(start, 22);
-      pEnd = addDays(start, 1);
-      pEnd = setHours(pEnd, 6);
-    }
-    return { start: pStart, end: pEnd };
-  }, [period]);
-
-  const { data: kpis } = useQuery({
-    queryKey: ["reception_user_kpis", user?.id, periodRange.start.toISOString().split('.')[0], periodRange.end.toISOString().split('.')[0], period],
+  const { data: globalKpis = [] } = useQuery({
+    queryKey: ["reception_global_kpis", format(new Date(), "yyyy-MM-dd")],
     queryFn: async () => {
-      const startTime = periodRange.start.toISOString();
-      const endTime = periodRange.end.toISOString();
-
-      
-      console.log("Fetching KPIs for user:", user?.id, "Period:", startTime, "to", endTime);
-      
-      const { data, error } = await supabase.rpc("get_reception_user_kpis" as any, {
-        p_user_id: user?.id,
-        p_start_time: startTime,
-        p_end_time: endTime,
+      const { data, error } = await supabase.rpc("get_reception_qualitative_kpis", {
+        p_target_date: format(new Date(), "yyyy-MM-dd")
       });
       if (error) {
-        console.error("Error fetching user KPIs:", error);
+        console.error("Error fetching global KPIs:", error);
         throw error;
       }
-      console.log("KPIs data received:", data);
-      return data?.[0] as {
-        count_pese: number;
-        count_a_peser: number;
-        avg_abattement: number;
-        avg_duree: number;
-      };
+      return (data ?? []) as any[];
     },
-    enabled: !!user?.id,
+    refetchInterval: 30000,
   });
 
   // Dernier numéro de ticket en base (tous statuts) pour contrôle de continuité
@@ -717,7 +663,7 @@ export default function ReceptionQualitative() {
 
             <AccordionItem value="recent" className="border-b-0">
               <AccordionTrigger className="py-0 hover:no-underline xl:[&>svg]:hidden">
-                <CardTitle className="text-base">Mon historique (10 derniers)</CardTitle>
+                <CardTitle className="text-base">Historique (10 derniers)</CardTitle>
               </AccordionTrigger>
               <AccordionContent className="pt-3 pb-0 space-y-4">
                 <div className="overflow-x-auto -mx-2 px-2">
@@ -752,45 +698,38 @@ export default function ReceptionQualitative() {
 
                 <div className="pt-4 border-t space-y-3">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Mes indicateurs</h4>
-                    <Tabs value={period} onValueChange={(v: any) => setPeriod(v)} className="h-8">
-                      <TabsList className="h-8 p-0.5">
-                        <TabsTrigger value="matin" className="text-[10px] h-7 px-2">Matin</TabsTrigger>
-                        <TabsTrigger value="apres_midi" className="text-[10px] h-7 px-2">A-M</TabsTrigger>
-                        <TabsTrigger value="nuit" className="text-[10px] h-7 px-2">Nuit</TabsTrigger>
-                      </TabsList>
-                    </Tabs>
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Indicateurs par période</h4>
+                    <span className="text-[10px] text-muted-foreground tabular-nums">Journée du {format(new Date(), "dd/MM/yyyy")}</span>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="bg-primary/5 rounded-lg p-3 border border-primary/10">
-                      <div className="flex items-center gap-1.5 text-primary mb-1">
-                        <TrendingDown className="h-3.5 w-3.5" />
-                        <span className="text-[10px] font-medium uppercase">Abat. Moyen</span>
-                      </div>
-                      <div className="text-xl font-bold tabular-nums">
-                        {kpis ? kpis.avg_abattement.toFixed(2) : "0.00"}%
-                      </div>
-                      <div className="text-[10px] text-muted-foreground mt-0.5">
-                        {kpis?.count_pese ?? 0} pesés · {kpis?.count_a_peser ?? 0} à peser
-                      </div>
-
-                    </div>
-                    <div className="bg-amber-500/5 rounded-lg p-3 border border-amber-500/10">
-                      <div className="flex items-center gap-1.5 text-amber-600 mb-1">
-                        <Timer className="h-3.5 w-3.5" />
-                        <span className="text-[10px] font-medium uppercase">Durée Moyenne</span>
-                      </div>
-
-                      <div className="text-xl font-bold tabular-nums">
-                        {Math.round(kpis?.avg_duree ?? 0)} <span className="text-xs font-normal">min</span>
-                      </div>
-
-                      <div className="text-[10px] text-muted-foreground mt-0.5">
-                        Période {period === "matin" ? "6h-14h" : period === "apres_midi" ? "14h-22h" : "22h-6h"}
-
-                      </div>
-                    </div>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="hover:bg-transparent border-b-0">
+                          <TableHead className="h-7 text-[10px] px-1 font-bold">Période</TableHead>
+                          <TableHead className="h-7 text-[10px] px-1 font-bold text-right">Abat. (%)</TableHead>
+                          <TableHead className="h-7 text-[10px] px-1 font-bold text-right">Abat. (kg)</TableHead>
+                          <TableHead className="h-7 text-[10px] px-1 font-bold text-right">Net (kg)</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {globalKpis.map((kpi: any) => (
+                          <TableRow key={kpi.period_name} className="hover:bg-transparent">
+                            <TableCell className="py-2 px-1 text-[10px] font-medium">{kpi.period_name}</TableCell>
+                            <TableCell className="py-2 px-1 text-[10px] text-right tabular-nums">{Number(kpi.avg_abattement_pct ?? 0).toFixed(2)} %</TableCell>
+                            <TableCell className="py-2 px-1 text-[10px] text-right tabular-nums font-medium text-amber-600">{Number(kpi.total_abattement_kg ?? 0).toLocaleString()} kg</TableCell>
+                            <TableCell className="py-2 px-1 text-[10px] text-right tabular-nums font-medium text-primary">{Number(kpi.total_net_kg ?? 0).toLocaleString()} kg</TableCell>
+                          </TableRow>
+                        ))}
+                        {globalKpis.length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={4} className="text-center text-muted-foreground py-4 text-[10px]">
+                              Aucune donnée disponible
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
                   </div>
                 </div>
               </AccordionContent>
