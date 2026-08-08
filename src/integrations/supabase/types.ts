@@ -7927,6 +7927,10 @@ export type Database = {
         }
         Returns: Json
       }
+      get_reception_qualitative_kpis: {
+        Args: { p_target_date: string }
+        Returns: Json
+      }
       get_reception_user_kpis: {
         Args: { p_end_time: string; p_start_time: string; p_user_id: string }
         Returns: Json
