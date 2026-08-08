@@ -265,10 +265,16 @@ export default function ReceptionQualitative() {
   });
 
   const { data: globalKpis = [] } = useQuery({
-    queryKey: ["reception_global_kpis", format(new Date(), "yyyy-MM-dd")],
+    queryKey: ["reception_global_kpis", format(new Date(), "yyyy-MM-dd"), new Date().getHours()],
     queryFn: async () => {
+      // Calculate logical target date: if before 06:00, target date is yesterday
+      const now = new Date();
+      const logicalDate = now.getHours() < 6 
+        ? subDays(now, 1) 
+        : now;
+      
       const { data, error } = await supabase.rpc("get_reception_qualitative_kpis", {
-        p_target_date: format(new Date(), "yyyy-MM-dd")
+        p_target_date: format(logicalDate, "yyyy-MM-dd")
       });
       if (error) {
         console.error("Error fetching global KPIs:", error);
