@@ -718,6 +718,15 @@ export default function ReceptionQualitative() {
                 <div className="overflow-x-auto -mx-2 px-2">
                   <Table>
                     <TableHeader><TableRow className="text-xs">
+                      <TableHead className="h-8 px-2 w-8">
+                        <Checkbox
+                          checked={recent.length > 0 && selectedIds.length === recent.length}
+                          onCheckedChange={(checked) => {
+                            if (checked) setSelectedIds(recent.map((t: any) => t.id));
+                            else setSelectedIds([]);
+                          }}
+                        />
+                      </TableHead>
                       <TableHead className="h-8 px-2">N°</TableHead>
                       <TableHead className="h-8 px-2">Date</TableHead>
                       <TableHead className="h-8 px-2">Fournisseur</TableHead>
