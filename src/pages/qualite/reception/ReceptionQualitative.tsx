@@ -265,6 +265,19 @@ export default function ReceptionQualitative() {
     },
   });
 
+  const deleteTickets = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase.from("reception_tickets" as any).delete().in("id", ids);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Tickets supprimés avec succès");
+      setSelectedIds([]);
+      qc.invalidateQueries({ queryKey: ["reception_tickets_recent_global"] });
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const { data: globalKpis = [] } = useQuery({
     queryKey: ["reception_global_kpis", format(new Date(), "yyyy-MM-dd"), new Date().getHours()],
     queryFn: async () => {
